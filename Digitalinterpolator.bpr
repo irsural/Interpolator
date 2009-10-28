@@ -1,0 +1,217 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="Digitalinterpolator.exe"/>
+    <OBJFILES value="Digitalinterpolator.obj addcolrow.obj copytable.obj datahandling.obj 
+      dinamictypes.obj newconfig.obj optionsoptimize.obj parsemathematic.obj 
+      servisfunction.obj managerf.obj modifidatatable.obj showmessages.obj 
+      measutils.obj About.obj ..\mxsrclib\correct_alg.obj 
+      ..\mxsrclib\csvwork.obj ..\mxsrclib\dbgprn.obj ..\mxsrclib\hardflowg.obj 
+      ..\mxsrclib\irsadc.obj ..\mxsrclib\irsalg.obj ..\mxsrclib\irscalc.obj 
+      ..\mxsrclib\irsdsp.obj ..\mxsrclib\irserror.obj ..\mxsrclib\irsexcept.obj 
+      ..\mxsrclib\irsfunnel.obj ..\mxsrclib\irsint.obj ..\mxsrclib\irsmath.obj 
+      ..\mxsrclib\irsmatrix.obj ..\mxsrclib\irsmbus.obj ..\mxsrclib\irsmenu.obj 
+      ..\mxsrclib\irsprop.obj ..\mxsrclib\irsstd.obj ..\mxsrclib\irsstdg.obj 
+      ..\mxsrclib\irstime.obj ..\mxsrclib\measmul.obj ..\mxsrclib\meassup.obj 
+      ..\mxsrclib\mxdata.obj ..\mxsrclib\mxifar.obj ..\mxsrclib\mxnet.obj 
+      ..\mxsrclib\mxnetc.obj ..\mxsrclib\mxnetr.obj ..\mxsrclib\timer.obj 
+      ..\mxsrclib\arch\cur\cbcomp.obj ..\mxsrclib\arch\cur\cbsysutils.obj 
+      ..\mxsrclib\arch\cur\counter.obj ..\mxsrclib\arch\cur\hardflow.obj 
+      ..\mxsrclib\arch\cur\irscberror.obj ..\mxsrclib\arch\cur\irsstdl.obj 
+      ..\mxsrclib\arch\cur\MxBase.obj ..\mxsrclib\arch\cur\MxChart.obj 
+      ..\mxsrclib\arch\cur\mxifa.obj ..\mxsrclib\arch\cur\mxini.obj 
+      ..\mxsrclib\arch\cur\tstlan4lib.obj table.obj"/>
+    <RESFILES value="Digitalinterpolator.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) addcolrow.dfm copytable.dfm datahandling.dfm newconfig.dfm 
+      optionsoptimize.dfm managerf.dfm modifidatatable.dfm showmessages.dfm 
+      About.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="bcbsmp.lib vclx.lib vcl.lib rtl.lib"/>
+    <SPARELIBS value="rtl.lib vcl.lib vclx.lib bcbsmp.lib"/>
+    <PACKAGES value="rtl.bpi vcl.bpi vclx.bpi vcljpg.bpi bcbsmp.bpi qrpt.bpi dbrtl.bpi 
+      vcldb.bpi bdertl.bpi ibsmp.bpi vcldbx.bpi teeui.bpi teedb.bpi tee.bpi 
+      nmfast.bpi dclocx.bpi"/>
+    <PATHCPP value=".;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur;..\mxsrclib\arch\cur"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="_DEBUG"/>
+    <SYSDEFINES value="NO_STRICT"/>
+    <MAINSOURCE value="Digitalinterpolator.cpp"/>
+    <INCLUDEPATH value="..\maxvlib;..\mxsrclib\arch\cbuilder;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\maxvlib;..\mxsrclib\arch\cbuilder;&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w8092 -w8090 -w8089 -w8087 -wprc -wucp -w-rch -wpin -w-pck -w-par -w-8027 
+      -w-8026 -wdef -wcln -wbbf -w-aus -wasm -wamp -wamb"/>
+    <WARNOPTSTR value=""/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-I..\maxvlib -I..\mxsrclib\arch\cbuilder 
+      -I&quot;C:\Program Files\Borland\CBuilder6\Projects&quot; -I..\mxsrclib\arch\cur 
+      -I..\mxsrclib -I$(BCB)\include -I$(BCB)\include\vcl -src_suffix cpp 
+      -D_DEBUG -boa"/>
+    <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a1 -b- -k -y -v -vi- -c 
+      -tW -tWM"/>
+    <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zi"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn -v"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="Digitalinterpolator.cpp" FORMNAME="" UNITNAME="Digitalinterpolator" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="addcolrow.cpp" FORMNAME="AddCorRowF" UNITNAME="addcolrow" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="copytable.cpp" FORMNAME="CopyTableForm" UNITNAME="copytable" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="datahandling.cpp" FORMNAME="DataHandlingF" UNITNAME="datahandling" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="dinamictypes.cpp" FORMNAME="" UNITNAME="dinamictypes.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="newconfig.cpp" FORMNAME="NewConfigF" UNITNAME="newconfig" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="optionsoptimize.cpp" FORMNAME="OptionsF" UNITNAME="optionsoptimize" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="parsemathematic.cpp" FORMNAME="" UNITNAME="parsemathematic.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="servisfunction.cpp" FORMNAME="" UNITNAME="servisfunction.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="Digitalinterpolator.res" FORMNAME="" UNITNAME="" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="managerf.cpp" FORMNAME="ManagerDGIF" UNITNAME="managerf" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="modifidatatable.cpp" FORMNAME="ModifiDataTableF" UNITNAME="modifidatatable" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="showmessages.cpp" FORMNAME="MessagesForm" UNITNAME="showmessages" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="measutils.cpp" FORMNAME="" UNITNAME="measutils" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="About.cpp" FORMNAME="AboutForm" UNITNAME="About" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\correct_alg.cpp" FORMNAME="" UNITNAME="correct_alg.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\csvwork.cpp" FORMNAME="" UNITNAME="csvwork.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\dbgprn.cpp" FORMNAME="" UNITNAME="dbgprn.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\hardflowg.cpp" FORMNAME="" UNITNAME="hardflowg.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsadc.cpp" FORMNAME="" UNITNAME="irsadc.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsalg.cpp" FORMNAME="" UNITNAME="irsalg.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irscalc.cpp" FORMNAME="" UNITNAME="irscalc.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsdsp.cpp" FORMNAME="" UNITNAME="irsdsp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irserror.cpp" FORMNAME="" UNITNAME="irserror.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsexcept.cpp" FORMNAME="" UNITNAME="irsexcept.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsfunnel.cpp" FORMNAME="" UNITNAME="irsfunnel.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsint.cpp" FORMNAME="" UNITNAME="irsint.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsmath.cpp" FORMNAME="" UNITNAME="irsmath.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsmatrix.cpp" FORMNAME="" UNITNAME="irsmatrix.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsmbus.cpp" FORMNAME="" UNITNAME="irsmbus.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsmenu.cpp" FORMNAME="" UNITNAME="irsmenu.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsprop.cpp" FORMNAME="" UNITNAME="irsprop.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsstd.cpp" FORMNAME="" UNITNAME="irsstd.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsstdg.cpp" FORMNAME="" UNITNAME="irsstdg.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irstime.cpp" FORMNAME="" UNITNAME="irstime.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\measmul.cpp" FORMNAME="" UNITNAME="measmul.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\meassup.cpp" FORMNAME="" UNITNAME="meassup.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\mxdata.cpp" FORMNAME="" UNITNAME="mxdata.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\mxifar.cpp" FORMNAME="" UNITNAME="mxifar.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\mxnet.cpp" FORMNAME="" UNITNAME="mxnet.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\mxnetc.cpp" FORMNAME="" UNITNAME="mxnetc.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\mxnetr.cpp" FORMNAME="" UNITNAME="mxnetr.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\timer.cpp" FORMNAME="" UNITNAME="timer.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\cbcomp.cpp" FORMNAME="" UNITNAME="cbcomp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\cbsysutils.cpp" FORMNAME="" UNITNAME="cbsysutils.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\counter.cpp" FORMNAME="" UNITNAME="counter.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\hardflow.cpp" FORMNAME="" UNITNAME="hardflow.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\irscberror.cpp" FORMNAME="" UNITNAME="irscberror.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\irsstdl.cpp" FORMNAME="" UNITNAME="irsstdl.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\MxBase.cpp" FORMNAME="" UNITNAME="MxBase.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\MxChart.cpp" FORMNAME="" UNITNAME="MxChart.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\mxifa.cpp" FORMNAME="" UNITNAME="mxifa.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\mxini.cpp" FORMNAME="" UNITNAME="mxini.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\arch\cur\tstlan4lib.cpp" FORMNAME="" UNITNAME="tstlan4lib.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="table.cpp" FORMNAME="" UNITNAME="table" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=1
+MajorVer=1
+MinorVer=0
+Release=0
+Build=12
+Debug=1
+PreRelease=1
+Special=1
+Private=1
+DLL=1
+Locale=1049
+CodePage=1251
+
+[Version Info Keys]
+CompanyName=ИРС
+FileDescription=
+FileVersion=1.0.0.12
+InternalName=
+LegalCopyright=
+LegalTrademarks=
+OriginalFilename=
+ProductName=
+ProductVersion=1.0.0.0
+Comments=Программа автокалибровки приборов.
+SpecialBuild=
+PrivateBuild=
+
+[HistoryLists\hlIncludePath]
+Count=4
+Item0=..\maxvlib;..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl
+Item2=C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl
+Item3=C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;..\..\mxsrclib\arch\cur;..\..\mxsrclib;..\..\Program Files\Borland\CBuilder4\Projects;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=4
+Item0=..\maxvlib;..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib
+Item1=..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib
+Item2=C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib
+Item3=C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;..\..\mxsrclib\arch\cur;..\..\mxsrclib;..\..\Program Files\Borland\CBuilder4\Projects;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=1
+Item0=_DEBUG
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=1
+LinkCGLIB=0
+
+[CORBA]
+AddServerUnit=1
+AddClientUnit=1
+PrecompiledHeaders=1
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>
