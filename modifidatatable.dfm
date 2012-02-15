@@ -1,6 +1,6 @@
 object ModifiDataTableF: TModifiDataTableF
-  Left = 436
-  Top = 400
+  Left = 443
+  Top = 404
   BiDiMode = bdRightToLeft
   BorderStyle = bsDialog
   Caption = #1048#1079#1084#1077#1085#1077#1085#1080#1077' '#1076#1072#1085#1085#1099#1093' '#1074' '#1090#1072#1073#1083#1080#1094#1077

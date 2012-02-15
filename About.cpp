@@ -4,7 +4,7 @@
 #pragma hdrstop
 
 #include "About.h"
-#include <irsstdg.h>
+//#include <irsstrdefs.h>
 #include <cbsysutils.h>
 //---------------------------------------------------------------------------
 #pragma package(smart_init)

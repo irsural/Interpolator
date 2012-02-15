@@ -42,7 +42,6 @@ __published:	// IDE-managed Components
   TLabeledEdit *PortLE;
   TLabel *Label3;
   TEdit *IndexWorkTimeEdit;
-  TPanel *Panel5;
   TComboBox *MeasTypeCB;
   TLabeledEdit *Delay_MeasLE;
   TLabel *Label1;
@@ -62,6 +61,8 @@ __published:	// IDE-managed Components
   TStringGrid *ListParameterSG;
   TCSpinEdit *ParamsExCSpinEdit;
   TLabel *Label4;
+  TGroupBox *MultimeterSettingsGroupBox;
+  TLabeledEdit *MeasRangeKoefLabeledEdit;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);

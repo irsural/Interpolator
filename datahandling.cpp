@@ -296,13 +296,13 @@ void TDataHandlingF::load_config_calibr()
         m_config_calibr.in_parametr2.type_variable.c_str();
       m_inf_in_param.type_variable_param3 =
         m_config_calibr.in_parametr3.type_variable.c_str();
-      if(m_config_calibr.in_parametr1.anchor == true){
+      if (m_config_calibr.in_parametr1.anchor == true) {
         m_inf_in_param.type_anchor = PARAMETR1;
         m_inf_in_param.number_in_param = TWO_PARAM;
-      }else if(m_config_calibr.in_parametr2.anchor == true){
+      } else if(m_config_calibr.in_parametr2.anchor == true) {
         m_inf_in_param.type_anchor = PARAMETR2;
         m_inf_in_param.number_in_param = TWO_PARAM;
-      }else{
+      } else {
         m_inf_in_param.type_anchor = PARAMETR3;
         m_inf_in_param.number_in_param = THREE_PARAM;
       }
@@ -1106,7 +1106,7 @@ void TDataHandlingF::process_volt_meas()
     m_on_auto_meas = false;
     //config_button_stop_avto_volt_meas();
     m_status_process_meas = spm_reset;
-    m_log<<"—топ.";
+    m_log << "—топ.";
   }
   if(m_on_auto_meas) {
     config_button_start_avto_volt_meas();
@@ -1121,7 +1121,7 @@ void TDataHandlingF::process_volt_meas()
         } else {
           m_status_process_meas =
             spm_wait_ext_trig_set_range;
-          m_log<<"ќжидание внешнего запуска установки диапазона измерений.";
+          m_log << "ќжидание внешнего запуска установки диапазона измерений.";
         }
         //m_status_process_meas = spm_jump_next_elem;
         m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
@@ -1132,8 +1132,8 @@ void TDataHandlingF::process_volt_meas()
           " секунд перед продолжением измерений.");
       }else{
         m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
-        m_log<<"ѕрибор не можнет выйти на рабочий режим.";
-        m_log<<"јвтоматическое измерение завершилось с ошибкой.";
+        m_log << "ѕрибор не можнет выйти на рабочий режим.";
+        m_log << "јвтоматическое измерение завершилось с ошибкой.";
         m_status_process_meas = spm_reset;
       }
     }
@@ -1170,20 +1170,20 @@ void TDataHandlingF::process_volt_meas()
             mp_active_table->get_col_displ(),
             mp_active_table->get_row_displ());
           m_on_process_auto_meas_active_cell = false;
-          m_log<<"«апуск автоматического измерени€ с активной €чейки.";
+          m_log << "«апуск автоматического измерени€ с активной €чейки.";
         } else {
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           mp_active_table->set_col_displ(coord_cur_cell.col);
           mp_active_table->set_row_displ(coord_cur_cell.row);
-          m_log<<"«апуск автоматического измерени€.";
+          m_log << "«апуск автоматического измерени€.";
         }
         if (m_mode_program == mode_prog_single_channel) {
           m_status_process_meas = spm_set_range;
         } else {
           m_status_process_meas =
             spm_wait_ext_trig_set_range;
-          m_log<<"ќжидание внешнего запуска установки диапазона измерений.";
+          m_log << "ќжидание внешнего запуска установки диапазона измерений.";
         }
         m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
         m_cell_count_end++;
@@ -1201,9 +1201,9 @@ void TDataHandlingF::process_volt_meas()
         next_elem_successfully = m_manager_traffic_cell.next_cell();
         if (next_elem_successfully == false) {
           m_status_process_meas = spm_reset;
-          m_log<<"јвтоматическое измерение успешно завершено.";
+          m_log << "јвтоматическое измерение успешно завершено.";
         } else {
-          m_log<<"ѕереход к следующей точке измерени€.";
+          m_log << "ѕереход к следующей точке измерени€.";
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           mp_active_table->set_col_displ(coord_cur_cell.col);
@@ -1213,7 +1213,7 @@ void TDataHandlingF::process_volt_meas()
           } else {
             m_status_process_meas =
               spm_wait_ext_trig_set_range;
-            m_log<<"ќжидание внешнего запуска установки диапазона измерений.";
+            m_log << "ќжидание внешнего запуска установки диапазона измерений.";
           }
         }
       }
@@ -1230,15 +1230,17 @@ void TDataHandlingF::process_volt_meas()
       param_cur_cell_t param_cur_cell =
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
-      set_range(param_cur_cell);
+      const double range = set_range(param_cur_cell);
       m_status_process_meas = spm_wait_set_range;
-      m_log<<"”становка диапазона измерени€.";
+      ostringstream msg;
+      msg << "”становка диапазона измерени€: " << range;
+      m_log << irs::str_conv<AnsiString>(msg.str());
     } break;
     case spm_wait_set_range: {
       status_range_t status_range = get_status_range();
       if (status_range == range_stat_success){
         m_status_process_meas = spm_mode_setting;
-        m_log<<"”становка диапазона измерени€ завершена.";
+        m_log << "”становка диапазона измерени€ завершена.";
       }
     } break;
     case spm_mode_setting: {
@@ -1473,7 +1475,6 @@ void TDataHandlingF::config_button_start_avto_volt_meas()
   AddGroupCellsAction->Enabled = false;
   AddSubtableAction->Enabled = false;
   DelSubtableAction->Enabled = false;
-  EditModeAction->Enabled = false;
   RestructDataType1Action->Enabled = false;
   ClearTableAction->Enabled = false;
   TableDefAction->Enabled = false;
@@ -1508,7 +1509,6 @@ void TDataHandlingF::config_button_stop_avto_volt_meas()
   AddGroupCellsAction->Enabled = true;
   AddSubtableAction->Enabled = true;
   DelSubtableAction->Enabled = true;
-  EditModeAction->Enabled = true;
   RestructDataType1Action->Enabled = true;
   ClearTableAction->Enabled = true;
   TableDefAction->Enabled = true;
@@ -1714,31 +1714,39 @@ double TDataHandlingF::calc_meas_value(
   const double out_param_value,
   const param_cur_cell_t& a_param_cell)
 {
-  double out_value = a_value_meas *
+  double out_value = a_value_meas*
     m_config_calibr.out_parametr.koef_shunt/out_param_value;
-  if(m_inf_in_param.type_anchor == PARAMETR1){
-    if(a_param_cell.col_value.init)
+  if (m_inf_in_param.type_anchor == PARAMETR1) {
+    if (a_param_cell.col_value.init) {
       out_value = m_param_cur_cell.col_value.value*out_value;
-  }else if(m_inf_in_param.type_anchor == PARAMETR2){
-    if(a_param_cell.row_value.init)
+    }
+  } else if(m_inf_in_param.type_anchor == PARAMETR2) {
+    if (a_param_cell.row_value.init) {
       out_value = m_param_cur_cell.row_value.value*out_value;
-  }else if(m_inf_in_param.type_anchor == PARAMETR3){
-    if(a_param_cell.top_value.init)
+    }
+  } else if(m_inf_in_param.type_anchor == PARAMETR3) {
+    if (a_param_cell.top_value.init) {
       out_value = m_param_cur_cell.top_value.value*out_value;
+    }
   }
   return out_value;
 }
 
-void TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
+double TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
 {
-  if (m_inf_in_param.type_anchor == PARAMETR1){
-    m_value_meas.set_range(m_type_meas, a_param_cur_cell.col_value.value);
-  }else if (m_inf_in_param.type_anchor == PARAMETR2){
-    m_value_meas.set_range(m_type_meas, a_param_cur_cell.row_value.value);
-  }else{
-    m_value_meas.set_range(m_type_meas, a_param_cur_cell.top_value.value);
+  double range = 0.;
+  const double koef = m_config_calibr.meas_range_koef;
+  if (m_inf_in_param.type_anchor == PARAMETR1) {
+    range = a_param_cur_cell.col_value.value*koef;
+    m_value_meas.set_range(m_type_meas, range);
+  } else if (m_inf_in_param.type_anchor == PARAMETR2) {
+    range = a_param_cur_cell.row_value.value*koef;
+    m_value_meas.set_range(m_type_meas, range);
+  } else {
+    range = a_param_cur_cell.top_value.value*koef;
+    m_value_meas.set_range(m_type_meas, range);
   }
-  //m_value_meas.execute_meas(m_type_meas, &m_value_meas_multimetr);
+  return range;
 }
 
 TDataHandlingF::status_range_t TDataHandlingF::get_status_range()
@@ -1909,12 +1917,6 @@ void __fastcall TDataHandlingF::FormDataHandingTimer1Timer(TObject *Sender)
 void __fastcall TDataHandlingF::ClearTableButtonClick(TObject *Sender)
 {
   mp_active_table->clear_table();
-}
-//---------------------------------------------------------------------------
-void __fastcall TDataHandlingF::OptionsOptimizeButtonClick(TObject *Sender)
-{
-  if(OptionsF->Visible == false)
-    OptionsF->ShowModal();
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::RawDataStringGridDrawCell(TObject *Sender,
@@ -2243,11 +2245,6 @@ void __fastcall TDataHandlingF::DelSubtableActionExecute(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TDataHandlingF::EditModeActionExecute(TObject *Sender)
-{
-  //edit_mode_table_change_stat();
-}
-//---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
       TObject *Sender, int ACol, int ARow, AnsiString &Value)
 {
@@ -2487,12 +2484,7 @@ void __fastcall TDataHandlingF::AddTableActionExecute(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-
-void __fastcall TDataHandlingF::Button1Click(TObject *Sender)
-{
-  //ConfDeviceF->ShowModal();
-}
-//--------------------------------------------------------------------------- 
+ 
 
 void __fastcall TDataHandlingF::ModeProgramCBClick(TObject *Sender)
 {
@@ -3162,30 +3154,24 @@ void TDataHandlingF::add_graph_z_of_x()
 {
 }
 void TDataHandlingF::add_graph_z_of_y()
-{
-
+{  
 }
 //---------------------------------------------------------------------------
 void TDataHandlingF::add_all_graph_z_of_x()
 {
-
 }
 //---------------------------------------------------------------------------
 void TDataHandlingF::add_all_graph_z_of_y()
 {
-
 }
 //---------------------------------------------------------------------------
 void TDataHandlingF::update_all_graph()
 {
-
 }
 void TDataHandlingF::clear_all_graph()
 {
   m_chart.clear_chart();
-}
-
-
+}     
 
 void __fastcall TDataHandlingF::AutoUpdateChartActionExecute(
       TObject *Sender)
@@ -3198,8 +3184,6 @@ void __fastcall TDataHandlingF::AutoUpdateChartActionExecute(
   }
 }
 //---------------------------------------------------------------------------
-
-
 
 void __fastcall TDataHandlingF::ExportTableToMExcelCsvFileActionExecute(
       TObject *Sender)
@@ -3237,7 +3221,6 @@ void __fastcall TDataHandlingF::InversionSignConrentTableActionExecute(
 }
 //---------------------------------------------------------------------------
 
-
 void __fastcall TDataHandlingF::VerificationDataActionExecute(
       TObject *Sender)
 {
@@ -3246,9 +3229,6 @@ void __fastcall TDataHandlingF::VerificationDataActionExecute(
   }
 }
 //---------------------------------------------------------------------------
-
-
-
 
 void __fastcall TDataHandlingF::ModifiTableDataActionExecute(
       TObject *Sender)
@@ -3264,4 +3244,7 @@ void __fastcall TDataHandlingF::AboutActionExecute(TObject *Sender)
   AboutForm->ShowModal();
 }
 //---------------------------------------------------------------------------
+
+
+
 

@@ -87,7 +87,6 @@ __published:	// IDE-managed Components
   TGroupBox *OptionsGroupBox;
   TPanel *ButtomPanel;
   TTimer *FormDataHandingTimer1;
-  TButton *OptionsOptimizeButton;
   TMemo *LogMemo;
   TActionManager *ActionManager1;
   TImageList *ImageList2;
@@ -163,7 +162,6 @@ __published:	// IDE-managed Components
   TAction *DelSubtableAction;
   TMenuItem *DelSubtableM;
   TMenuItem *EditModeM;
-  TAction *EditModeAction;
   TMenuItem *N4;
   TPanel *Panel1;
   TPanel *LeftPanel;
@@ -228,7 +226,6 @@ __published:	// IDE-managed Components
   TLabel *PercentProgressL;
   TAction *VerificationDataAction;
   TMenuItem *N16;
-  TButton *Button1;
   TAction *ModifiTableDataAction;
   TMenuItem *ModifiTableDataM;
   TAction *AboutAction;
@@ -241,7 +238,6 @@ __published:	// IDE-managed Components
   void __fastcall FormCreate(TObject *Sender);
   void __fastcall FormDataHandingTimer1Timer(TObject *Sender);
   void __fastcall ClearTableButtonClick(TObject *Sender);
-  void __fastcall OptionsOptimizeButtonClick(TObject *Sender);
   void __fastcall RawDataStringGridDrawCell(TObject *Sender, int ACol,
           int ARow, TRect &Rect, TGridDrawState State);
   //void __fastcall OnCorrectSpeedButtonClick(TObject *Sender);
@@ -284,7 +280,6 @@ __published:	// IDE-managed Components
   void __fastcall N3Click(TObject *Sender);
   void __fastcall AddSubtableActionExecute(TObject *Sender);
   void __fastcall DelSubtableActionExecute(TObject *Sender);
-  void __fastcall EditModeActionExecute(TObject *Sender);
   void __fastcall RawDataStringGridGetEditText(TObject *Sender, int ACol,
           int ARow, AnsiString &Value);
   void __fastcall CreateConfigButtonClick(TObject *Sender);
@@ -302,7 +297,6 @@ __published:	// IDE-managed Components
   void __fastcall SetTimeIntervalMeasActionExecute(TObject *Sender);
   void __fastcall SetTimeIntervalAverageMeasActionExecute(TObject *Sender);
   void __fastcall AddTableActionExecute(TObject *Sender);
-  void __fastcall Button1Click(TObject *Sender);
   void __fastcall ModeProgramCBClick(TObject *Sender);
   void __fastcall RestructDataType1ActionExecute(TObject *Sender);
   void __fastcall ClearTableActionExecute(TObject *Sender);
@@ -862,7 +856,7 @@ public:
     const double out_param_value,
     const param_cur_cell_t& a_param_cell);
   // ѕредустановка диапазона измерений
-  void set_range(const param_cur_cell_t& a_param_cur_cell);
+  double set_range(const param_cur_cell_t& a_param_cur_cell);
   enum status_range_t {range_stat_success, range_stat_busy};
   // ѕроверка статуса установлени€ диапазона
   status_range_t get_status_range();
@@ -954,41 +948,7 @@ inline void TDataHandlingF::set_connect_multimetr()
   AnsiString cur_multimetr =
     PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
   m_value_meas.set_connect_multimetr(
-    str_to_type_multimeter(cur_multimetr.c_str()));
-
-  /*
-  if(!m_on_block_reconfiguration){
-
-
-    m_cur_config_multimetr = index_multimetr;
-    AnsiString select_multimetr = "";
-    switch(index_multimetr){
-      case 0:{
-        select_multimetr =
-          PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
-        if(m_cur_config_multimetr != select_multimetr){
-          m_value_meas.set_connect_multimetr(tmul_agilent_3458a);
-          m_cur_config_multimetr = select_multimetr;
-        }
-      } break;
-      case 1:{
-        select_multimetr =
-          PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
-        if(m_cur_config_multimetr != select_multimetr){
-          m_value_meas.set_connect_multimetr(tmul_v7_78_1);
-          m_cur_config_multimetr = select_multimetr;
-        }
-      } break;
-      case 2:{
-        select_multimetr =
-          PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
-        if(m_cur_config_multimetr != select_multimetr){
-          m_value_meas.set_connect_multimetr(tmul_ch3_85_3r);
-          m_cur_config_multimetr = select_multimetr;
-        }
-      } break;
-    }
-  }*/
+    str_to_type_multimeter(cur_multimetr.c_str()));  
 }
 inline void TDataHandlingF::reset_connect_multimetr()
 {
@@ -1074,13 +1034,11 @@ inline void TDataHandlingF::set_deley_volt_meas(const unsigned int a_delay)
 inline void TDataHandlingF::edit_mode_table_change_stat()
 {
   bool edit_mode = !mp_active_table->get_edit_mode_table();
-  if(edit_mode){
-    EditModeAction->Checked = true;
+  if (edit_mode) {
     mp_active_table->set_edit_mode_table();
     mp_active_table->set_col_displ(0);
     mp_active_table->set_row_displ(0);
-  }else{
-    EditModeAction->Checked = false;
+  } else {
     mp_active_table->reset_edit_mode_table();
     mp_active_table->set_col_displ(1);
     mp_active_table->set_row_displ(1);
@@ -1130,25 +1088,25 @@ inline double TDataHandlingF::get_out_param()
   double out_param = m_data_map.y_out;
   return out_param;
 }
+
 inline void TDataHandlingF::set_cell(
   const cell_t a_cell, const int a_col_displ, const int a_row_displ)
 {
   mp_active_table->set_cell(a_cell, a_col_displ, a_row_displ);
 }
+
 inline cell_t TDataHandlingF::get_cell_table(
   const int a_col_displ, const int a_row_displ) const
 {
   cell_t cell = mp_active_table->get_cell_table(a_col_displ, a_row_displ);
   return cell;
 }
-/*inline void TDataHandlingF::exec_trigger_meas()
-{
-  m_on_external_trig_meas = true;
-} */
+
 inline status_process_meas_t TDataHandlingF::get_status_process_meas()
 {
   return m_status_process_meas;
 }
+
 inline void TDataHandlingF::exec_ext_trig_process_meas(
   const status_process_meas_t a_status_process_meas)
 {

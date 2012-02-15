@@ -174,6 +174,11 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   }
   m_config_calibr.type_meas = MeasTypeCB->Text.c_str();
   if (!irs::cbuilder::str_to_number(
+    MeasRangeKoefLabeledEdit->Text,
+    m_config_calibr.meas_range_koef)) {
+    messages.push_back("Неверно указан коэффициент диапазона измерения.");
+  }
+  if (!irs::cbuilder::str_to_number(
     Delay_MeasLE->Text, m_config_calibr.delay_meas)) {
     messages.push_back("Неверно указана задержка измерения.");
   }
@@ -653,6 +658,7 @@ void TNewConfigF::set_config_def()
   SubDiapasonSG->Cells[4][1] = "";
 
   //config_calibr_def.mismatch_mode = true;
+  config_calibr_def.meas_range_koef = 1.;
   config_calibr_def.delay_meas = 10;
   config_calibr_def.type_meas = "Постоянное напряжение";
   config_calibr_def.count_reset_over_bit = 3;
@@ -674,6 +680,9 @@ void TNewConfigF::config_calibr_out_displ(
   AnsiString type_meas_str = a_config_calibr.type_meas;
   MeasTypeCB->ItemIndex =
     get_index_row_combo_box_str(MeasTypeCB,type_meas_str);
+
+  MeasRangeKoefLabeledEdit->Text =
+    irs::cbuilder::number_to_str(a_config_calibr.meas_range_koef);
   Delay_MeasLE->Text =
     irs::cbuilder::number_to_str(a_config_calibr.delay_meas);
 
@@ -980,6 +989,7 @@ void __fastcall TNewConfigF::ListParameterSGSelectCell(TObject *Sender,
   }*/
 }
 //---------------------------------------------------------------------------
+
 
 
 

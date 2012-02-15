@@ -3,8 +3,9 @@
 #pragma hdrstop
 
 #include <irsalg.h>
+#include <measmul.h>
 #include "servisfunction.h"
-#include "irscalc.h"
+#include <irscalc.h>
 
 //---------------------------------------------------------------------------
 //table_string_grid_t
@@ -34,10 +35,7 @@ void table_string_grid_t::out_display(
         cell_t cell = av_data[z][x][y];
         if(cell.init){
           irs::string value_str;
-          ostrstream ostr;
-          ostr << setprecision(m_precision) << cell.value << ends;
-          value_str = ostr.str();
-          ostr.freeze(false);
+          irs::number_to_string(cell.value, &value_str, m_precision); 
           bool select_cell_x = (x > 0) && (y == 0);
           bool select_cell_y = (x == 0) && (y > 0);
           irs::string type_variable;
@@ -109,11 +107,9 @@ void table_string_grid_t::out_display_cell_variable_precision(
   const irs::string& a_type_variable)
 {
   irs::string cell_str = "";
-  if(a_cell.init == true){  
-    ostrstream ostr;
-    ostr << setprecision(m_precision) << a_cell.value << '\0';
-    cell_str = ostr.str();
-    ostr.freeze(false);
+  if(a_cell.init == true){ 
+
+    irs::number_to_string(a_cell.value, &cell_str, m_precision);
     cell_str += irs::string(" ")+a_type_variable.c_str();
   }else{
     cell_str = "";
@@ -476,10 +472,11 @@ void table_data_t::save_table_to_file(const string a_file_name)
   inifile->WriteInteger("Setting", "size_z", size_z);
 
   //запись значений ячеек кватерниона
-  for(unsigned int z = 0; z < size_z; z++){
+  for(unsigned int z = 0; z < size_z; z++) {
     String table_name = "table"+ IntToStr(z);
-    for(unsigned int y = 0; y < size_y; y++){
-      std::strstream row_str;
+    for(unsigned int y = 0; y < size_y; y++) {
+      std::stringstream row_str;
+      row_str.imbue(locale::classic()); 
       for(unsigned int x = 0; x < size_x; x++){
         double value_cell;
          cell_t cell = mv_table[z][x][y];
@@ -491,10 +488,9 @@ void table_data_t::save_table_to_file(const string a_file_name)
         row_str<<setw(m_field_width)<<left<<setprecision(m_precision)<<
           value_cell;
       }
-      row_str<<ends;
       String row_name = "row"+ IntToStr(y);
-      inifile->WriteString(table_name, row_name, row_str.str());
-      row_str.freeze(false);
+      inifile->WriteString(table_name, row_name,
+        irs::str_conv<String>(row_str.str()));
     }
   }
   #ifdef  debug_version_digital_interpolator
@@ -645,18 +641,17 @@ void table_data_t::load_table_from_file(const string a_file_name)
   std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
   load_table_from_file(param_count_from_file, a_file_name, table);
-  if(m_inf_in_param.number_in_param != param_count_from_file){
-    // сообщение о несоответствии загруженного файла выбранной конфигурации
-  }else{
+  if (m_inf_in_param.number_in_param == param_count_from_file) {
     mv_table.clear();
     #ifdef  debug_version_digital_interpolator
     mv_fixed_table.clear();
     mv_fixed_table = table;
     #endif
-    mv_table = table; 
+    mv_table = table;
     mp_display_table->out_display(mv_table, m_inf_in_param);
+  } else {
+    // сообщение о несоответствии загруженного файла выбранной конфигурации
   }
-
 }
 //---------------------------------------------------------------------------
 void table_data_t::load_subtable_from_file(const string a_file_name)
@@ -990,31 +985,29 @@ void table_data_t::load_table_from_file(
   size_z = inifile->ReadInteger("Setting", "size_z", size_z);
   a_table.clear();
   a_table.reserve(size_z);
-
-  //чтение значений ячеек кватерниона
+  // чтение значений ячеек кватерниона
   for(unsigned int z = 0; z < size_z; z++){
     irs::matrix_t<cell_t> matrix(size_x, size_y);
     String table_name = "table"+ IntToStr(z);
     for(unsigned int y = 0; y < size_y; y++){
-      AnsiString row_str_string;
-      std::strstream row_str;
+      AnsiString row_str_string;   
       String row_name = "row"+ IntToStr(y);
       row_str_string =
         inifile->ReadString(table_name, row_name, row_str_string);
-      row_str<<row_str_string.c_str()<<'\0';
-      for(unsigned int x = 0; x < size_x; x++){
+      std::stringstream row_str(irs::str_conv<std::string>(row_str_string));
+      row_str.imbue(locale::classic());
+      for (unsigned int x = 0; x < size_x; x++) {
         double value_cell;
-         row_str>>value_cell;
+         row_str >> value_cell;
          cell_t cell;
          cell.value = value_cell;
-        if(value_cell != m_nan){
+        if (value_cell != m_nan){
           cell.init = true;
-        }else{
+        } else {
           cell.init = false;
         }
         matrix[x][y] = cell;
       }
-      row_str.freeze(false);
     }
     a_table.push_back(matrix);
   }
@@ -1266,10 +1259,12 @@ void table_data_t::modifi_content_table(const irs::string& a_str)
   const int y_name_size = y_name.size();
   int table_count = mv_table.size();
   if(table_count > 0){
-    irs::calculator_t calculator;
-    calculator.add_func_r_double_a_double(
-      "phasen180",
-      irs::phase_normalize_180);
+    irs::calc::calculator_t calculator;
+    calculator.function_add(irst("phasen180"),
+        new irs::calc::func_r_double_a_double_t(irs::phase_normalize_180));
+    //calculator. add_func_r_double_a_double(
+      //"phasen180",
+      //irs::phase_normalize_180);
     int col_count = mv_table[0].col_count();
     int row_count = mv_table[0].row_count();
     for(int table = 0; table < table_count; table++){
@@ -1318,9 +1313,13 @@ void table_data_t::modifi_content_table(const irs::string& a_str)
           }
 
           if (replace_str_success) {
-            if (calculator.calc(mathem_expression_str, cell.value)) {
-              cell.init = true;
-              mv_table[table][col][row] = cell;
+            irs::variant::variant_t value;
+            if (calculator.calc(&mathem_expression_str, &value)) {
+              if (value.convert_to(irs::variant::var_type_double)) {
+                cell.value = value.as_double();
+                cell.init = true;
+                mv_table[table][col][row] = cell;
+              }
             }
           }
         }
@@ -1370,6 +1369,7 @@ log_t::~log_t()
 {
   m_outfile.close();
 }
+
 void log_t::operator<<(AnsiString a_str)
 {
   AnsiString time_str = "", date_time_str = "";
@@ -1395,6 +1395,7 @@ void log_t::operator<<(AnsiString a_str)
   ostr.rdbuf()->freeze(false);
   #endif
 }
+
 //извлекает из имени файла(без пути) имя файла без расширения
 AnsiString extract_short_filename(const AnsiString& a_filename)
 {
@@ -1426,35 +1427,35 @@ int get_index_row_combo_box_str(
 //-------------------------------------------------------------------------
 //struct config_calibr_t
 config_calibr_t::config_calibr_t():
-  ini_file()
+  type_meas(irs::str_conv<String>(type_meas_to_str(tm_first))),
+  ip_adress(irst("192.168.0.200")),
+  port(5005),
+  in_parametr1(),
+  in_parametr2(),
+  in_parametr3(),
+  out_parametr(),
+  v_parametr_ex(),
+  bit_pos_mismatch_state(),
+  bit_pos_correct_mode(),
+  bit_pos_operating_duty(),
+  bit_pos_error_bit(),
+  bit_pos_reset_over_bit(),
+  bit_pos_phase_preset_bit(),
+  bit_type2_array(),
+  index_work_time(0),
+  index_pos_eeprom(0),
+  type_sub_diapason(tsd_parameter2),
+  v_sub_diapason_calibr(),
+  meas_range_koef(1.),
+  delay_meas(0),
+  count_reset_over_bit(0),
+  active_filename(),
+  reference_channel()
 {
 }
 void config_calibr_t::clear()
 {
-  type_meas = "";
-  ip_adress = "";
-  port = 5005;
-  in_parametr1.clear();
-  in_parametr2.clear();
-  in_parametr3.clear();
-  out_parametr.clear();
-  bit_pos_mismatch_state.clear();
-  bit_pos_correct_mode.clear();
-  bit_pos_operating_duty.clear();
-  bit_pos_error_bit.clear();
-  bit_pos_reset_over_bit.clear();
-  bit_pos_phase_preset_bit.clear();
-  bit_type2_array.clear();
-  index_work_time = 0;
-  index_pos_eeprom = 0;
-  type_sub_diapason = tsd_parameter2;
-  v_sub_diapason_calibr.clear();
-  delay_meas = 0;
-  count_reset_over_bit = 0;  
-  active_filename = "";
-  reference_channel.enabled = false;
-  reference_channel.ip_adress = "";
-  reference_channel.port = 5005;
+  *this = config_calibr_t();
 }
 bool config_calibr_t::save(const irs::string& a_filename)
 {
@@ -1463,9 +1464,10 @@ bool config_calibr_t::save(const irs::string& a_filename)
     fsuccess = false;
     return fsuccess;
   }
+  irs::ini_file_t ini_file;
   ini_file.set_ini_name(a_filename.c_str());
   ini_file.clear_control();
-  add_static_param();
+  add_static_param(&ini_file);
   ini_file.save();
   ini_file.clear_control();
   irs::string in_parametr1_unit_str =
@@ -1582,9 +1584,10 @@ bool config_calibr_t::save(const irs::string& a_filename)
 bool config_calibr_t::load(const irs::string& a_filename)
 {
   bool fsuccess = true;
+  irs::ini_file_t ini_file;
   ini_file.set_ini_name(a_filename.c_str());
   ini_file.clear_control();
-  add_static_param();
+  add_static_param(&ini_file);
   ini_file.load();
   ini_file.clear_control();
   irs::string in_parametr1_unit_str;
@@ -1717,88 +1720,90 @@ bool config_calibr_t::load(const irs::string& a_filename)
   }
   return fsuccess;
 }
-void config_calibr_t::add_static_param()
+void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
 {
-  ini_file.set_section("Свойства сетевого подключения");
-  ini_file.add("IP-адрес", &ip_adress);
-  ini_file.add("Порт",&(irs_i32)port);
+  ap_ini_file->set_section("Свойства сетевого подключения");
+  ap_ini_file->add("IP-адрес", &ip_adress);
+  ap_ini_file->add("Порт",&(irs_i32)port);
 
-  ini_file.set_section("Входной параметр 1");
-  ini_file.add("Имя параметра", &in_parametr1.name);
-  ini_file.add("Единицы измерения", &in_parametr1.type_variable);
+  ap_ini_file->set_section("Входной параметр 1");
+  ap_ini_file->add("Имя параметра", &in_parametr1.name);
+  ap_ini_file->add("Единицы измерения", &in_parametr1.type_variable);
 
-  //ini_file.add("Тип параметра", &in_parametr1.unit);
-  ini_file.add("Привязка", &in_parametr1.anchor);
-  ini_file.add("Индекс", &(irs_i32)in_parametr1.index);
-  ini_file.add("Коэффициент", &in_parametr1.koef);
-  ini_file.add("Значение по умолчанию", &in_parametr1.default_val);
+  //ap_ini_file->add("Тип параметра", &in_parametr1.unit);
+  ap_ini_file->add("Привязка", &in_parametr1.anchor);
+  ap_ini_file->add("Индекс", &(irs_i32)in_parametr1.index);
+  ap_ini_file->add("Коэффициент", &in_parametr1.koef);
+  ap_ini_file->add("Значение по умолчанию", &in_parametr1.default_val);
 
-  ini_file.set_section("Входной параметр 2");
-  ini_file.add("Имя параметра", &in_parametr2.name);
-  ini_file.add("Единицы измерения", &in_parametr2.type_variable);
-  //ini_file.add("Тип параметра", &in_parametr2.unit);
-  ini_file.add("Привязка", &in_parametr2.anchor);
-  ini_file.add("Индекс", &(irs_i32)in_parametr2.index);
-  ini_file.add("Коэффициент", &in_parametr2.koef);
-  ini_file.add("Значение по умолчанию", &in_parametr2.default_val);
+  ap_ini_file->set_section("Входной параметр 2");
+  ap_ini_file->add("Имя параметра", &in_parametr2.name);
+  ap_ini_file->add("Единицы измерения", &in_parametr2.type_variable);
+  //ap_ini_file->add("Тип параметра", &in_parametr2.unit);
+  ap_ini_file->add("Привязка", &in_parametr2.anchor);
+  ap_ini_file->add("Индекс", &(irs_i32)in_parametr2.index);
+  ap_ini_file->add("Коэффициент", &in_parametr2.koef);
+  ap_ini_file->add("Значение по умолчанию", &in_parametr2.default_val);
 
-  ini_file.set_section("Входной параметр 3");
-  ini_file.add("Имя параметра", &in_parametr3.name);
-  ini_file.add("Единицы измерения", &in_parametr3.type_variable);
-  //ini_file.add("Тип параметра", &in_parametr3.unit);
-  ini_file.add("Индекс", &(irs_i32)in_parametr3.index);
-  ini_file.add("Коффициент", &in_parametr3.koef);
-  ini_file.add("Значение по умолчанию", &in_parametr3.default_val);
+  ap_ini_file->set_section("Входной параметр 3");
+  ap_ini_file->add("Имя параметра", &in_parametr3.name);
+  ap_ini_file->add("Единицы измерения", &in_parametr3.type_variable);
+  //ap_ini_file->add("Тип параметра", &in_parametr3.unit);
+  ap_ini_file->add("Индекс", &(irs_i32)in_parametr3.index);
+  ap_ini_file->add("Коффициент", &in_parametr3.koef);
+  ap_ini_file->add("Значение по умолчанию", &in_parametr3.default_val);
 
-  ini_file.set_section("Выходной параметр");
-  ini_file.add("Имя параметра", &out_parametr.name);
-  ini_file.add("Единицы измерения", &out_parametr.type_variable);
-  //ini_file.add("Тип параметра", &out_parametr.unit);
-  ini_file.add("Индекс", &(irs_i32)out_parametr.index);
-  ini_file.add("Коэффициент шунта", &out_parametr.koef_shunt);
+  ap_ini_file->set_section("Выходной параметр");
+  ap_ini_file->add("Имя параметра", &out_parametr.name);
+  ap_ini_file->add("Единицы измерения", &out_parametr.type_variable);
+  //ap_ini_file->add("Тип параметра", &out_parametr.unit);
+  ap_ini_file->add("Индекс", &(irs_i32)out_parametr.index);
+  ap_ini_file->add("Коэффициент шунта", &out_parametr.koef_shunt);
 
-  ini_file.set_section("Опции");
-  ini_file.add("Вид измерения", &type_meas);
-  ini_file.add("Задержка измерения", &delay_meas);
-  ini_file.add("Количество допустимых сбросов ошибок", &count_reset_over_bit);
-  /*ini_file.add("Режим расстройки",
+  ap_ini_file->set_section("Опции");
+  ap_ini_file->add("Вид измерения", &type_meas);
+  ap_ini_file->add("Коэффициент диапазона измерения", &meas_range_koef);
+  ap_ini_file->add("Задержка измерения", &delay_meas);
+  ap_ini_file->add("Количество допустимых сбросов ошибок",
+    &count_reset_over_bit);
+  /*ap_ini_file->add("Режим расстройки",
     &mismatch_mode);*/
-  ini_file.add("Индекс счетчика", &index_work_time);
-  //ini_file.add("Индекс коррекции в воронке", &index_pos_offset_eeprom);
-  ini_file.add("Индекс воронки", &index_pos_eeprom);
-  //ini_file.add("Максимальный размер коррекции", &max_size_correct);
+  ap_ini_file->add("Индекс счетчика", &index_work_time);
+  //ap_ini_file->add("Индекс коррекции в воронке", &index_pos_offset_eeprom);
+  ap_ini_file->add("Индекс воронки", &index_pos_eeprom);
+  //ap_ini_file->add("Максимальный размер коррекции", &max_size_correct);
 
-  ini_file.add("Режим расстройки. Индекс байта",
+  ap_ini_file->add("Режим расстройки. Индекс байта",
     &bit_pos_mismatch_state.index_byte);
-  ini_file.add("Режим расстройки. Индекс бита",
+  ap_ini_file->add("Режим расстройки. Индекс бита",
     &bit_pos_mismatch_state.index_bit);
-  ini_file.add("Режим коррекции. Индекс байта",
+  ap_ini_file->add("Режим коррекции. Индекс байта",
     &bit_pos_correct_mode.index_byte);
-  ini_file.add("Режим коррекции. Индекс бита",
+  ap_ini_file->add("Режим коррекции. Индекс бита",
     &bit_pos_correct_mode.index_bit);
-  ini_file.add("Готовность регулятора. Индекс байта",
+  ap_ini_file->add("Готовность регулятора. Индекс байта",
     &bit_pos_operating_duty.index_byte);
-  ini_file.add("Готовность регулятора. Индекс бита",
+  ap_ini_file->add("Готовность регулятора. Индекс бита",
     &bit_pos_operating_duty.index_bit);
-  ini_file.add("Бит наличия ошибки. Индекс байта",
+  ap_ini_file->add("Бит наличия ошибки. Индекс байта",
     &bit_pos_error_bit.index_byte);
-  ini_file.add("Бит наличия ошибки. Индекс бита",
+  ap_ini_file->add("Бит наличия ошибки. Индекс бита",
     &bit_pos_error_bit.index_bit);
-  ini_file.add("Бит сброса ошибки. Индекс байта",
+  ap_ini_file->add("Бит сброса ошибки. Индекс байта",
     &bit_pos_reset_over_bit.index_byte);
-  ini_file.add("Бит сброса ошибки. Индекс бита",
+  ap_ini_file->add("Бит сброса ошибки. Индекс бита",
     &bit_pos_reset_over_bit.index_bit);
-  ini_file.add("Бит предустановки фазы. Индекс байта",
+  ap_ini_file->add("Бит предустановки фазы. Индекс байта",
     &bit_pos_phase_preset_bit.index_byte);
-  ini_file.add("Бит предустановки фазы. Индекс бита",
+  ap_ini_file->add("Бит предустановки фазы. Индекс бита",
     &bit_pos_phase_preset_bit.index_bit);
 
-  ini_file.add("Последний активный файл", &active_filename);
+  ap_ini_file->add("Последний активный файл", &active_filename);
 
-  ini_file.set_section("Опции опорного канала");
-  ini_file.add("Статус включения", &reference_channel.enabled);
-  ini_file.add("IP-адрес", &reference_channel.ip_adress);
-  ini_file.add("Порт", &(irs_i32)reference_channel.port);
+  ap_ini_file->set_section("Опции опорного канала");
+  ap_ini_file->add("Статус включения", &reference_channel.enabled);
+  ap_ini_file->add("IP-адрес", &reference_channel.ip_adress);
+  ap_ini_file->add("Порт", &(irs_i32)reference_channel.port);
 }
 
 //-------------------------------------------------------------------------

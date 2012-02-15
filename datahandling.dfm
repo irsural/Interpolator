@@ -1,8 +1,8 @@
 object DataHandlingF: TDataHandlingF
-  Left = 415
-  Top = 222
-  Width = 807
-  Height = 539
+  Left = 392
+  Top = 201
+  Width = 815
+  Height = 543
   Caption = 'DataHandlingF'
   Color = clWindow
   Font.Charset = DEFAULT_CHARSET
@@ -20,16 +20,16 @@ object DataHandlingF: TDataHandlingF
   object TableValuePanel: TPanel
     Left = 249
     Top = 30
-    Width = 550
-    Height = 414
+    Width = 558
+    Height = 418
     Align = alClient
     BevelOuter = bvLowered
     Constraints.MinWidth = 550
     TabOrder = 0
     object LogMemo: TMemo
       Left = 1
-      Top = 263
-      Width = 548
+      Top = 267
+      Width = 556
       Height = 150
       Align = alBottom
       Constraints.MaxHeight = 150
@@ -47,8 +47,8 @@ object DataHandlingF: TDataHandlingF
     object RawDataStringGrid: TStringGrid
       Left = 1
       Top = 105
-      Width = 548
-      Height = 158
+      Width = 556
+      Height = 162
       Align = alClient
       Constraints.MinHeight = 150
       Constraints.MinWidth = 150
@@ -82,7 +82,7 @@ object DataHandlingF: TDataHandlingF
     object Panel1: TPanel
       Left = 1
       Top = 1
-      Width = 548
+      Width = 556
       Height = 104
       Align = alTop
       TabOrder = 2
@@ -144,7 +144,7 @@ object DataHandlingF: TDataHandlingF
       object RightPanel: TPanel
         Left = 359
         Top = 1
-        Width = 188
+        Width = 196
         Height = 102
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
@@ -152,7 +152,7 @@ object DataHandlingF: TDataHandlingF
         BevelOuter = bvLowered
         TabOrder = 1
         DesignSize = (
-          188
+          196
           102)
         object PatternOfMeasuringInstrumentCB: TComboBox
           Left = 8
@@ -182,21 +182,12 @@ object DataHandlingF: TDataHandlingF
     Left = 0
     Top = 30
     Width = 249
-    Height = 414
+    Height = 418
     Align = alLeft
     Caption = #1055#1072#1085#1077#1083#1100' '#1091#1087#1088#1072#1074#1083#1077#1085#1080#1103
     Color = clBtnFace
     ParentColor = False
     TabOrder = 1
-    object OptionsOptimizeButton: TButton
-      Left = 8
-      Top = 216
-      Width = 233
-      Height = 25
-      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1072' '#1086#1087#1090#1080#1084#1080#1079#1072#1094#1080#1080' '#1076#1072#1085#1085#1093
-      TabOrder = 0
-      OnClick = OptionsOptimizeButtonClick
-    end
     object CurrentStatusLabeledEdit: TLabeledEdit
       Left = 6
       Top = 64
@@ -210,7 +201,7 @@ object DataHandlingF: TDataHandlingF
       LabelPosition = lpAbove
       LabelSpacing = 3
       ReadOnly = True
-      TabOrder = 1
+      TabOrder = 0
     end
     object ModeProgramCB: TCheckBox
       Left = 8
@@ -218,7 +209,7 @@ object DataHandlingF: TDataHandlingF
       Width = 153
       Height = 17
       Caption = #1052#1085#1086#1075#1086#1082#1072#1085#1072#1083#1100#1085#1099#1081' '#1088#1077#1078#1080#1084
-      TabOrder = 2
+      TabOrder = 1
       OnClick = ModeProgramCBClick
     end
     object TimeMeasLE: TLabeledEdit
@@ -232,7 +223,7 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Caption = #1054#1073#1097#1077#1077' '#1074#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
       LabelPosition = lpAbove
       LabelSpacing = 3
-      TabOrder = 3
+      TabOrder = 2
     end
     object IntervalTimeMeasLE: TLabeledEdit
       Left = 8
@@ -245,7 +236,7 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Caption = #1054#1089#1090#1072#1074#1096#1077#1077#1089#1103' '#1074#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
       LabelPosition = lpAbove
       LabelSpacing = 3
-      TabOrder = 4
+      TabOrder = 3
     end
     object WorkTimeDeviceLE: TLabeledEdit
       Left = 8
@@ -258,27 +249,18 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Caption = #1042#1088#1077#1084#1103' '#1088#1072#1073#1086#1090#1099' '#1089' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1086#1084
       LabelPosition = lpAbove
       LabelSpacing = 3
-      TabOrder = 5
-    end
-    object Button1: TButton
-      Left = 8
-      Top = 360
-      Width = 75
-      Height = 25
-      Caption = 'Button1'
-      TabOrder = 6
-      OnClick = Button1Click
+      TabOrder = 4
     end
   end
   object ButtomPanel: TPanel
     Left = 0
-    Top = 444
-    Width = 799
+    Top = 448
+    Width = 807
     Height = 49
     Align = alBottom
     TabOrder = 2
     DesignSize = (
-      799
+      807
       49)
     object CommentProgressL: TLabel
       Left = 8
@@ -289,7 +271,7 @@ object DataHandlingF: TDataHandlingF
       Caption = 'CommentProgress'
     end
     object PercentProgressL: TLabel
-      Left = 648
+      Left = 656
       Top = 24
       Width = 37
       Height = 13
@@ -297,7 +279,7 @@ object DataHandlingF: TDataHandlingF
       Caption = 'Percent'
     end
     object CloseFormButton: TButton
-      Left = 712
+      Left = 720
       Top = 15
       Width = 75
       Height = 25
@@ -309,7 +291,7 @@ object DataHandlingF: TDataHandlingF
     object ProgressBar1: TProgressBar
       Left = 8
       Top = 24
-      Width = 633
+      Width = 641
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
       Min = 0
@@ -320,7 +302,7 @@ object DataHandlingF: TDataHandlingF
   object CoolBar1: TCoolBar
     Left = 0
     Top = 0
-    Width = 799
+    Width = 807
     Height = 30
     AutoSize = True
     Bands = <
@@ -348,7 +330,7 @@ object DataHandlingF: TDataHandlingF
         Break = False
         Control = ActionToolBar4
         ImageIndex = -1
-        Width = 294
+        Width = 302
       end>
     Color = clBtnFace
     Images = ImageList1
@@ -398,7 +380,7 @@ object DataHandlingF: TDataHandlingF
     object ActionToolBar4: TActionToolBar
       Left = 510
       Top = 0
-      Width = 281
+      Width = 289
       Height = 25
       ActionManager = ActionManager1
       AllowHiding = True
@@ -541,11 +523,6 @@ object DataHandlingF: TDataHandlingF
           item
             Action = DelSubtableAction
             ImageIndex = 14
-            ShowCaption = False
-          end
-          item
-            Action = EditModeAction
-            ImageIndex = 19
             ShowCaption = False
           end>
         ActionBar = ActionToolBar2
@@ -774,13 +751,6 @@ object DataHandlingF: TDataHandlingF
       Hint = #1059#1076#1072#1083#1080#1090#1100' '#1087#1086#1076#1090#1072#1073#1083#1080#1094#1091
       ImageIndex = 14
       OnExecute = DelSubtableActionExecute
-    end
-    object EditModeAction: TAction
-      Category = #1055#1088#1072#1074#1082#1072
-      Caption = #1056#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103
-      Hint = #1056#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103'|'#1042#1082#1083#1102#1095#1080#1090#1100'/'#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1088#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103
-      ImageIndex = 19
-      OnExecute = EditModeActionExecute
     end
     object CorrectModeAction: TAction
       Category = #1054#1087#1094#1080#1080' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
@@ -1773,7 +1743,9 @@ object DataHandlingF: TDataHandlingF
         Caption = '-'
       end
       object EditModeM: TMenuItem
-        Action = EditModeAction
+        Caption = #1056#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103
+        Hint = #1056#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103'|'#1042#1082#1083#1102#1095#1080#1090#1100'/'#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1088#1077#1078#1080#1084' '#1088#1077#1076#1072#1082#1090#1080#1088#1086#1074#1072#1085#1080#1103
+        ImageIndex = 19
       end
       object N11: TMenuItem
         Caption = '-'

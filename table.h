@@ -95,7 +95,7 @@ struct cell_t
   }
 };
 
-//тип перехода к следующему элемент 
+// Тип перехода к следующему элементу
 enum type_jump_next_elem_t{
   HORIZONTAL_DOWN,
   HORIZONTAL_DOWN_SMOOTH,
@@ -148,7 +148,7 @@ public:
     const type_jump_next_elem_t a_type_jump_next_elem);
   inline void set_current_cell(
     const unsigned int a_col, const unsigned int a_row);
-  //установка типа движения
+  // Установка типа движения
   void set_traffic_smooth();
   void unset_traffic_smooth();
   inline bool next_cell();
@@ -167,23 +167,23 @@ public:
   int get_cell_count_end();
 private:
   void init_inf_table();
-  // по горизонтали вниз, обычный переход
+  // По горизонтали вниз, обычный переход
   bool next_cell_horizontal_down();
-  // плавный переход
+  // Плавный переход
   bool next_cell_horizontal_down_smooth();
-  // по горизонтали вверх, обычный переход
+  // По горизонтали вверх, обычный переход
   bool next_cell_horizontal_up();
-  // плавный переход
+  // Плавный переход
   bool next_cell_horizontal_up_smooth();
-  // по вертикали вниз, обычный переход
+  // По вертикали вниз, обычный переход
   bool next_cell_vertical_forward();
-  // плавный переход
+  // Плавный переход
   bool next_cell_vertical_forward_smooth();
-  // по вертикали вверх, обычный переход
+  // По вертикали вверх, обычный переход
   bool next_cell_vertical_back();
-  // плавный переход
+  // Плавный переход
   bool next_cell_vertical_back_smooth();
-  // проверка на запрещенную ячейку
+  // Проверка на запрещенную ячейку
   bool illegal_cell(const coord_cell_t a_cell);
 };
 inline void manager_traffic_cell_t::set_type_traffic(

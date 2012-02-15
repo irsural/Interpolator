@@ -1,6 +1,6 @@
 object MessagesForm: TMessagesForm
-  Left = 247
-  Top = 413
+  Left = 253
+  Top = 418
   Width = 811
   Height = 400
   Caption = 'Messages'
@@ -26,7 +26,7 @@ object MessagesForm: TMessagesForm
   object MessagesMemo: TMemo
     Left = 0
     Top = 0
-    Width = 803
+    Width = 795
     Height = 337
     Align = alTop
     ScrollBars = ssVertical

@@ -3,8 +3,9 @@
 #ifndef dinamictypesH
 #define dinamictypesH
 
-#include <irsstdg.h>
+//#include <irsstdg.h>
 #include <irserror.h>
+#include <mxdata.h>
 enum lang_type_t {
   type_first = 0,
   type_none = type_first,

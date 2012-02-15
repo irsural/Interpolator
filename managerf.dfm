@@ -1,6 +1,6 @@
 object ManagerDGIF: TManagerDGIF
-  Left = 393
-  Top = 222
+  Left = 401
+  Top = 228
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Manager channel'

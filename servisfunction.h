@@ -64,7 +64,7 @@ struct options_calculating_coef_t
   AnsiString name_dir;
   AnsiString file_name;
 };
-enum type_anchor_t{PARAMETR1, PARAMETR2, PARAMETR3};
+enum type_anchor_t { PARAMETR1, PARAMETR2, PARAMETR3 };
 enum number_in_param_t{TWO_PARAM = 2, THREE_PARAM = 3};
 struct inf_in_param_t
 {
@@ -376,10 +376,11 @@ inline irs::string table_data_t::get_cell_value_str_table_data(
     int cur_table = val.quot;
     int cur_row = val.rem;
     cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
-    if(cur_cell.init)
-      cell_value_str = cur_cell.value;
-    else
+    if(cur_cell.init) {
+      irs::num_to_str(cur_cell.value, &cell_value_str);
+    } else {
       cell_value_str = "";
+    }
   }
   return cell_value_str;
 }
@@ -579,7 +580,7 @@ public:
 //#define type_log_stream
 class log_t
 {
-private:
+private:           
   bool m_error_open_file_log;
   static const int m_field_width_display_time = 15;
   static const int m_field_width_file_date_time = 30;
@@ -592,7 +593,7 @@ private:
   ofstream m_outfile;
   log_t();
 public:
-  void operator<<(AnsiString a_str);
+  void operator<<(String a_str);
   log_t(TMemo* ap_memo, string a_file_name);
   ~log_t();
 };
@@ -625,9 +626,9 @@ struct parametr1_t
   long double koef;
   double default_val;
   parametr1_t():
-    name(""),
+    name(),
     unit(type_none),
-    type_variable(""),
+    type_variable(),
     anchor(false),
     index(0),
     koef(1),
@@ -651,13 +652,7 @@ struct parametr1_t
   {}
   void clear()
   {
-    name = "";
-    unit = type_none;
-    type_variable = "";
-    anchor = false;
-    index = 0;
-    koef = 1;
-    default_val = 0;
+    *this = parametr1_t();
   }
 };
 struct parametr2_t
@@ -669,9 +664,9 @@ struct parametr2_t
   long double koef;
   double default_val;
   parametr2_t():
-    name(""),
+    name(),
     unit(type_none),
-    type_variable(""),
+    type_variable(),
     index(0),
     koef(1),
     default_val(0)
@@ -692,12 +687,7 @@ struct parametr2_t
   {}
   void clear()
   {
-    name = "";
-    unit = type_none;
-    type_variable = "";
-    index = 0;
-    koef = 1;
-    default_val = 0;
+    *this = parametr2_t();
   }
 };
 struct parametr3_t
@@ -709,9 +699,9 @@ struct parametr3_t
   long double koef_shunt;
   parametr3_t(
   ):
-    name(""),
+    name(),
     unit(type_none),
-    type_variable(""),
+    type_variable(),
     index(0),
     koef_shunt(1)
   {}
@@ -729,11 +719,7 @@ struct parametr3_t
   {}
   void clear()
   {
-    name = "";
-    unit = type_none;
-    type_variable = "";
-    index = 0;
-    koef_shunt = 1;
+    *this = parametr3_t();
   }
 };
 struct parametr_ex_t
@@ -745,9 +731,9 @@ struct parametr_ex_t
   double value_working;     // рабочее значение
   double value_default;     // значение по умолчанию
   parametr_ex_t():
-    name(""),
+    name(),
     unit(type_none),
-    type_variable(""),
+    type_variable(),
     index(0),
     value_working(0.0),
     value_default(0.0)
@@ -759,7 +745,8 @@ struct parametr_ex_t
     const irs_i32 a_index,
     const long double a_koef,
     double a_value_working,
-    double a_value_default):
+    double a_value_default
+  ):
     name(a_name),
     unit(a_unit),
     type_variable(a_type_variable),
@@ -769,19 +756,16 @@ struct parametr_ex_t
   {}
   void clear()
   {
-    name = "";
-    unit = type_none;
-    type_variable = "";
-    index = 0; 
-    value_working = 0;
-    value_default = 0;
+    *this = parametr_ex_t();
   }
 };
 struct bit_type1_pos_t
 {
   irs_i32 index_byte;
   irs_i32 index_bit;
-  bit_type1_pos_t():index_byte(0),index_bit(0)
+  bit_type1_pos_t():
+    index_byte(0),
+    index_bit(0)
   {}
   bit_type1_pos_t(const irs_i32 a_index_byte, const irs_i32 a_index_bit):
     index_byte(a_index_byte),
@@ -789,8 +773,7 @@ struct bit_type1_pos_t
   {}
   void clear()
   {
-    index_byte = 0;
-    index_bit = 0;
+    *this = bit_type1_pos_t(); 
   }
 };
 
@@ -823,24 +806,28 @@ struct bit_type2_pos_t
   {}
   void clear()
   {
-    bitname = "";
-    index_byte = 0;
-    index_bit = 0;
-    value_working = false;
-    value_def = false;
+    *this = bit_type2_pos_t();   
   }
 };
 
 struct reference_channel_t
 {
   bool enabled;
-  AnsiString ip_adress;
+  String ip_adress;
   irs_u32 port;
-  reference_channel_t():enabled(false), ip_adress(""), port(0)
-  {}
+  reference_channel_t():
+    enabled(false),
+    ip_adress(),
+    port(5005)
+  {
+  }
 };
 
-enum type_sub_diapason_t{tsd_parameter1, tsd_parameter2};
+enum type_sub_diapason_t{
+  tsd_parameter1,
+  tsd_parameter2
+};
+
 struct sub_diapason_calibr_t
 {
   int index_start;
@@ -856,16 +843,17 @@ struct sub_diapason_calibr_t
   {}
   void clear()
   {
-    index_start = 0; size = 0; value_begin = 0.0; value_end = 0.0;
+    *this = sub_diapason_calibr_t();           
   }
 };
 
-struct config_calibr_t{
-public:
-  AnsiString type_meas;
-  AnsiString ip_adress;
+struct config_calibr_t
+{
+  String type_meas;
+  String ip_adress;
   irs_u32 port;
-  parametr1_t in_parametr1, in_parametr2;
+  parametr1_t in_parametr1;
+  parametr1_t in_parametr2;
   parametr2_t in_parametr3;
   parametr3_t out_parametr;
   vector<parametr_ex_t> v_parametr_ex;
@@ -880,6 +868,7 @@ public:
   irs_u32 index_pos_eeprom;
   type_sub_diapason_t type_sub_diapason;
   std::vector<sub_diapason_calibr_t> v_sub_diapason_calibr;
+  double meas_range_koef;
   irs_u32 delay_meas;
   irs_u32 count_reset_over_bit;
   AnsiString active_filename;
@@ -889,8 +878,7 @@ public:
   bool save(const irs::string& a_filename);
   bool load(const irs::string& a_filename);
 private:
-  irs::ini_file_t ini_file;
-  void add_static_param();
+  void add_static_param(irs::ini_file_t* ap_ini_file);
 };
 
 struct correct_data_t
