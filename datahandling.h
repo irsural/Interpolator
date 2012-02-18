@@ -60,8 +60,10 @@
 
 enum mode_program_t {
   mode_prog_multi_channel,
-  mode_prog_single_channel};
-enum status_process_meas_t{
+  mode_prog_single_channel
+};
+
+enum status_process_meas_t {
   spm_off_process,
   spm_jump_next_elem,
   spm_wait_ext_trig_set_range,
@@ -77,7 +79,87 @@ enum status_process_meas_t{
   spm_wait_external_trig_processing_data,
   spm_processing_data,
   spm_wait_ext_trig_process_data_to_next_elem,
-  spm_reset};
+  spm_reset
+};
+
+template <class T>
+class stability_control_t
+{
+public:
+  stability_control_t(T a_reference = 0, T a_deviation = 0,
+    double a_tability_min_time = 5);
+  void set_reference(T a_reference);
+  void set_diviation(T a_diviation);
+  void set_current(T a_current);
+  double get_stable_state_time() const;
+  bool stable_state() const;
+  void set_stability_min_time(double a_min_time);
+private:
+  stability_control_t();
+  T difference(T a_first, T a_second) const;
+  T m_reference;
+  T m_diviation;
+  irs::measure_time_t m_time;
+  //! \brief ћинимальное врем€, дл€ утверждени€, что значение стабильно
+  double m_stability_min_time;
+};
+
+template <class T>
+stability_control_t<T>::stability_control_t(T a_reference,
+  T a_deviation, double a_tability_min_time
+):
+  m_reference(a_reference),
+  m_diviation((m_diviation < 0) ? (m_diviation*-1) : m_diviation),
+  m_time(),
+  m_stability_min_time(a_tability_min_time)
+{ 
+  m_time.start();
+}
+
+template <class T>
+void stability_control_t<T>::set_reference(T a_reference)
+{
+  m_reference = a_reference;
+}
+
+template <class T>
+void stability_control_t<T>::set_diviation(T a_diviation)
+{
+  m_diviation = a_diviation;
+}
+
+template <class T>
+void stability_control_t<T>::set_current(T a_current)
+{
+  if (difference(m_reference, a_current) > m_diviation) {
+    m_time.start();
+  }
+}
+
+template <class T>
+double stability_control_t<T>::get_stable_state_time() const
+{
+  return m_time.get();
+}
+
+template <class T>
+bool stability_control_t<T>::stable_state() const
+{
+  return m_time.get() >= m_stability_min_time;
+}
+
+template <class T>
+void stability_control_t<T>::set_stability_min_time(double a_min_time)
+{
+  m_stability_min_time = a_min_time;
+}
+
+template <class T>
+T stability_control_t<T>::difference(T a_first, T a_second) const
+{
+  return (a_first < a_second) ? (a_second - a_first) : (a_first - a_second);
+}
+
 //---------------------------------------------------------------------------
 class TDataHandlingF : public TForm
 {
@@ -231,6 +313,10 @@ __published:	// IDE-managed Components
   TAction *AboutAction;
   TMenuItem *N17;
   TMenuItem *AboutM;
+  TGroupBox *TemperatureControlGroupBox;
+  TLabeledEdit *ReferenceTemperatureLabeledEdit;
+  TLabeledEdit *CurrentTemperatureLabeledEdit;
+  TLabeledEdit *DifferenceTemperatureLabeledEdit;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -345,6 +431,7 @@ private:	// User declarations
     dynamic_conn_data_t y_out;
     irs::conn_data_t<irs_u32> work_time;
     irs::conn_data_t<irs_u32> status;
+    irs::conn_data_t<float> temperature;
     irs::bit_data_t mismatch_state_bit;
     irs::bit_data_t correct_mode_bit;
     irs::bit_data_t operating_duty_bit;
@@ -389,6 +476,9 @@ private:	// User declarations
 
       work_time.connect(ap_data,
         a_config_calibr.index_work_time);
+      if (a_config_calibr.temperature_control.enabled) {
+        temperature.connect(ap_data, a_config_calibr.temperature_control.index);
+      }
       mismatch_state_bit.connect(
         ap_data,
         a_config_calibr.bit_pos_mismatch_state.index_byte,
@@ -454,7 +544,7 @@ private:	// User declarations
   auto_ptr<irs::mxdata_to_mxnet_t> mp_mxnet_data_ref_channel;
   auto_ptr<irs::funnel_client_t> mp_eeprom;
   auto_ptr<irs::local_data_t> mp_local_data;
-  irs::conn_data_t<irs_u32> work_time;
+  //irs::conn_data_t<irs_u32> work_time;
 
   table_data_t* mp_active_table;
   status_connect_t status_connect;
@@ -609,7 +699,11 @@ private:	// User declarations
   cur_elem_t m_max_cur_elem;
   cur_elem_t m_min_cur_elem;
 
-  //установка режима
+  //bool m_temperature_allowable;
+  enum { temperature_stability_min_time = 4 };
+  stability_control_t<double> m_temperature_stability_control;
+  irs::measure_time_t m_temperature_stable_min_time;
+  // ”становка режима
   bool m_on_reg_ready;
 
   counter_t m_delay_start_control_reg;

@@ -3,7 +3,8 @@
 #include <vcl.h>
 #pragma hdrstop
 
-#include "datahandling.h"
+#include "datahandling.h"d
+#include <irscpp.h>
 //#include "mathv.h"
 
 
@@ -114,8 +115,11 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_max_cur_elem(m_start_elem),
   m_min_cur_elem(m_start_elem),
 
+  //m_temperature_allowable(false),
+  m_temperature_stability_control(0, 0, temperature_stability_min_time),
+  m_temperature_stable_min_time(),
   m_on_reg_ready(false),
-  
+
   m_delay_start_control_reg(irs::make_cnt_ms(5000)),
   m_delay_operating_duty(irs::make_cnt_ms(2000)),
   m_delay_control_error_bit(irs::make_cnt_ms(5000)),
@@ -341,6 +345,22 @@ void TDataHandlingF::load_config_calibr()
       }
       Caption = m_prog_name+AnsiString(" - ")+file_namedir;
 
+      temperature_control_config_t temperature_ctrl_cft =
+        m_config_calibr.temperature_control;
+      if (temperature_ctrl_cft.enabled) {
+        m_temperature_stability_control.set_reference(
+          temperature_ctrl_cft.reference);
+        m_temperature_stability_control.set_diviation(
+          temperature_ctrl_cft.difference);
+        TemperatureControlGroupBox->Visible = true;
+        ReferenceTemperatureLabeledEdit->Text =
+          FloatToStr(temperature_ctrl_cft.reference);
+        DifferenceTemperatureLabeledEdit->Text =
+          FloatToStr(temperature_ctrl_cft.difference);
+      } else {
+        TemperatureControlGroupBox->Visible = false;
+      }
+
       m_load_conf_calibr_device_success = true;
       m_on_reset_functional_bits = true;
       m_log<<"Загрузка конфигурации калибровки успешно завершена.";
@@ -562,9 +582,23 @@ void TDataHandlingF::tick()
     if(m_mxnet_data.connected())
     {
       WorkTimeDeviceLE->Text = (AnsiString)m_data_map.work_time;
-      if(m_data_map.operating_duty_bit == 1){
+      if (m_config_calibr.temperature_control.enabled) {
+
+        double temperature = m_data_map.temperature;
+        bool temperature_allowable = fabs(temperature -
+          m_config_calibr.temperature_control.reference) <=
+          m_config_calibr.temperature_control.difference;
+        m_temperature_stability_control.set_current(temperature);
+        CurrentTemperatureLabeledEdit->Text = FloatToStr(temperature);
+        if (temperature_allowable) {
+          CurrentTemperatureLabeledEdit->Font->Color = clBlue;
+        } else {
+          CurrentTemperatureLabeledEdit->Font->Color = clRed;
+        }
+      }
+      if (m_data_map.operating_duty_bit == 1) {
         m_on_reg_ready = true;
-      }else{
+      } else {
         m_on_reg_ready = false;
       }
 
@@ -986,24 +1020,6 @@ void TDataHandlingF::reset_jump_smooth()
 void TDataHandlingF::processing_select_cell(TStringGrid* a_table,
     int a_col, int a_row, bool &a_can_select)
 {
-  /*
-  //запрет выделения ячеек
-  coord3d_t coord_cell =
-    mp_active_table->get_coord_cell_table(a_col ,a_row);
-  int num_table = coord_cell.z;
-  int row_table = coord_cell.y;
-  int col_table = coord_cell.x;
-  //если выделены ячейки 2 входного параметра таблицы с номером > 0
-  bool select_cell_in_y_nonzero_table =
-    (num_table > 0) && (row_table > 0) && (col_table == 0);
-  //если выделены ячейки 1 входного параметра таблицы с номером > 0
-  bool select_cell_in_x_nonzero_table =
-    (num_table > 0) && (row_table == 0) && (col_table > 0);
-  if(select_cell_in_y_nonzero_table || select_cell_in_x_nonzero_table){
-    // запрещаем выделение ячейки
-    a_can_select = false;
-  }
-  */
 }
 //--------------------------------------------------------------------------
 void TDataHandlingF::processing_key_return_and_ctrl_down(
@@ -1238,7 +1254,7 @@ void TDataHandlingF::process_volt_meas()
     } break;
     case spm_wait_set_range: {
       status_range_t status_range = get_status_range();
-      if (status_range == range_stat_success){
+      if (status_range == range_stat_success) {   
         m_status_process_meas = spm_mode_setting;
         m_log << "Установка диапазона измерения завершена.";
       }
@@ -1261,14 +1277,24 @@ void TDataHandlingF::process_volt_meas()
       #ifdef debug_datahanding
         m_on_reg_ready = true;
       #endif
-      if(m_timer_delay_control.check())
-      {
-        m_log<<"Ждем установления рабочего режима.";
+      if (m_timer_delay_control.check()) {
+        if (m_config_calibr.temperature_control.enabled) {
+          m_log<<"Ждем установления рабочего режима и температуры.";
+        } else {
+          m_log<<"Ждем установления рабочего режима.";
+        }
       }
-      if((m_timer_delay_control.stopped() == true)) {
-        if(m_on_out_data == false){
-          if(m_on_reg_ready){
-            //m_timer_delay_operating_duty.set(m_delay_operating_duty);
+      if ((m_timer_delay_control.stopped() == true)) {
+        if (m_on_out_data == false) {
+          bool ready = false;
+          if (m_config_calibr.temperature_control.enabled) {
+            ready = m_on_reg_ready &&
+              m_temperature_stability_control.stable_state();
+            m_temperature_stable_min_time.start();
+          } else {
+            ready = m_on_reg_ready;
+          }
+          if (ready) {      
             m_log<<"Рабочий режим установлен";
             if (m_mode_program == mode_prog_single_channel) {
               m_timer_delay_operating_duty.set(m_delay_operating_duty);
@@ -1301,24 +1327,32 @@ void TDataHandlingF::process_volt_meas()
     // режим контрольного ожидания установления рабочего режима
     case spm_control_wait_mode_setting: {
       m_timer_delay_operating_duty.check();
-      if(m_on_reg_ready) {
-        if(m_timer_delay_operating_duty.stopped()){
-        m_log<<"Рабочий режим подтвержден.";
-          if (m_mode_program == mode_prog_single_channel) {
-            m_status_process_meas = spm_execute_meas;
-          } else {
-            //m_on_external_trig_meas = false;
-            m_status_process_meas = spm_wait_external_trig_meas;
-            m_log<<"Ожидание внешнего запуска измерения.";
-          }
+      if (m_config_calibr.temperature_control.enabled) {
+        if (m_temperature_stability_control.get_stable_state_time() <
+          m_temperature_stable_min_time.get()) {
+          m_log<<"Температура вышла за допустимые значения.";
+          m_status_process_meas = spm_wait_mode_setting;
         }
-      } else {
-        m_log << "Рабочий режим не подтвержден.";
-        m_log << ("Ждем " + FloatToStr(
-          (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
-          " секунд перед проверкой рабочего режима.");
-        m_timer_delay_control.set(m_delay_start_control_reg);
-        m_status_process_meas = spm_wait_mode_setting;
+      }
+      if (m_status_process_meas == spm_control_wait_mode_setting) {
+        if (m_on_reg_ready) {
+          if (m_timer_delay_operating_duty.stopped()) {
+          m_log<<"Рабочий режим подтвержден.";
+            if (m_mode_program == mode_prog_single_channel) {
+              m_status_process_meas = spm_execute_meas;
+            } else {
+              m_status_process_meas = spm_wait_external_trig_meas;
+              m_log<<"Ожидание внешнего запуска измерения.";
+            }
+          }
+        } else {
+          m_log << "Рабочий режим не подтвержден.";
+          m_log << ("Ждем " + FloatToStr(
+            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+            " секунд перед проверкой рабочего режима.");
+          m_timer_delay_control.set(m_delay_start_control_reg);
+          m_status_process_meas = spm_wait_mode_setting;
+        }
       }
     } break;
     // ожидание внешнего внешнего запуска измерения
@@ -2321,7 +2355,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
             ConfigCB->ItemIndex = index_pos_text;
           }
         }
-        bool forsed_connect = true;
+        const bool forsed_connect = true;
         // устанавливаем принудительно реконнект
         set_connect_calibr_device(forsed_connect);
       }

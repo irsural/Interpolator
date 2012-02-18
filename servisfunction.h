@@ -847,6 +847,21 @@ struct sub_diapason_calibr_t
   }
 };
 
+struct temperature_control_config_t
+{
+  bool enabled;
+  irs_u32 index;
+  double reference;
+  double difference;
+  temperature_control_config_t():
+    enabled(false),
+    index(0),
+    reference(65),
+    difference(0.5)
+  {
+  }
+};
+
 struct config_calibr_t
 {
   String type_meas;
@@ -866,6 +881,7 @@ struct config_calibr_t
   vector<bit_type2_pos_t> bit_type2_array;
   irs_u32 index_work_time;
   irs_u32 index_pos_eeprom;
+  temperature_control_config_t temperature_control;
   type_sub_diapason_t type_sub_diapason;
   std::vector<sub_diapason_calibr_t> v_sub_diapason_calibr;
   double meas_range_koef;

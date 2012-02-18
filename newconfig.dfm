@@ -1,13 +1,13 @@
 object NewConfigF: TNewConfigF
-  Left = 412
-  Top = 132
+  Left = 247
+  Top = 26
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
   ClientHeight = 847
   ClientWidth = 1029
   Color = clBtnFace
-  Constraints.MinHeight = 885
-  Constraints.MinWidth = 1045
+  Constraints.MinHeight = 874
+  Constraints.MinWidth = 1037
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -291,6 +291,59 @@ object NewConfigF: TNewConfigF
         EditLabel.Width = 232
         EditLabel.Height = 13
         EditLabel.Caption = #1050#1086#1101#1092#1092#1080#1094#1080#1077#1085#1090' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1091#1089#1090#1072#1085#1086#1074#1082#1080' '#1076#1080#1072#1087#1072#1079#1086#1085#1072
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        TabOrder = 3
+      end
+    end
+    object GroupBox2: TGroupBox
+      Left = 688
+      Top = 392
+      Width = 329
+      Height = 121
+      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099' '#1090#1077#1088#1084#1086#1089#1090#1072#1090#1072' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1081' '#1095#1072#1089#1090#1080
+      TabOrder = 5
+      object TemperatureControlCheckBox: TCheckBox
+        Left = 8
+        Top = 16
+        Width = 193
+        Height = 17
+        Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
+        TabOrder = 0
+        OnClick = TemperatureControlCheckBoxClick
+      end
+      object TemperatureVariableIndexByteLabeledEdit: TLabeledEdit
+        Left = 8
+        Top = 48
+        Width = 153
+        Height = 21
+        EditLabel.Width = 155
+        EditLabel.Height = 13
+        EditLabel.Caption = #1048#1085#1076#1077#1082#1089' '#1087#1077#1088#1077#1084#1077#1085#1085#1086#1081' ('#1074' '#1073#1072#1081#1090#1072#1093')'
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        TabOrder = 1
+      end
+      object ReferenceTemperetureLabeledEdit: TLabeledEdit
+        Left = 8
+        Top = 88
+        Width = 153
+        Height = 21
+        EditLabel.Width = 113
+        EditLabel.Height = 13
+        EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        TabOrder = 2
+      end
+      object DifferenceTemperatureLabeledEdit: TLabeledEdit
+        Left = 168
+        Top = 88
+        Width = 153
+        Height = 21
+        EditLabel.Width = 125
+        EditLabel.Height = 13
+        EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
         LabelPosition = lpAbove
         LabelSpacing = 3
         TabOrder = 3

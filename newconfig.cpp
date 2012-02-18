@@ -163,6 +163,16 @@ bool TNewConfigF::cell_illegal_ListParameterSG_stat(
   return cell_illegal_stat;
 }
 
+void TNewConfigF::temperature_control_components_update()
+{
+  TemperatureVariableIndexByteLabeledEdit->Enabled =
+    TemperatureControlCheckBox->Checked;
+  ReferenceTemperetureLabeledEdit->Enabled =
+    TemperatureControlCheckBox->Checked;
+  DifferenceTemperatureLabeledEdit->Enabled =
+    TemperatureControlCheckBox->Checked;
+}
+
 // Выгрузка списка параметров с экрана в структуру
 void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 { 
@@ -193,6 +203,24 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(
     ValueIndexEEPROMEdit->Text, m_config_calibr.index_pos_eeprom)) {
     messages.push_back("Неверно указан индекс \"eeprom\".");
+  }
+
+  m_config_calibr.temperature_control.enabled =
+    TemperatureControlCheckBox->Checked;
+  if (!irs::cbuilder::str_to_number(
+    TemperatureVariableIndexByteLabeledEdit->Text,
+    m_config_calibr.temperature_control.index)) {
+    messages.push_back("Неверно указан индекс \"температура\".");
+  }
+  if (!irs::cbuilder::str_to_number(
+    ReferenceTemperetureLabeledEdit->Text,
+    m_config_calibr.temperature_control.reference)) {
+    messages.push_back("Неверно указана уставка температуры");
+  }
+  if (!irs::cbuilder::str_to_number(
+    DifferenceTemperatureLabeledEdit->Text,
+    m_config_calibr.temperature_control.difference)) {
+    messages.push_back("Неверно указано допустимое отклонение температуры");
   }
 
   // Выгрузка списка параметров
@@ -632,6 +660,10 @@ void TNewConfigF::set_config_def()
 
   config_calibr_def.index_work_time = 1;
   config_calibr_def.index_pos_eeprom = 1;
+  config_calibr_def.temperature_control.enabled = false;
+  config_calibr_def.temperature_control.index = 0;
+  config_calibr_def.temperature_control.reference = 65;
+  config_calibr_def.temperature_control.difference = 0.5;
   //config_calibr_def.index_pos_offset_eeprom = 1;
   //config_calibr_def.max_size_correct = 4096;
 
@@ -693,6 +725,15 @@ void TNewConfigF::config_calibr_out_displ(
   ValueIndexEEPROMEdit->Text = irs::cbuilder::number_to_str(
     a_config_calibr.index_pos_eeprom);
 
+  TemperatureControlCheckBox->Checked =
+    a_config_calibr.temperature_control.enabled;
+  TemperatureVariableIndexByteLabeledEdit->Text = irs::cbuilder::number_to_str(
+    a_config_calibr.temperature_control.index);
+  ReferenceTemperetureLabeledEdit->Text = irs::cbuilder::number_to_str(
+    a_config_calibr.temperature_control.reference);
+  DifferenceTemperatureLabeledEdit->Text = irs::cbuilder::number_to_str(
+    a_config_calibr.temperature_control.difference);  
+  temperature_control_components_update();
   // Загрузка списка параметров
   // Параметр 1
   ListParameterSG->Cells[0][1] = m_config_calibr.in_parametr1.name;
@@ -990,6 +1031,10 @@ void __fastcall TNewConfigF::ListParameterSGSelectCell(TObject *Sender,
 }
 //---------------------------------------------------------------------------
 
-
-
+void __fastcall TNewConfigF::TemperatureControlCheckBoxClick(
+      TObject *Sender)
+{
+  temperature_control_components_update();
+}
+//---------------------------------------------------------------------------
 

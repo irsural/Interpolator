@@ -1,6 +1,6 @@
 object DataHandlingF: TDataHandlingF
-  Left = 392
-  Top = 201
+  Left = 425
+  Top = 182
   Width = 815
   Height = 543
   Caption = 'DataHandlingF'
@@ -251,6 +251,56 @@ object DataHandlingF: TDataHandlingF
       LabelSpacing = 3
       TabOrder = 4
     end
+    object TemperatureControlGroupBox: TGroupBox
+      Left = 8
+      Top = 216
+      Width = 233
+      Height = 65
+      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
+      TabOrder = 5
+      object ReferenceTemperatureLabeledEdit: TLabeledEdit
+        Left = 80
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 43
+        EditLabel.Height = 13
+        EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 0
+      end
+      object CurrentTemperatureLabeledEdit: TLabeledEdit
+        Left = 8
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 45
+        EditLabel.Height = 13
+        EditLabel.Caption = #1058#1077#1082#1091#1097#1072#1103
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 1
+      end
+      object DifferenceTemperatureLabeledEdit: TLabeledEdit
+        Left = 152
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 38
+        EditLabel.Height = 13
+        EditLabel.Caption = #1044#1086#1087#1091#1089#1082
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 2
+      end
+    end
   end
   object ButtomPanel: TPanel
     Left = 0
@@ -395,7 +445,7 @@ object DataHandlingF: TDataHandlingF
     Interval = 10
     OnTimer = FormDataHandingTimer1Timer
     Left = 8
-    Top = 344
+    Top = 408
   end
   object ActionManager1: TActionManager
     ActionBars = <
@@ -562,7 +612,7 @@ object DataHandlingF: TDataHandlingF
       end>
     Images = ImageList2
     Left = 40
-    Top = 344
+    Top = 408
     object FileOpen: TFileOpen
       Category = #1060#1072#1081#1083
       Caption = '&'#1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1060#1072#1081#1083'...'
@@ -863,7 +913,7 @@ object DataHandlingF: TDataHandlingF
     ImageType = itMask
     ShareImages = True
     Left = 104
-    Top = 344
+    Top = 408
     Bitmap = {
       494C010117001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
@@ -1667,7 +1717,7 @@ object DataHandlingF: TDataHandlingF
   object MainMenu1: TMainMenu
     Images = ImageList1
     Left = 136
-    Top = 344
+    Top = 408
     object FileOpenM: TMenuItem
       Caption = #1060#1072#1081#1083
       object N2: TMenuItem
@@ -1907,7 +1957,7 @@ object DataHandlingF: TDataHandlingF
   object ImageList1: TImageList
     ShareImages = True
     Left = 72
-    Top = 344
+    Top = 408
     Bitmap = {
       494C010117001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
@@ -2711,13 +2761,13 @@ object DataHandlingF: TDataHandlingF
   object FileOpenDialog1: TOpenDialog
     Filter = 'Digital interpolator (*.dgi)|*.dgi|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.*'
     Left = 168
-    Top = 344
+    Top = 408
   end
   object SaveFileDialog: TSaveDialog
     Filter = 
       #1058#1077#1082#1089#1090#1086#1074#1099#1077' '#1092#1072#1081#1083#1099' Microsoft Excel (*.csv)|*.csv|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.' +
       '*'
     Left = 200
-    Top = 344
+    Top = 408
   end
 end

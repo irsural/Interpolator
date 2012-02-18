@@ -1444,6 +1444,7 @@ config_calibr_t::config_calibr_t():
   bit_type2_array(),
   index_work_time(0),
   index_pos_eeprom(0),
+  temperature_control(),
   type_sub_diapason(tsd_parameter2),
   v_sub_diapason_calibr(),
   meas_range_koef(1.),
@@ -1772,6 +1773,11 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   //ap_ini_file->add("Индекс коррекции в воронке", &index_pos_offset_eeprom);
   ap_ini_file->add("Индекс воронки", &index_pos_eeprom);
   //ap_ini_file->add("Максимальный размер коррекции", &max_size_correct);
+  ap_ini_file->add("Включения контроля температуры",
+    &temperature_control.enabled);
+  ap_ini_file->add("Индекс температуры", &temperature_control.index);
+  ap_ini_file->add("Уставка температуры", &temperature_control.reference);
+  ap_ini_file->add("допустимое отклонение", &temperature_control.difference);
 
   ap_ini_file->add("Режим расстройки. Индекс байта",
     &bit_pos_mismatch_state.index_byte);

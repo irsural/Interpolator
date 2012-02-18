@@ -63,6 +63,11 @@ __published:	// IDE-managed Components
   TLabel *Label4;
   TGroupBox *MultimeterSettingsGroupBox;
   TLabeledEdit *MeasRangeKoefLabeledEdit;
+  TGroupBox *GroupBox2;
+  TCheckBox *TemperatureControlCheckBox;
+  TLabeledEdit *TemperatureVariableIndexByteLabeledEdit;
+  TLabeledEdit *ReferenceTemperetureLabeledEdit;
+  TLabeledEdit *DifferenceTemperatureLabeledEdit;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);
@@ -77,6 +82,7 @@ __published:	// IDE-managed Components
           int ARow, TRect &Rect, TGridDrawState State);
   void __fastcall ListParameterSGSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
+  void __fastcall TemperatureControlCheckBoxClick(TObject *Sender);
 private:	// User declarations
   static const int m_basic_parameter_count = 4;
   static const int m_basic_bit_count = 6;
@@ -109,7 +115,7 @@ private:	// User declarations
     TObject *Sender, int ACol, int ARow, TRect &Rect);
   // Выдаем true, если ячейка запрещенная
   bool cell_illegal_ListParameterSG_stat(const int a_col, const int a_row);
-
+  void temperature_control_components_update();
   
 public:		// User declarations
   __fastcall TNewConfigF(TComponent* Owner);
