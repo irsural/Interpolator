@@ -12,6 +12,7 @@
 #include <inifiles.hpp>
 #include <Grids.hpp>
 #include "CSPIN.h"
+#include <ComCtrls.hpp>
 #pragma hdrstop
 
 #include <vector>
@@ -72,6 +73,10 @@ __published:	// IDE-managed Components
   TCheckBox *OutParameterControlCheckBox;
   TLabeledEdit *MaxRelativeDifferenceOutParameterLabeledEdit;
   TLabeledEdit *TimeCalcDifferenceLabeledEdit;
+  TPageControl *PageControl1;
+  TTabSheet *MeasAndCalibrationSettingsTabSheet;
+  TTabSheet *SecondaryNetworkVariablesTabSheet;
+  TTabSheet *PrimaryNetworkVariablesTabSheet;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);

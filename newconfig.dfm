@@ -1,12 +1,12 @@
 object NewConfigF: TNewConfigF
-  Left = 245
-  Top = 4
+  Left = 372
+  Top = 170
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
-  ClientHeight = 847
-  ClientWidth = 1029
+  ClientHeight = 523
+  ClientWidth = 1044
   Color = clBtnFace
-  Constraints.MinHeight = 874
+  Constraints.MinHeight = 550
   Constraints.MinWidth = 1037
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,14 +17,14 @@ object NewConfigF: TNewConfigF
   Position = poDesktopCenter
   OnClose = FormClose
   DesignSize = (
-    1029
-    847)
+    1044
+    523)
   PixelsPerInch = 96
   TextHeight = 13
   object InformationPanel: TPanel
     Left = 0
     Top = 0
-    Width = 1029
+    Width = 1044
     Height = 33
     Align = alTop
     BevelInner = bvRaised
@@ -39,11 +39,11 @@ object NewConfigF: TNewConfigF
     TabOrder = 0
   end
   object CreateConfigButton: TButton
-    Left = 866
-    Top = 815
+    Left = 881
+    Top = 491
     Width = 73
     Height = 25
-    Anchors = [akBottom]
+    Anchors = [akRight, akBottom]
     Caption = #1054#1050
     Default = True
     ModalResult = 1
@@ -51,8 +51,8 @@ object NewConfigF: TNewConfigF
     OnClick = CreateConfigButtonClick
   end
   object ExitButton: TButton
-    Left = 952
-    Top = 815
+    Left = 967
+    Top = 491
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -64,7 +64,7 @@ object NewConfigF: TNewConfigF
   object Panel2: TPanel
     Left = 0
     Top = 33
-    Width = 1029
+    Width = 1044
     Height = 48
     Align = alTop
     BevelInner = bvRaised
@@ -86,314 +86,333 @@ object NewConfigF: TNewConfigF
   object Panel3: TPanel
     Left = 0
     Top = 137
-    Width = 1029
-    Height = 669
+    Width = 1044
+    Height = 351
     Align = alTop
-    Anchors = [akLeft, akTop, akRight, akBottom]
     BevelInner = bvRaised
     BevelOuter = bvLowered
     TabOrder = 4
-    DesignSize = (
-      1029
-      669)
-    object Label3: TLabel
-      Left = 688
-      Top = 360
-      Width = 86
-      Height = 13
-      Anchors = [akLeft, akBottom]
-      Caption = #1048#1085#1076#1077#1082#1089' '#1089#1095#1077#1090#1095#1080#1082#1072
-    end
-    object GroupBox1: TGroupBox
-      Left = 312
-      Top = 357
-      Width = 361
-      Height = 305
-      Anchors = [akLeft, akBottom]
-      Caption = 'EEPROM'
-      TabOrder = 0
-      object Label9: TLabel
-        Left = 8
-        Top = 56
-        Width = 140
-        Height = 13
-        Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1076#1076#1080#1072#1087#1072#1079#1086#1085#1086#1074
-      end
-      object IndexEEPROMLabel: TLabel
-        Left = 8
-        Top = 18
-        Width = 83
-        Height = 13
-        Caption = #1048#1085#1076#1077#1082#1089' '#1074#1086#1088#1086#1085#1082#1080
-      end
-      object CSpinEdit1: TCSpinEdit
-        Left = 160
-        Top = 48
-        Width = 89
-        Height = 22
-        EditorEnabled = False
-        MaxValue = 1000000
-        MinValue = 1
-        TabOrder = 0
-        Value = 1
-        OnChange = CSpinEdit1Change
-      end
-      object SubDiapasonSG: TStringGrid
-        Left = 8
-        Top = 88
-        Width = 345
-        Height = 193
-        DefaultRowHeight = 17
-        RowCount = 2
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
-        TabOrder = 1
-        ColWidths = (
-          64
-          64
-          64
-          64
-          64)
-      end
-      object TypeSubDiapasonParam1RB: TRadioButton
-        Left = 264
-        Top = 40
-        Width = 89
-        Height = 17
-        Caption = #1055#1072#1088#1072#1084#1077#1090#1088' 1'
-        TabOrder = 2
-      end
-      object TypeSubDiapasonParam2RB: TRadioButton
-        Left = 264
-        Top = 64
-        Width = 89
-        Height = 17
-        Caption = #1055#1072#1088#1072#1084#1077#1090#1088' 2'
-        TabOrder = 3
-      end
-      object ValueIndexEEPROMEdit: TEdit
-        Left = 160
-        Top = 18
-        Width = 89
-        Height = 21
-        TabOrder = 4
-        Text = '17'
-      end
-    end
-    object ListByteSG: TStringGrid
-      Left = 2
-      Top = 169
-      Width = 1025
-      Height = 181
-      Align = alTop
-      Anchors = [akLeft, akTop, akRight, akBottom]
-      DefaultColWidth = 150
-      DefaultRowHeight = 17
-      FixedCols = 0
-      RowCount = 9
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
-      TabOrder = 1
-      OnDrawCell = ListByteSGDrawCell
-      OnSelectCell = ListByteSGSelectCell
-      ColWidths = (
-        258
-        78
-        90
-        115
-        132)
-    end
-    object IndexWorkTimeEdit: TEdit
-      Left = 792
-      Top = 361
-      Width = 121
-      Height = 21
-      Anchors = [akLeft, akBottom]
-      TabOrder = 2
-      Text = '16'
-    end
-    object ListParameterSG: TStringGrid
-      Left = 2
-      Top = 2
-      Width = 1025
-      Height = 167
-      Align = alTop
-      ColCount = 8
-      DefaultColWidth = 150
-      DefaultRowHeight = 17
-      FixedCols = 0
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
-      TabOrder = 3
-      OnDrawCell = ListParameterSGDrawCell
-      OnSelectCell = ListParameterSGSelectCell
-      ColWidths = (
-        150
-        113
-        136
-        85
-        115
-        108
-        150
-        150)
-    end
-    object MultimeterSettingsGroupBox: TGroupBox
+    object PageControl1: TPageControl
       Left = 8
-      Top = 357
-      Width = 297
-      Height = 305
-      Anchors = [akLeft, akBottom]
-      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1075#1086' '#1087#1088#1080#1073#1086#1088#1072
-      TabOrder = 4
-      object Label1: TLabel
-        Left = 8
-        Top = 16
-        Width = 78
-        Height = 13
-        Caption = #1058#1080#1087' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
+      Top = 8
+      Width = 1033
+      Height = 337
+      ActivePage = SecondaryNetworkVariablesTabSheet
+      TabIndex = 1
+      TabOrder = 0
+      object PrimaryNetworkVariablesTabSheet: TTabSheet
+        Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
+        ImageIndex = 2
+        object ListParameterSG: TStringGrid
+          Left = 0
+          Top = 0
+          Width = 1025
+          Height = 305
+          Align = alTop
+          ColCount = 8
+          DefaultColWidth = 150
+          DefaultRowHeight = 17
+          FixedCols = 0
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
+          TabOrder = 0
+          OnDrawCell = ListParameterSGDrawCell
+          OnSelectCell = ListParameterSGSelectCell
+          ColWidths = (
+            150
+            113
+            136
+            85
+            115
+            108
+            150
+            150)
+        end
       end
-      object MeasTypeCB: TComboBox
-        Left = 8
-        Top = 32
-        Width = 281
-        Height = 21
-        Style = csDropDownList
-        ItemHeight = 13
-        TabOrder = 0
+      object SecondaryNetworkVariablesTabSheet: TTabSheet
+        Caption = #1042#1089#1087#1086#1084#1086#1075#1072#1090#1077#1083#1100#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
+        ImageIndex = 1
+        object ListByteSG: TStringGrid
+          Left = 0
+          Top = 0
+          Width = 1025
+          Height = 305
+          Align = alTop
+          Anchors = [akLeft, akTop, akRight, akBottom]
+          DefaultColWidth = 150
+          DefaultRowHeight = 17
+          FixedCols = 0
+          RowCount = 9
+          Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
+          TabOrder = 0
+          OnDrawCell = ListByteSGDrawCell
+          OnSelectCell = ListByteSGSelectCell
+          ColWidths = (
+            258
+            78
+            90
+            115
+            132)
+        end
       end
-      object Delay_MeasLE: TLabeledEdit
-        Left = 8
-        Top = 112
-        Width = 281
-        Height = 21
-        EditLabel.Width = 134
-        EditLabel.Height = 13
-        EditLabel.Caption = #1047#1072#1076#1077#1088#1078#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 1
-        Text = '1'
-      end
-      object CountResetOverBitLE: TLabeledEdit
-        Left = 8
-        Top = 152
-        Width = 281
-        Height = 21
-        EditLabel.Width = 232
-        EditLabel.Height = 13
-        EditLabel.Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1087#1099#1090#1086#1082' '#1087#1077#1088#1077#1079#1072#1087#1091#1089#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 2
-      end
-      object MeasRangeKoefLabeledEdit: TLabeledEdit
-        Left = 8
-        Top = 72
-        Width = 281
-        Height = 21
-        EditLabel.Width = 232
-        EditLabel.Height = 13
-        EditLabel.Caption = #1050#1086#1101#1092#1092#1080#1094#1080#1077#1085#1090' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1091#1089#1090#1072#1085#1086#1074#1082#1080' '#1076#1080#1072#1087#1072#1079#1086#1085#1072
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 3
-      end
-    end
-    object GroupBox2: TGroupBox
-      Left = 680
-      Top = 392
-      Width = 337
-      Height = 121
-      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099' '#1090#1077#1088#1084#1086#1089#1090#1072#1090#1072' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1081' '#1095#1072#1089#1090#1080
-      TabOrder = 5
-      object TemperatureControlCheckBox: TCheckBox
-        Left = 8
-        Top = 16
-        Width = 193
-        Height = 17
-        Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
-        TabOrder = 0
-        OnClick = TemperatureControlCheckBoxClick
-      end
-      object TemperatureVariableIndexByteLabeledEdit: TLabeledEdit
-        Left = 8
-        Top = 48
-        Width = 153
-        Height = 21
-        EditLabel.Width = 155
-        EditLabel.Height = 13
-        EditLabel.Caption = #1048#1085#1076#1077#1082#1089' '#1087#1077#1088#1077#1084#1077#1085#1085#1086#1081' ('#1074' '#1073#1072#1081#1090#1072#1093')'
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 1
-      end
-      object ReferenceTemperetureLabeledEdit: TLabeledEdit
-        Left = 8
-        Top = 88
-        Width = 153
-        Height = 21
-        EditLabel.Width = 113
-        EditLabel.Height = 13
-        EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 2
-      end
-      object DifferenceTemperatureLabeledEdit: TLabeledEdit
-        Left = 168
-        Top = 88
-        Width = 153
-        Height = 21
-        EditLabel.Width = 125
-        EditLabel.Height = 13
-        EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 3
-      end
-    end
-    object GroupBox3: TGroupBox
-      Left = 680
-      Top = 520
-      Width = 337
-      Height = 81
-      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
-      TabOrder = 6
-      object OutParameterControlCheckBox: TCheckBox
-        Left = 8
-        Top = 16
-        Width = 305
-        Height = 17
-        Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
-        TabOrder = 0
-      end
-      object MaxRelativeDifferenceOutParameterLabeledEdit: TLabeledEdit
-        Left = 8
-        Top = 48
-        Width = 153
-        Height = 21
-        EditLabel.Width = 148
-        EditLabel.Height = 13
-        EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1085'. '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 1
-      end
-      object TimeCalcDifferenceLabeledEdit: TLabeledEdit
-        Left = 168
-        Top = 48
-        Width = 153
-        Height = 21
-        EditLabel.Width = 96
-        EditLabel.Height = 13
-        EditLabel.Caption = #1042#1088#1077#1084#1077#1085#1085#1086#1077' '#1086#1082#1085#1086', '#1089
-        LabelPosition = lpAbove
-        LabelSpacing = 3
-        TabOrder = 2
+      object MeasAndCalibrationSettingsTabSheet: TTabSheet
+        Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1085#1077#1085#1080#1103' '#1080' '#1082#1072#1083#1080#1073#1088#1086#1074#1082#1080
+        DesignSize = (
+          1025
+          309)
+        object Label3: TLabel
+          Left = 675
+          Top = 16
+          Width = 86
+          Height = 13
+          Anchors = [akLeft, akBottom]
+          Caption = #1048#1085#1076#1077#1082#1089' '#1089#1095#1077#1090#1095#1080#1082#1072
+        end
+        object MultimeterSettingsGroupBox: TGroupBox
+          Left = 0
+          Top = 4
+          Width = 297
+          Height = 305
+          Anchors = [akLeft, akBottom]
+          Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1075#1086' '#1087#1088#1080#1073#1086#1088#1072
+          TabOrder = 0
+          object Label1: TLabel
+            Left = 8
+            Top = 16
+            Width = 78
+            Height = 13
+            Caption = #1058#1080#1087' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
+          end
+          object MeasTypeCB: TComboBox
+            Left = 8
+            Top = 32
+            Width = 281
+            Height = 21
+            Style = csDropDownList
+            ItemHeight = 13
+            TabOrder = 0
+          end
+          object Delay_MeasLE: TLabeledEdit
+            Left = 8
+            Top = 112
+            Width = 281
+            Height = 21
+            EditLabel.Width = 134
+            EditLabel.Height = 13
+            EditLabel.Caption = #1047#1072#1076#1077#1088#1078#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 1
+            Text = '1'
+          end
+          object CountResetOverBitLE: TLabeledEdit
+            Left = 8
+            Top = 152
+            Width = 281
+            Height = 21
+            EditLabel.Width = 232
+            EditLabel.Height = 13
+            EditLabel.Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1087#1099#1090#1086#1082' '#1087#1077#1088#1077#1079#1072#1087#1091#1089#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 2
+          end
+          object MeasRangeKoefLabeledEdit: TLabeledEdit
+            Left = 8
+            Top = 72
+            Width = 281
+            Height = 21
+            EditLabel.Width = 232
+            EditLabel.Height = 13
+            EditLabel.Caption = #1050#1086#1101#1092#1092#1080#1094#1080#1077#1085#1090' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1091#1089#1090#1072#1085#1086#1074#1082#1080' '#1076#1080#1072#1087#1072#1079#1086#1085#1072
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 3
+          end
+        end
+        object GroupBox1: TGroupBox
+          Left = 304
+          Top = 4
+          Width = 361
+          Height = 305
+          Anchors = [akLeft, akBottom]
+          Caption = 'EEPROM'
+          TabOrder = 1
+          object Label9: TLabel
+            Left = 8
+            Top = 56
+            Width = 140
+            Height = 13
+            Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1076#1076#1080#1072#1087#1072#1079#1086#1085#1086#1074
+          end
+          object IndexEEPROMLabel: TLabel
+            Left = 8
+            Top = 18
+            Width = 83
+            Height = 13
+            Caption = #1048#1085#1076#1077#1082#1089' '#1074#1086#1088#1086#1085#1082#1080
+          end
+          object CSpinEdit1: TCSpinEdit
+            Left = 160
+            Top = 48
+            Width = 89
+            Height = 22
+            EditorEnabled = False
+            MaxValue = 1000000
+            MinValue = 1
+            TabOrder = 0
+            Value = 1
+            OnChange = CSpinEdit1Change
+          end
+          object SubDiapasonSG: TStringGrid
+            Left = 8
+            Top = 88
+            Width = 345
+            Height = 193
+            DefaultRowHeight = 17
+            RowCount = 2
+            Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
+            TabOrder = 1
+            ColWidths = (
+              64
+              64
+              64
+              64
+              64)
+          end
+          object TypeSubDiapasonParam1RB: TRadioButton
+            Left = 264
+            Top = 40
+            Width = 89
+            Height = 17
+            Caption = #1055#1072#1088#1072#1084#1077#1090#1088' 1'
+            TabOrder = 2
+          end
+          object TypeSubDiapasonParam2RB: TRadioButton
+            Left = 264
+            Top = 64
+            Width = 89
+            Height = 17
+            Caption = #1055#1072#1088#1072#1084#1077#1090#1088' 2'
+            TabOrder = 3
+          end
+          object ValueIndexEEPROMEdit: TEdit
+            Left = 160
+            Top = 18
+            Width = 89
+            Height = 21
+            TabOrder = 4
+            Text = '17'
+          end
+        end
+        object IndexWorkTimeEdit: TEdit
+          Left = 768
+          Top = 8
+          Width = 121
+          Height = 21
+          Anchors = [akLeft, akBottom]
+          TabOrder = 2
+          Text = '16'
+        end
+        object GroupBox2: TGroupBox
+          Left = 672
+          Top = 44
+          Width = 337
+          Height = 121
+          Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099' '#1090#1077#1088#1084#1086#1089#1090#1072#1090#1072' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1081' '#1095#1072#1089#1090#1080
+          TabOrder = 3
+          object TemperatureControlCheckBox: TCheckBox
+            Left = 8
+            Top = 16
+            Width = 193
+            Height = 17
+            Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
+            TabOrder = 0
+            OnClick = TemperatureControlCheckBoxClick
+          end
+          object TemperatureVariableIndexByteLabeledEdit: TLabeledEdit
+            Left = 8
+            Top = 48
+            Width = 153
+            Height = 21
+            EditLabel.Width = 155
+            EditLabel.Height = 13
+            EditLabel.Caption = #1048#1085#1076#1077#1082#1089' '#1087#1077#1088#1077#1084#1077#1085#1085#1086#1081' ('#1074' '#1073#1072#1081#1090#1072#1093')'
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 1
+          end
+          object ReferenceTemperetureLabeledEdit: TLabeledEdit
+            Left = 8
+            Top = 88
+            Width = 153
+            Height = 21
+            EditLabel.Width = 113
+            EditLabel.Height = 13
+            EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 2
+          end
+          object DifferenceTemperatureLabeledEdit: TLabeledEdit
+            Left = 168
+            Top = 88
+            Width = 153
+            Height = 21
+            EditLabel.Width = 125
+            EditLabel.Height = 13
+            EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 3
+          end
+        end
+        object GroupBox3: TGroupBox
+          Left = 672
+          Top = 172
+          Width = 337
+          Height = 81
+          Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
+          TabOrder = 4
+          object OutParameterControlCheckBox: TCheckBox
+            Left = 8
+            Top = 16
+            Width = 305
+            Height = 17
+            Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
+            TabOrder = 0
+          end
+          object MaxRelativeDifferenceOutParameterLabeledEdit: TLabeledEdit
+            Left = 8
+            Top = 48
+            Width = 153
+            Height = 21
+            EditLabel.Width = 148
+            EditLabel.Height = 13
+            EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1085'. '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 1
+          end
+          object TimeCalcDifferenceLabeledEdit: TLabeledEdit
+            Left = 168
+            Top = 48
+            Width = 153
+            Height = 21
+            EditLabel.Width = 96
+            EditLabel.Height = 13
+            EditLabel.Caption = #1042#1088#1077#1084#1077#1085#1085#1086#1077' '#1086#1082#1085#1086', '#1089
+            LabelPosition = lpAbove
+            LabelSpacing = 3
+            TabOrder = 2
+          end
+        end
       end
     end
   end
   object Panel4: TPanel
     Left = 0
     Top = 81
-    Width = 1029
+    Width = 1044
     Height = 56
     Align = alTop
     BevelInner = bvRaised
