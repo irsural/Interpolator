@@ -116,6 +116,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_min_cur_elem(m_start_elem),
 
   //m_temperature_allowable(false),
+  m_out_param_stability_control(0, 0, 0),
+  m_out_param_stable_min_time(),
   m_temperature_stability_control(0, 0, temperature_stability_min_time),
   m_temperature_stable_min_time(),
   m_on_reg_ready(false),
@@ -345,22 +347,26 @@ void TDataHandlingF::load_config_calibr()
       }
       Caption = m_prog_name+AnsiString(" - ")+file_namedir;
 
+      out_param_control_config_t out_param_ctrl_cfg =
+        m_config_calibr.out_param_control_config;
+      if (out_param_ctrl_cfg.enabled) {
+        m_out_param_stability_control.set_stability_min_time(
+          out_param_ctrl_cfg.time);
+      }
+      OutParamControlGroupBox->Visible = out_param_ctrl_cfg.enabled;
       temperature_control_config_t temperature_ctrl_cft =
         m_config_calibr.temperature_control;
       if (temperature_ctrl_cft.enabled) {
         m_temperature_stability_control.set_reference(
           temperature_ctrl_cft.reference);
         m_temperature_stability_control.set_diviation(
-          temperature_ctrl_cft.difference);
-        TemperatureControlGroupBox->Visible = true;
+          temperature_ctrl_cft.difference);      
         ReferenceTemperatureLabeledEdit->Text =
           FloatToStr(temperature_ctrl_cft.reference);
         DifferenceTemperatureLabeledEdit->Text =
           FloatToStr(temperature_ctrl_cft.difference);
-      } else {
-        TemperatureControlGroupBox->Visible = false;
       }
-
+      TemperatureControlGroupBox->Visible = temperature_ctrl_cft.enabled;   
       m_load_conf_calibr_device_success = true;
       m_on_reset_functional_bits = true;
       m_log<<"Загрузка конфигурации калибровки успешно завершена.";
@@ -582,8 +588,25 @@ void TDataHandlingF::tick()
     if(m_mxnet_data.connected())
     {
       WorkTimeDeviceLE->Text = (AnsiString)m_data_map.work_time;
+      if (m_config_calibr.out_param_control_config.enabled) {
+        double out_param = m_data_map.y_out;
+        coord_cell_t coord_cur_cell =
+          m_manager_traffic_cell.get_coord_cell();
+        param_cur_cell_t param_cur_cell =
+          mp_active_table->get_param_cell(
+          coord_cur_cell.col, coord_cur_cell.row);
+        double reference = get_anchor_in_param(param_cur_cell)*
+          m_config_calibr.out_param_control_config.max_relative_difference;
+        bool out_param_allowable = fabs(out_param - reference) <= reference;
+        m_out_param_stability_control.set_current(out_param);
+        CurrentOutParamLabeledEdit->Text = FloatToStr(out_param);
+        if (out_param_allowable) {
+          CurrentOutParamLabeledEdit->Font->Color = clBlue;
+        } else {
+          CurrentOutParamLabeledEdit->Font->Color = clBlue;
+        }
+      }
       if (m_config_calibr.temperature_control.enabled) {
-
         double temperature = m_data_map.temperature;
         bool temperature_allowable = fabs(temperature -
           m_config_calibr.temperature_control.reference) <=
@@ -1109,7 +1132,7 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
 void TDataHandlingF::process_volt_meas()
 {
   if(m_on_process_auto_meas_active_cell == true){
-    if(m_on_auto_meas == true) {
+    if (m_on_auto_meas == true) {
       if(m_status_process_meas != spm_jump_next_elem){
         m_on_process_auto_meas_active_cell = false;
       }
@@ -1124,11 +1147,12 @@ void TDataHandlingF::process_volt_meas()
     m_status_process_meas = spm_reset;
     m_log << "Стоп.";
   }
-  if(m_on_auto_meas) {
+  if (m_on_auto_meas) {
     config_button_start_avto_volt_meas();
     m_timer_delay_control_error_bit.check();
-    if(m_data_map.error_bit == 1 && m_timer_delay_control_error_bit.stopped()){
-      if(m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit){
+    if (m_data_map.error_bit == 1 &&
+      m_timer_delay_control_error_bit.stopped()) {
+      if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
         m_cur_count_reset_over_bit++;
         m_data_map.reset_over_bit = 1;
         m_on_process_auto_meas_active_cell = true;
@@ -1146,7 +1170,7 @@ void TDataHandlingF::process_volt_meas()
         m_log << ("Ждем " + FloatToStr(
           (CNT_TO_DBLTIME(m_delay_next_cell))) +
           " секунд перед продолжением измерений.");
-      }else{
+      } else {
         m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
         m_log << "Прибор не можнет выйти на рабочий режим.";
         m_log << "Автоматическое измерение завершилось с ошибкой.";
@@ -1157,7 +1181,7 @@ void TDataHandlingF::process_volt_meas()
   switch(m_status_process_meas)
   {
     case spm_off_process: {
-      if(m_on_start_new_auto_meas == true){
+      if (m_on_start_new_auto_meas == true) {
         m_count_point_meas = 0;
         m_previous_count_point_meas = 0;
         set_connect_multimetr();
@@ -1247,6 +1271,10 @@ void TDataHandlingF::process_volt_meas()
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
       const double range = set_range(param_cur_cell);
+      const double reference = get_anchor_in_param(param_cur_cell);
+      m_out_param_stability_control.set_reference(reference);
+      m_out_param_stability_control.set_diviation(reference*
+        m_config_calibr.out_param_control_config.max_relative_difference);
       m_status_process_meas = spm_wait_set_range;
       ostringstream msg;
       msg << "Установка диапазона измерения: " << range;
@@ -1286,15 +1314,19 @@ void TDataHandlingF::process_volt_meas()
       }
       if ((m_timer_delay_control.stopped() == true)) {
         if (m_on_out_data == false) {
-          bool ready = false;
+          bool all_ready = true;
           if (m_config_calibr.temperature_control.enabled) {
-            ready = m_on_reg_ready &&
+            all_ready = all_ready &&
               m_temperature_stability_control.stable_state();
             m_temperature_stable_min_time.start();
-          } else {
-            ready = m_on_reg_ready;
           }
-          if (ready) {      
+          if (m_config_calibr.out_param_control_config.enabled) {
+            all_ready = all_ready &&
+              m_out_param_stability_control.stable_state();
+            m_out_param_stable_min_time.start();
+          }
+          all_ready = all_ready && m_on_reg_ready;
+          if (all_ready) {
             m_log<<"Рабочий режим установлен";
             if (m_mode_program == mode_prog_single_channel) {
               m_timer_delay_operating_duty.set(m_delay_operating_duty);
@@ -1303,7 +1335,7 @@ void TDataHandlingF::process_volt_meas()
                 " секунд.");
               m_status_process_meas = spm_control_wait_mode_setting;
             } else {
-              m_log<<"Ожидание внешнего запуска контрольного "
+              m_log << "Ожидание внешнего запуска контрольного "
                 "установления рабочего режима.";
               m_status_process_meas =
                 spm_wait_ext_trig_control_wait_mode_setting;
@@ -1331,6 +1363,11 @@ void TDataHandlingF::process_volt_meas()
         if (m_temperature_stability_control.get_stable_state_time() <
           m_temperature_stable_min_time.get()) {
           m_log<<"Температура вышла за допустимые значения.";
+          m_status_process_meas = spm_wait_mode_setting;
+        }
+        if (m_temperature_stability_control.get_stable_state_time() <
+          m_out_param_stable_min_time.get()) {
+          m_log<<"Значение выходного параметра вышло за допустимые значения.";
           m_status_process_meas = spm_wait_mode_setting;
         }
       }
@@ -1768,9 +1805,10 @@ double TDataHandlingF::calc_meas_value(
 
 double TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
 {
-  double range = 0.;
   const double koef = m_config_calibr.meas_range_koef;
-  if (m_inf_in_param.type_anchor == PARAMETR1) {
+  double range = get_anchor_in_param(a_param_cur_cell)*koef;
+  m_value_meas.set_range(m_type_meas, range);
+  /*if (m_inf_in_param.type_anchor == PARAMETR1) {
     range = a_param_cur_cell.col_value.value*koef;
     m_value_meas.set_range(m_type_meas, range);
   } else if (m_inf_in_param.type_anchor == PARAMETR2) {
@@ -1779,8 +1817,22 @@ double TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
   } else {
     range = a_param_cur_cell.top_value.value*koef;
     m_value_meas.set_range(m_type_meas, range);
-  }
+  }*/
   return range;
+}
+
+double TDataHandlingF::get_anchor_in_param(
+  const param_cur_cell_t& a_param_cur_cell)
+{
+  double value = 0;
+  if (m_inf_in_param.type_anchor == PARAMETR1) {
+    value = a_param_cur_cell.col_value.value;
+  } else if (m_inf_in_param.type_anchor == PARAMETR2) {
+    value = a_param_cur_cell.row_value.value;
+  } else {
+    value = a_param_cur_cell.top_value.value;
+  }
+  return value;
 }
 
 TDataHandlingF::status_range_t TDataHandlingF::get_status_range()
@@ -1876,7 +1928,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)){
     if((a_col == table->Col) && (a_row == table->Row)){
       //цвет фона
-      table->Canvas->Brush->Color = clBackground;//clMoneyGreen;
+      table->Canvas->Brush->Color = clMoneyGreen;
       //цвет текста
       table->Canvas->Font->Color = clBlack;
       //cтиль текста (жирный)
@@ -2451,20 +2503,19 @@ TDataHandlingF::device_mode_status_t
   TDataHandlingF::status_device_mode()
 {
   device_mode_status_t device_mode_status = DM_BUSY;
-  if(m_timer_delay_control.check())
-  {
+  if (m_timer_delay_control.check()) {
     m_log<<"Ждем установления рабочего режима.";
   }
   m_timer_delay_operating_duty.check();
-  if((m_timer_delay_control.stopped() == true)
-    && (m_timer_delay_operating_duty.stopped() == true)){
-    if(m_on_out_data == false){
-      if(m_on_reg_ready){
-        if(on_reg_ready_back_cycle == true){
+  if ((m_timer_delay_control.stopped() == true) &&
+    (m_timer_delay_operating_duty.stopped() == true)) {
+    if (m_on_out_data == false) {
+      if (m_on_reg_ready) {
+        if (on_reg_ready_back_cycle == true) {
           on_reg_ready_back_cycle = false;
           device_mode_status = DM_SUCCESS;
           m_log << "Рабочий режим подтвержден.";
-        }else{
+        } else {
           on_reg_ready_back_cycle = true;
           m_timer_delay_operating_duty.set(m_delay_operating_duty);
           m_log << "Рабочий режим установлен";
@@ -2472,8 +2523,8 @@ TDataHandlingF::device_mode_status_t
             (CNT_TO_DBLTIME(m_delay_operating_duty))) +
             " секунд.");
         }
-      }else{
-        if(on_reg_ready_back_cycle == true){
+      } else {
+        if (on_reg_ready_back_cycle == true) {
           m_log << "Происходит установление рабочего режима.";
         }
         on_reg_ready_back_cycle = false;

@@ -68,6 +68,10 @@ __published:	// IDE-managed Components
   TLabeledEdit *TemperatureVariableIndexByteLabeledEdit;
   TLabeledEdit *ReferenceTemperetureLabeledEdit;
   TLabeledEdit *DifferenceTemperatureLabeledEdit;
+  TGroupBox *GroupBox3;
+  TCheckBox *OutParameterControlCheckBox;
+  TLabeledEdit *MaxRelativeDifferenceOutParameterLabeledEdit;
+  TLabeledEdit *TimeCalcDifferenceLabeledEdit;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);

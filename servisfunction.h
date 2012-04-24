@@ -2,6 +2,8 @@
 #ifndef servisfunctionH
 #define servisfunctionH
 
+#include <irsdefs.h>
+
 #include <Grids.hpp>
 #include <inifiles.hpp>
 #include <string>
@@ -10,16 +12,15 @@
 #include <math.h>
 #include <irsstd.h>
 #include <irserror.h>
-//#include <mathv.h>
 #include <irscberror.h>
 #include <mxini.h>
 #include "addcolrow.h"
 #include <irstable.h>
 #include "table.h"
 #include "dinamictypes.h"
-
-//#include "newconfig.h"
 #include "debugdigitalinterpolator.h"
+
+#include <irsfinal.h>
 //  Command bits
 //using namespace std;
 //---------------------------------------------------------------------------
@@ -862,6 +863,19 @@ struct temperature_control_config_t
   }
 };
 
+struct out_param_control_config_t
+{ 
+  bool enabled;
+  double max_relative_difference;
+  double time;
+  out_param_control_config_t():
+    enabled(false),
+    max_relative_difference(0.00003), 
+    time(15)
+  {
+  }
+};
+
 struct config_calibr_t
 {
   String type_meas;
@@ -881,6 +895,7 @@ struct config_calibr_t
   vector<bit_type2_pos_t> bit_type2_array;
   irs_u32 index_work_time;
   irs_u32 index_pos_eeprom;
+  out_param_control_config_t out_param_control_config;
   temperature_control_config_t temperature_control;
   type_sub_diapason_t type_sub_diapason;
   std::vector<sub_diapason_calibr_t> v_sub_diapason_calibr;

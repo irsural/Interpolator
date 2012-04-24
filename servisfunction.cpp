@@ -1444,6 +1444,7 @@ config_calibr_t::config_calibr_t():
   bit_type2_array(),
   index_work_time(0),
   index_pos_eeprom(0),
+  out_param_control_config(),
   temperature_control(),
   type_sub_diapason(tsd_parameter2),
   v_sub_diapason_calibr(),
@@ -1773,11 +1774,6 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   //ap_ini_file->add("Индекс коррекции в воронке", &index_pos_offset_eeprom);
   ap_ini_file->add("Индекс воронки", &index_pos_eeprom);
   //ap_ini_file->add("Максимальный размер коррекции", &max_size_correct);
-  ap_ini_file->add("Включения контроля температуры",
-    &temperature_control.enabled);
-  ap_ini_file->add("Индекс температуры", &temperature_control.index);
-  ap_ini_file->add("Уставка температуры", &temperature_control.reference);
-  ap_ini_file->add("допустимое отклонение", &temperature_control.difference);
 
   ap_ini_file->add("Режим расстройки. Индекс байта",
     &bit_pos_mismatch_state.index_byte);
@@ -1810,6 +1806,21 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   ap_ini_file->add("Статус включения", &reference_channel.enabled);
   ap_ini_file->add("IP-адрес", &reference_channel.ip_adress);
   ap_ini_file->add("Порт", &(irs_i32)reference_channel.port);
+
+  ap_ini_file->set_section("Контроль выходного параметра");
+  ap_ini_file->add("Включение",
+    &out_param_control_config.enabled);
+  ap_ini_file->add("Допустимое относительное отклонение",
+    &out_param_control_config.max_relative_difference);
+  ap_ini_file->add("Временное окно", &out_param_control_config.time);
+
+  ap_ini_file->set_section("Контроль температуры");
+  ap_ini_file->add("Включение",
+    &temperature_control.enabled);
+  ap_ini_file->add("Индекс", &temperature_control.index);
+  ap_ini_file->add("Уставка", &temperature_control.reference);
+  ap_ini_file->add("Допустимое отклонение",
+    &temperature_control.difference);
 }
 
 //-------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 object NewConfigF: TNewConfigF
-  Left = 247
-  Top = 26
+  Left = 245
+  Top = 4
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
   ClientHeight = 847
@@ -297,9 +297,9 @@ object NewConfigF: TNewConfigF
       end
     end
     object GroupBox2: TGroupBox
-      Left = 688
+      Left = 680
       Top = 392
-      Width = 329
+      Width = 337
       Height = 121
       Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099' '#1090#1077#1088#1084#1086#1089#1090#1072#1090#1072' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1081' '#1095#1072#1089#1090#1080
       TabOrder = 5
@@ -347,6 +347,46 @@ object NewConfigF: TNewConfigF
         LabelPosition = lpAbove
         LabelSpacing = 3
         TabOrder = 3
+      end
+    end
+    object GroupBox3: TGroupBox
+      Left = 680
+      Top = 520
+      Width = 337
+      Height = 81
+      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
+      TabOrder = 6
+      object OutParameterControlCheckBox: TCheckBox
+        Left = 8
+        Top = 16
+        Width = 305
+        Height = 17
+        Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1082#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
+        TabOrder = 0
+      end
+      object MaxRelativeDifferenceOutParameterLabeledEdit: TLabeledEdit
+        Left = 8
+        Top = 48
+        Width = 153
+        Height = 21
+        EditLabel.Width = 148
+        EditLabel.Height = 13
+        EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1085'. '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        TabOrder = 1
+      end
+      object TimeCalcDifferenceLabeledEdit: TLabeledEdit
+        Left = 168
+        Top = 48
+        Width = 153
+        Height = 21
+        EditLabel.Width = 96
+        EditLabel.Height = 13
+        EditLabel.Caption = #1042#1088#1077#1084#1077#1085#1085#1086#1077' '#1086#1082#1085#1086', '#1089
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        TabOrder = 2
       end
     end
   end

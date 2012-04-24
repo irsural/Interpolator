@@ -1,8 +1,8 @@
 object DataHandlingF: TDataHandlingF
-  Left = 425
-  Top = 182
+  Left = 420
+  Top = 162
   Width = 815
-  Height = 543
+  Height = 531
   Caption = 'DataHandlingF'
   Color = clWindow
   Font.Charset = DEFAULT_CHARSET
@@ -21,14 +21,14 @@ object DataHandlingF: TDataHandlingF
     Left = 249
     Top = 30
     Width = 558
-    Height = 418
+    Height = 406
     Align = alClient
     BevelOuter = bvLowered
     Constraints.MinWidth = 550
     TabOrder = 0
     object LogMemo: TMemo
       Left = 1
-      Top = 267
+      Top = 255
       Width = 556
       Height = 150
       Align = alBottom
@@ -48,7 +48,7 @@ object DataHandlingF: TDataHandlingF
       Left = 1
       Top = 105
       Width = 556
-      Height = 162
+      Height = 150
       Align = alClient
       Constraints.MinHeight = 150
       Constraints.MinWidth = 150
@@ -182,7 +182,7 @@ object DataHandlingF: TDataHandlingF
     Left = 0
     Top = 30
     Width = 249
-    Height = 418
+    Height = 406
     Align = alLeft
     Caption = #1055#1072#1085#1077#1083#1100' '#1091#1087#1088#1072#1074#1083#1077#1085#1080#1103
     Color = clBtnFace
@@ -301,10 +301,60 @@ object DataHandlingF: TDataHandlingF
         TabOrder = 2
       end
     end
+    object OutParamControlGroupBox: TGroupBox
+      Left = 8
+      Top = 288
+      Width = 233
+      Height = 73
+      Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
+      TabOrder = 6
+      object CurrentOutParamLabeledEdit: TLabeledEdit
+        Left = 8
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 45
+        EditLabel.Height = 13
+        EditLabel.Caption = #1058#1077#1082#1091#1097#1080#1081
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 0
+      end
+      object ReferenceOutParamLabeledEdit: TLabeledEdit
+        Left = 80
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 43
+        EditLabel.Height = 13
+        EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 1
+      end
+      object RelativeDiffOutParamTemperatureLabeledEdit: TLabeledEdit
+        Left = 152
+        Top = 32
+        Width = 67
+        Height = 21
+        Color = clScrollBar
+        EditLabel.Width = 60
+        EditLabel.Height = 13
+        EditLabel.Caption = #1054#1090#1085'. '#1076#1086#1087#1091#1089#1082
+        LabelPosition = lpAbove
+        LabelSpacing = 3
+        ReadOnly = True
+        TabOrder = 2
+      end
+    end
   end
   object ButtomPanel: TPanel
     Left = 0
-    Top = 448
+    Top = 436
     Width = 807
     Height = 49
     Align = alBottom

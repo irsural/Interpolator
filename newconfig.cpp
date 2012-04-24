@@ -205,6 +205,20 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     messages.push_back("Ќеверно указан индекс \"eeprom\".");
   }
 
+  m_config_calibr.out_param_control_config.enabled =
+    OutParameterControlCheckBox->Checked;
+  if (!irs::cbuilder::str_to_number(
+    MaxRelativeDifferenceOutParameterLabeledEdit->Text,
+    m_config_calibr.out_param_control_config.max_relative_difference)) {
+    messages.push_back("Ќеверно указано допустимое относительное отклонение "
+      "выходного параметра");
+  }
+  if (!irs::cbuilder::str_to_number(
+    TimeCalcDifferenceLabeledEdit->Text,
+    m_config_calibr.out_param_control_config.time)) {
+    messages.push_back("Ќеверно указано временное окно");
+  }
+
   m_config_calibr.temperature_control.enabled =
     TemperatureControlCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
@@ -660,6 +674,9 @@ void TNewConfigF::set_config_def()
 
   config_calibr_def.index_work_time = 1;
   config_calibr_def.index_pos_eeprom = 1;
+  config_calibr_def.out_param_control_config.enabled = false;
+  config_calibr_def.out_param_control_config.max_relative_difference = 0.00003;
+  config_calibr_def.out_param_control_config.time = 15;
   config_calibr_def.temperature_control.enabled = false;
   config_calibr_def.temperature_control.index = 0;
   config_calibr_def.temperature_control.reference = 65;
@@ -724,6 +741,14 @@ void TNewConfigF::config_calibr_out_displ(
     a_config_calibr.index_work_time);
   ValueIndexEEPROMEdit->Text = irs::cbuilder::number_to_str(
     a_config_calibr.index_pos_eeprom);
+
+  OutParameterControlCheckBox->Checked =
+    m_config_calibr.out_param_control_config.enabled;
+  MaxRelativeDifferenceOutParameterLabeledEdit->Text =
+    irs::cbuilder::number_to_str(
+    a_config_calibr.out_param_control_config.max_relative_difference);
+  TimeCalcDifferenceLabeledEdit->Text = irs::cbuilder::number_to_str(
+    a_config_calibr.out_param_control_config.time);
 
   TemperatureControlCheckBox->Checked =
     a_config_calibr.temperature_control.enabled;

@@ -317,6 +317,10 @@ __published:	// IDE-managed Components
   TLabeledEdit *ReferenceTemperatureLabeledEdit;
   TLabeledEdit *CurrentTemperatureLabeledEdit;
   TLabeledEdit *DifferenceTemperatureLabeledEdit;
+  TGroupBox *OutParamControlGroupBox;
+  TLabeledEdit *CurrentOutParamLabeledEdit;
+  TLabeledEdit *ReferenceOutParamLabeledEdit;
+  TLabeledEdit *RelativeDiffOutParamTemperatureLabeledEdit;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -699,6 +703,8 @@ private:	// User declarations
   cur_elem_t m_max_cur_elem;
   cur_elem_t m_min_cur_elem;
 
+  stability_control_t<double> m_out_param_stability_control;
+  irs::measure_time_t m_out_param_stable_min_time;
   //bool m_temperature_allowable;
   enum { temperature_stability_min_time = 4 };
   stability_control_t<double> m_temperature_stability_control;
@@ -951,6 +957,8 @@ public:
     const param_cur_cell_t& a_param_cell);
   // Предустановка диапазона измерений
   double set_range(const param_cur_cell_t& a_param_cur_cell);
+  // Получить значение входного связанного параметра
+  double get_anchor_in_param(const param_cur_cell_t& a_param_cur_cell);
   enum status_range_t {range_stat_success, range_stat_busy};
   // Проверка статуса установления диапазона
   status_range_t get_status_range();
