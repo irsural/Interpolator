@@ -26,10 +26,11 @@ interface_multim_t str_to_interface_multim(
 enum type_multimetr_t{
   tmul_first = 3,
   tmul_none_multimeter = tmul_first,
-  tmul_agilent_3458a = tmul_none_multimeter+1,
-  tmul_v7_78_1 = tmul_agilent_3458a+1,
-  tmul_ch3_85_3r = tmul_v7_78_1+1,
-  tmul_last = tmul_ch3_85_3r};
+  tmul_agilent_3458a = tmul_none_multimeter + 1,
+  tmul_v7_78_1 = tmul_agilent_3458a + 1,
+  tmul_ch3_85_3r = tmul_v7_78_1 + 1,
+  tmul_dummy = tmul_ch3_85_3r + 1,
+  tmul_last = tmul_dummy};
 
 irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr);
 type_multimetr_t str_to_type_multimeter(const irs::string& a_str_type_multimetr);
@@ -77,24 +78,34 @@ public:
 inline int value_meas_t::set_connect_multimetr(
   type_multimetr_t a_type_multimetr)
 {
-  m_on_connect_multimetr = true;
+
   switch(a_type_multimetr)
   {
     case tmul_agilent_3458a:{
       m_hardflow.reset(NULL);
       multimeter.reset(new mx_agilent_3458a_t(MXIFA_MULTIMETER, mul_addr));
+      m_on_connect_multimetr = true;
     } break;
     case tmul_v7_78_1:{
       m_hardflow.reset(NULL);
       multimeter.reset(new irs::v7_78_1_t(MXIFA_MULTIMETER, 21));
       multimeter->set_aperture(100);
+      m_on_connect_multimetr = true;
     } break;
-    case tmul_ch3_85_3r:{
+    case tmul_ch3_85_3r: {
       m_hardflow.reset(new irs::com_flow_t(
         "com1", CBR_9600, FALSE, NOPARITY, 8, ONESTOPBIT, DTR_CONTROL_DISABLE));
       multimeter.reset(new irs::akip_ch3_85_3r_t(m_hardflow.get()));
+      m_on_connect_multimetr = true;
     } break;
-    default: m_on_connect_multimetr = false;
+    case tmul_dummy: {
+      m_hardflow.reset(IRS_NULL);
+      multimeter.reset(new irs::dummy_multimeter_t());
+      m_on_connect_multimetr = true;
+    } break;
+    default: {
+      m_on_connect_multimetr = false;
+    }
   }
   return 0;
 }

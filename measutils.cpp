@@ -38,6 +38,7 @@ const irs::string str_tmul_none_multimeter = "Не выбран";
 const irs::string str_tmul_agilent_3458a = "Agilent 3458A";
 const irs::string str_tmul_v7_78_1 = "В7-78\\1";
 const irs::string str_tmul_ch3_85_3r = "Ч3-85\\3R";
+const irs::string str_tmul_dummy = "Случайные числа";
 
 
 irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr)
@@ -52,6 +53,9 @@ irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr)
     } break;
     case tmul_ch3_85_3r: {
       str_type_multimetr = str_tmul_ch3_85_3r;
+    } break;
+    case tmul_dummy: {
+      str_type_multimetr = str_tmul_dummy;
     } break;
     default :{
       str_type_multimetr = str_tmul_none_multimeter;
@@ -69,6 +73,8 @@ type_multimetr_t str_to_type_multimeter(const irs::string& a_str_type_multimetr)
     type_multimetr = tmul_v7_78_1;
   } else if (a_str_type_multimetr == str_tmul_ch3_85_3r) {
     type_multimetr = tmul_ch3_85_3r;
+  } else if (a_str_type_multimetr == str_tmul_dummy) {
+    type_multimetr = tmul_dummy;
   } else {
     type_multimetr = tmul_none_multimeter;
   }
@@ -174,8 +180,9 @@ void value_meas_t::process_meas()
 }
 void value_meas_t::tick()
 {
-  if(m_on_connect_multimetr)
+  if(m_on_connect_multimetr) {
     multimeter->tick();
+  }
   process_meas();
 }
 

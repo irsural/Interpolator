@@ -97,8 +97,8 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 337
-      ActivePage = SecondaryNetworkVariablesTabSheet
-      TabIndex = 1
+      ActivePage = MeasAndCalibrationSettingsTabSheet
+      TabIndex = 2
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077

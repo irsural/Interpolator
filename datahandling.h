@@ -320,7 +320,8 @@ __published:	// IDE-managed Components
   TGroupBox *OutParamControlGroupBox;
   TLabeledEdit *CurrentOutParamLabeledEdit;
   TLabeledEdit *ReferenceOutParamLabeledEdit;
-  TLabeledEdit *RelativeDiffOutParamTemperatureLabeledEdit;
+  TLabeledEdit *AbsoluteDiffOutParamLabeledEdit;
+  TLabeledEdit *RemainingTimeForStableState;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -717,7 +718,8 @@ private:	// User declarations
   counter_t m_delay_control_error_bit;
   counter_t m_delay_next_cell;
 
-  irs::timer_t m_timer_delay_control, m_timer_delay_operating_duty;
+  irs::timer_t m_timer_delay_control;
+  irs::timer_t m_timer_delay_operating_duty;
   irs::timer_t m_timer_delay_control_error_bit;
   irs::timer_t m_timer_delay_next_cell;
   // Счетчик времени измерений

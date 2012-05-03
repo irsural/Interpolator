@@ -585,25 +585,36 @@ void TDataHandlingF::tick()
     #ifdef debug_irsdigint
     m_on_out_data = false;
     #endif //debug_irsdigint
-    if(m_mxnet_data.connected())
-    {
+    if(m_mxnet_data.connected()) {
       WorkTimeDeviceLE->Text = (AnsiString)m_data_map.work_time;
       if (m_config_calibr.out_param_control_config.enabled) {
-        double out_param = m_data_map.y_out;
-        coord_cell_t coord_cur_cell =
-          m_manager_traffic_cell.get_coord_cell();
-        param_cur_cell_t param_cur_cell =
-          mp_active_table->get_param_cell(
-          coord_cur_cell.col, coord_cur_cell.row);
-        double reference = get_anchor_in_param(param_cur_cell)*
-          m_config_calibr.out_param_control_config.max_relative_difference;
-        bool out_param_allowable = fabs(out_param - reference) <= reference;
-        m_out_param_stability_control.set_current(out_param);
-        CurrentOutParamLabeledEdit->Text = FloatToStr(out_param);
-        if (out_param_allowable) {
-          CurrentOutParamLabeledEdit->Font->Color = clBlue;
-        } else {
-          CurrentOutParamLabeledEdit->Font->Color = clBlue;
+        if (m_on_auto_meas) {
+          double out_param = m_data_map.y_out;
+          coord_cell_t coord_cur_cell =
+            m_manager_traffic_cell.get_coord_cell();
+          param_cur_cell_t param_cur_cell =
+            mp_active_table->get_param_cell(
+            coord_cur_cell.col, coord_cur_cell.row);
+          double difference = get_anchor_in_param(param_cur_cell)*
+            m_config_calibr.out_param_control_config.max_relative_difference;
+          bool out_param_allowable =
+            fabs(out_param - get_anchor_in_param(param_cur_cell)) <= difference;
+          m_out_param_stability_control.set_current(out_param);
+          CurrentOutParamLabeledEdit->Text = FloatToStr(out_param);
+          if (out_param_allowable) {
+            CurrentOutParamLabeledEdit->Font->Color = clBlue;
+          } else {
+            CurrentOutParamLabeledEdit->Font->Color = clRed;
+          }
+          ReferenceOutParamLabeledEdit->Text = FloatToStr(
+            get_anchor_in_param(param_cur_cell));
+          AbsoluteDiffOutParamLabeledEdit->Text = FloatToStr(difference);
+
+          double remaining_time = max(0.,
+            m_config_calibr.out_param_control_config.time -
+            m_out_param_stability_control.get_stable_state_time());
+          RemainingTimeForStableState->Text =
+            IntToStr(static_cast<int>(remaining_time));
         }
       }
       if (m_config_calibr.temperature_control.enabled) {
@@ -1365,7 +1376,7 @@ void TDataHandlingF::process_volt_meas()
           m_log<<"Температура вышла за допустимые значения.";
           m_status_process_meas = spm_wait_mode_setting;
         }
-        if (m_temperature_stability_control.get_stable_state_time() <
+        if (m_out_param_stability_control.get_stable_state_time() <
           m_out_param_stable_min_time.get()) {
           m_log<<"Значение выходного параметра вышло за допустимые значения.";
           m_status_process_meas = spm_wait_mode_setting;
@@ -1374,7 +1385,7 @@ void TDataHandlingF::process_volt_meas()
       if (m_status_process_meas == spm_control_wait_mode_setting) {
         if (m_on_reg_ready) {
           if (m_timer_delay_operating_duty.stopped()) {
-          m_log<<"Рабочий режим подтвержден.";
+            m_log<<"Рабочий режим подтвержден.";
             if (m_mode_program == mode_prog_single_channel) {
               m_status_process_meas = spm_execute_meas;
             } else {
@@ -1470,8 +1481,12 @@ void TDataHandlingF::process_volt_meas()
       m_on_process_auto_meas_active_cell = false;
       config_button_stop_avto_volt_meas();
       m_status_process_meas = spm_off_process;
-      TimeMeasLE->Text = "";
-      IntervalTimeMeasLE->Text = "";
+      TimeMeasLE->Text = String();
+      IntervalTimeMeasLE->Text = String();
+      CurrentOutParamLabeledEdit->Text = String();
+      ReferenceOutParamLabeledEdit->Text = String();
+      AbsoluteDiffOutParamLabeledEdit->Text = String();
+      RemainingTimeForStableState->Text = String();
       m_exec_progress.hide();
       m_exec_progress.clear();
     } break;
