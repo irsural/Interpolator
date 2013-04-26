@@ -163,8 +163,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_enabled_fixes_cells(true),
   m_value_meas_multimetr(0.),
   m_cur_cell_table1(1, 1, "", false),
-  m_on_get_edit_text_event_sg(false),
-  m_on_key_char_down(false),
   m_default_param_cur_cell(),
   m_cur_count_reset_over_bit(0),
   y_out(0.),
@@ -1068,12 +1066,9 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
         [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
       if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
         mp_active_table->cur_cell_in_display();
+        RawDataStringGrid->Repaint();
       }
-      //mp_active_table->cell_out_display_variable_precision(
-        //m_cur_cell_table1.col, m_cur_cell_table1.row);
       m_cur_cell_table1.init = false;
-      m_on_get_edit_text_event_sg = false;
-
 
       if(a_table->Row == 0)//если находимся в нулевой строке
       {
@@ -1134,8 +1129,6 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
         }
       }
     }
-  } else {
-    m_on_key_char_down = true;
   }
 }
 //---------------------------------------------------------------------------
@@ -1455,8 +1448,8 @@ void TDataHandlingF::process_volt_meas()
         coord_cell_t coord_cur_cell =
           m_manager_traffic_cell.get_coord_cell();
         mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
-        //mp_active_table->cell_out_display_variable_precision(
-          //coord_cur_cell.col, coord_cur_cell.row);
+        mp_active_table->cell_out_display(
+          coord_cur_cell.col, coord_cur_cell.row);
       }
       m_count_point_meas++;
       if (m_mode_program == mode_prog_single_channel) {
@@ -1620,10 +1613,7 @@ void __fastcall TDataHandlingF::RawDataStringGridSelectCell(
       mp_active_table->cur_cell_in_display();
       RawDataStringGrid->Repaint();
     }
-    //mp_active_table->cell_out_display_variable_precision(
-      //m_cur_cell_table1.col, m_cur_cell_table1.row);
     m_cur_cell_table1.init = false;
-    m_on_get_edit_text_event_sg = false;
   }
   processing_select_cell(RawDataStringGrid, ACol, ARow, CanSelect);
 }
@@ -1679,21 +1669,6 @@ void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
 //---------------------------------------------------------------------------
 void TDataHandlingF::tick2()
 {
-  if (m_on_get_edit_text_event_sg){
-    m_on_get_edit_text_event_sg = false;
-    if (!m_cur_cell_table1.init) {
-      m_cur_cell_table1.init = true;
-      if (!m_on_key_char_down) {
-        m_cur_cell_table1.value_str =
-          mp_active_table->get_cell_value_str_table_data(
-          m_cur_cell_table1.col, m_cur_cell_table1.row);
-        mp_active_table->cell_out_display(
-          m_cur_cell_table1.col, m_cur_cell_table1.row);
-      } else {
-        m_on_key_char_down = false;
-      }
-    }
-  }
   m_status_copy_table = CopyTableForm->read_status_copy_data();
   m_value_meas.tick();
   if(m_add_col_or_row_successfuly == true){
@@ -2326,9 +2301,14 @@ void __fastcall TDataHandlingF::DelSubtableActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
       TObject *Sender, int ACol, int ARow, AnsiString &Value)
 {
-  m_on_get_edit_text_event_sg = true;
   m_cur_cell_table1.col = ACol;
   m_cur_cell_table1.row = ARow;
+  if (!m_cur_cell_table1.init) {
+    m_cur_cell_table1.init = true;
+    m_cur_cell_table1.value_str =
+      mp_active_table->get_cell_value_str_table_data(
+      m_cur_cell_table1.col, m_cur_cell_table1.row);
+  }
 }
 //---------------------------------------------------------------------------
 
@@ -3327,4 +3307,19 @@ void __fastcall TDataHandlingF::AboutActionExecute(TObject *Sender)
 
 
 
+
+void __fastcall TDataHandlingF::RawDataStringGridExit(TObject *Sender)
+{
+  if(m_cur_cell_table1.init){
+    irs::string latest_entry_previous_cell_str =
+      RawDataStringGrid->Cells
+      [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
+    if (m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
+      mp_active_table->cur_cell_in_display();
+      RawDataStringGrid->Repaint();
+    }
+    m_cur_cell_table1.init = false;
+  }
+}
+//---------------------------------------------------------------------------
 

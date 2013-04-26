@@ -401,6 +401,7 @@ __published:	// IDE-managed Components
   void __fastcall VerificationDataActionExecute(TObject *Sender);
   void __fastcall ModifiTableDataActionExecute(TObject *Sender);
   void __fastcall AboutActionExecute(TObject *Sender);
+  void __fastcall RawDataStringGridExit(TObject *Sender);
 
 private:	// User declarations
   //טלÿ ןנמדנאללû
@@ -784,8 +785,6 @@ private:	// User declarations
       col(a_col), row(a_row),value_str(a_value_str), init(a_init)
     {}
   } m_cur_cell_table1;
-  bool m_on_get_edit_text_event_sg;
-  bool m_on_key_char_down;
   param_cur_cell_t m_default_param_cur_cell;
   irs_u32 m_cur_count_reset_over_bit;
   double y_out;

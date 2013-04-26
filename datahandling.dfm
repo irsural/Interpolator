@@ -1,6 +1,6 @@
 object DataHandlingF: TDataHandlingF
-  Left = 437
-  Top = 141
+  Left = 367
+  Top = 181
   Width = 815
   Height = 531
   Caption = 'DataHandlingF'
@@ -64,6 +64,7 @@ object DataHandlingF: TDataHandlingF
       ParentFont = False
       TabOrder = 1
       OnDrawCell = RawDataStringGridDrawCell
+      OnExit = RawDataStringGridExit
       OnGetEditText = RawDataStringGridGetEditText
       OnKeyDown = RawDataStringGridKeyDown
       OnSelectCell = RawDataStringGridSelectCell
