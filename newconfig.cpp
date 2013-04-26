@@ -1065,3 +1065,4 @@ void __fastcall TNewConfigF::TemperatureControlCheckBoxClick(
 
 
 
+

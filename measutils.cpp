@@ -92,7 +92,7 @@ value_meas_t::value_meas_t():
   m_num(0),
   m_denom(1),
   m_test_to(0),
-  multimeter(NULL),
+  m_multimeter(NULL),
   m_hardflow(NULL),
   mp_value(NULL)
 {
@@ -100,7 +100,7 @@ value_meas_t::value_meas_t():
 }
 value_meas_t::~value_meas_t()
 {
-  multimeter.reset(NULL);
+  m_multimeter.reset(NULL);
   deinit_to_cnt();
 }
 void value_meas_t::set_time_wait_meas(int a_time)
@@ -127,31 +127,31 @@ void value_meas_t::process_meas()
         #ifdef debug_avto_volt_meas
         #else
         if(m_type_meas == tm_volt_dc){
-          multimeter->set_dc();
-          multimeter->get_voltage(mp_value);
+          m_multimeter->set_dc();
+          m_multimeter->get_voltage(mp_value);
         }else if(m_type_meas == tm_volt_ac){
-          multimeter->set_ac();
-          multimeter->get_voltage(mp_value);
+          m_multimeter->set_ac();
+          m_multimeter->get_voltage(mp_value);
         }else if(m_type_meas == tm_current_dc){
-          multimeter->set_dc();
-          multimeter->get_current(mp_value);
+          m_multimeter->set_dc();
+          m_multimeter->get_current(mp_value);
         }else if(m_type_meas == tm_current_ac){
-          multimeter->set_ac();
-          multimeter->get_current(mp_value);
+          m_multimeter->set_ac();
+          m_multimeter->get_current(mp_value);
         }else if(m_type_meas == tm_resistance_2x){
-          multimeter->get_resistance2x(mp_value);
+          m_multimeter->get_resistance2x(mp_value);
         }else if(m_type_meas == tm_resistance_4x){
-          multimeter->get_resistance4x(mp_value);
+          m_multimeter->get_resistance4x(mp_value);
         }else if(m_type_meas == tm_frequency){
-          multimeter->get_frequency(mp_value);
+          m_multimeter->get_frequency(mp_value);
         }else if(m_type_meas == tm_phase){
-          multimeter->get_phase(mp_value);
+          m_multimeter->get_phase(mp_value);
         }else if(m_type_meas == tm_phase_average){
-          multimeter->get_phase_average(mp_value);
+          m_multimeter->get_phase_average(mp_value);
         }else if(m_type_meas == tm_time_interval){
-          multimeter->get_time_interval(mp_value);
+          m_multimeter->get_time_interval(mp_value);
         }else if(m_type_meas == tm_time_interval_average){
-         multimeter->get_time_interval_average(mp_value);
+         m_multimeter->get_time_interval_average(mp_value);
         }else{
           // сообщение об ошибке
         }
@@ -167,7 +167,7 @@ void value_meas_t::process_meas()
         i = 0;
       voltage = i++;
       #else
-      m_meas_status = multimeter->status();
+      m_meas_status = m_multimeter->status();
       #endif
       if (m_meas_status == meas_status_success) {
         m_status_process = OFF_PROCESS;
@@ -181,7 +181,7 @@ void value_meas_t::process_meas()
 void value_meas_t::tick()
 {
   if(m_on_connect_multimetr) {
-    multimeter->tick();
+    m_multimeter->tick();
   }
   process_meas();
 }

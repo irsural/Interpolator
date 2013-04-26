@@ -50,8 +50,8 @@ private:
   counter_t m_test_to;
   //дл€ работы с мультиметром
   //экземпл€р класса дл€ мультиметра
-  auto_ptr<mxmultimeter_t> multimeter;
-  auto_ptr<irs::hardflow_t> m_hardflow;
+  irs::handle_t<mxmultimeter_t> m_multimeter;
+  irs::handle_t<irs::hardflow_t> m_hardflow;
   //адресс мультиметра
   static const mul_addr = 22;
   //meas_status_t cur_status;
@@ -83,24 +83,24 @@ inline int value_meas_t::set_connect_multimetr(
   {
     case tmul_agilent_3458a:{
       m_hardflow.reset(NULL);
-      multimeter.reset(new mx_agilent_3458a_t(MXIFA_MULTIMETER, mul_addr));
+      m_multimeter.reset(new mx_agilent_3458a_t(MXIFA_MULTIMETER, mul_addr));
       m_on_connect_multimetr = true;
     } break;
     case tmul_v7_78_1:{
       m_hardflow.reset(NULL);
-      multimeter.reset(new irs::v7_78_1_t(MXIFA_MULTIMETER, 21));
-      multimeter->set_aperture(100);
+      m_multimeter.reset(new irs::v7_78_1_t(MXIFA_MULTIMETER, mul_addr));
+      m_multimeter->set_aperture(100);
       m_on_connect_multimetr = true;
     } break;
     case tmul_ch3_85_3r: {
       m_hardflow.reset(new irs::com_flow_t(
         "com1", CBR_9600, FALSE, NOPARITY, 8, ONESTOPBIT, DTR_CONTROL_DISABLE));
-      multimeter.reset(new irs::akip_ch3_85_3r_t(m_hardflow.get()));
+      m_multimeter.reset(new irs::akip_ch3_85_3r_t(m_hardflow.get()));
       m_on_connect_multimetr = true;
     } break;
     case tmul_dummy: {
       m_hardflow.reset(IRS_NULL);
-      multimeter.reset(new irs::dummy_multimeter_t());
+      m_multimeter.reset(new irs::dummy_multimeter_t());
       m_on_connect_multimetr = true;
     } break;
     default: {
@@ -111,9 +111,15 @@ inline int value_meas_t::set_connect_multimetr(
 }
 inline void value_meas_t::disconnect_multimetr()
 {
-  multimeter.reset(NULL);
+  if (!m_multimeter.is_empty()) {
+    m_multimeter->abort();
+  }
+  m_multimeter.reset(NULL);
   m_hardflow.reset(NULL);
+  m_status_process = OFF_PROCESS;
   m_on_connect_multimetr = false;
+  m_meas_status = meas_status_success;
+  m_on_meas = false;
 }
 inline void value_meas_t::execute_meas(
   const type_meas_t a_type_meas, double* ap_value)
@@ -124,7 +130,8 @@ inline void value_meas_t::execute_meas(
 }
 inline void value_meas_t::abort_meas()
 {
-  multimeter->abort();
+  m_multimeter->abort();
+  m_status_process = OFF_PROCESS;
   m_meas_status = meas_status_success;
   m_on_meas = false;
 }
@@ -132,7 +139,7 @@ inline void value_meas_t::set_range(
   const type_meas_t a_type_meas, const double a_range)
 {
   if (m_on_connect_multimetr)
-    multimeter->set_range(a_type_meas, a_range);
+    m_multimeter->set_range(a_type_meas, a_range);
 }
 inline meas_status_t value_meas_t::get_status_meas()
   {return m_meas_status;}
