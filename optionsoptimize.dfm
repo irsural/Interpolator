@@ -1,6 +1,6 @@
 object OptionsF: TOptionsF
-  Left = 251
-  Top = 277
+  Left = 175
+  Top = 154
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = #1054#1087#1090#1080#1084#1080#1079#1072#1094#1080#1103' '#1076#1072#1085#1085#1099#1093

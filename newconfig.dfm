@@ -1,6 +1,6 @@
 object NewConfigF: TNewConfigF
-  Left = 372
-  Top = 170
+  Left = 299
+  Top = 174
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
   ClientHeight = 523
@@ -97,8 +97,8 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 337
-      ActivePage = MeasAndCalibrationSettingsTabSheet
-      TabIndex = 2
+      ActivePage = PrimaryNetworkVariablesTabSheet
+      TabIndex = 0
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077

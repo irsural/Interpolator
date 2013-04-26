@@ -29,7 +29,7 @@
       ..\mxsrclib\arch\cbuilder\hardflow.obj 
       ..\mxsrclib\arch\cbuilder\counter.obj 
       ..\mxsrclib\arch\cbuilder\cbsysutils.obj 
-      ..\mxsrclib\arch\cbuilder\cbcomp.obj"/>
+      ..\mxsrclib\arch\cbuilder\cbcomp.obj ..\mxsrclib\irsstring.obj"/>
     <RESFILES value="Digitalinterpolator.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
@@ -143,6 +143,7 @@
       <FILE FILENAME="..\mxsrclib\arch\cbuilder\counter.cpp" FORMNAME="" UNITNAME="counter.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\mxsrclib\arch\cbuilder\cbsysutils.cpp" FORMNAME="" UNITNAME="cbsysutils.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\mxsrclib\arch\cbuilder\cbcomp.cpp" FORMNAME="" UNITNAME="cbcomp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsstring.cpp" FORMNAME="" UNITNAME="irsstring" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -154,7 +155,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=0
 Release=0
-Build=19
+Build=20
 Debug=1
 PreRelease=1
 Special=1
@@ -166,7 +167,7 @@ CodePage=1251
 [Version Info Keys]
 CompanyName=ИРС
 FileDescription=
-FileVersion=1.0.0.19
+FileVersion=1.0.0.20
 InternalName=
 LegalCopyright=
 LegalTrademarks=

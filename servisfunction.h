@@ -121,6 +121,11 @@ public:
     const int a_row_displ,
     const cell_t a_cell,
     const irs::string& a_type_variable) = 0;
+  virtual std::string get_display_cell_variable_precision(
+    const int a_col_displ,
+    const int a_row_displ,
+    const cell_t a_cell,
+    const irs::string& a_type_variable) = 0;
   virtual void set_edit_mode_table() = 0;
   virtual void reset_edit_mode_table() = 0;
   virtual bool get_edit_mode_table() = 0 ;
@@ -146,6 +151,11 @@ class table_string_grid_t:public display_table_t
     const int a_col_displ, const int a_row_displ, const cell_t a_cell);
   void out_display_cur_cell(const cell_t a_cell);
   void out_display_cell_variable_precision(
+    const int a_col_displ,
+    const int a_row_displ,
+    const cell_t a_cell,
+    const irs::string& a_type_variable);
+  std::string get_display_cell_variable_precision(
     const int a_col_displ,
     const int a_row_displ,
     const cell_t a_cell,
@@ -204,6 +214,9 @@ public:
     const int a_col_displ, const int a_row_displ);
   inline void cur_cell_out_display();
   void cell_out_display_variable_precision(
+    const int a_col_displ,
+    const int a_row_displ);
+  std::string get_cell_display_variable_precision(
     const int a_col_displ,
     const int a_row_displ);
   inline void cur_cell_in_display();

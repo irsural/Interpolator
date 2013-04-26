@@ -1060,17 +1060,17 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
   TStringGrid* const a_table,
   const WORD a_key,
   const TShiftState Shift)
-{
-  if(a_key == VK_RETURN){
-    if(m_cur_cell_table1.init){
+{ 
+  if (a_key == VK_RETURN) {
+    if (m_cur_cell_table1.init){
       irs::string latest_entry_previous_cell_str =
         RawDataStringGrid->Cells
         [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
       if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
         mp_active_table->cur_cell_in_display();
       }
-      mp_active_table->cell_out_display_variable_precision(
-        m_cur_cell_table1.col, m_cur_cell_table1.row);
+      //mp_active_table->cell_out_display_variable_precision(
+        //m_cur_cell_table1.col, m_cur_cell_table1.row);
       m_cur_cell_table1.init = false;
       m_on_get_edit_text_event_sg = false;
 
@@ -1455,8 +1455,8 @@ void TDataHandlingF::process_volt_meas()
         coord_cell_t coord_cur_cell =
           m_manager_traffic_cell.get_coord_cell();
         mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
-        mp_active_table->cell_out_display_variable_precision(
-          coord_cur_cell.col, coord_cur_cell.row);
+        //mp_active_table->cell_out_display_variable_precision(
+          //coord_cur_cell.col, coord_cur_cell.row);
       }
       m_count_point_meas++;
       if (m_mode_program == mode_prog_single_channel) {
@@ -1618,9 +1618,10 @@ void __fastcall TDataHandlingF::RawDataStringGridSelectCell(
       [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
     if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
       mp_active_table->cur_cell_in_display();
+      RawDataStringGrid->Repaint();
     }
-    mp_active_table->cell_out_display_variable_precision(
-      m_cur_cell_table1.col, m_cur_cell_table1.row);
+    //mp_active_table->cell_out_display_variable_precision(
+      //m_cur_cell_table1.col, m_cur_cell_table1.row);
     m_cur_cell_table1.init = false;
     m_on_get_edit_text_event_sg = false;
   }
@@ -1678,9 +1679,9 @@ void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
 //---------------------------------------------------------------------------
 void TDataHandlingF::tick2()
 {
-  if(m_on_get_edit_text_event_sg){
+  if (m_on_get_edit_text_event_sg){
     m_on_get_edit_text_event_sg = false;
-    if(!m_cur_cell_table1.init){
+    if (!m_cur_cell_table1.init) {
       m_cur_cell_table1.init = true;
       if (!m_on_key_char_down) {
         m_cur_cell_table1.value_str =
@@ -1933,13 +1934,14 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
 {
   TStringGrid* table = a_table;
   coord3d_t coord_cell =
-    mp_active_table->get_coord_cell_table(a_col ,a_row);
-  //int num_table = coord_cell.z;
+    mp_active_table->get_coord_cell_table(a_col, a_row);
   int row_table = coord_cell.y;
   int col_table = coord_cell.x;
   bool select_cell_in_x = (col_table > 0) && (row_table == 0);
   bool select_cell_in_y = (col_table == 0) && (row_table > 0);
   bool select_cell_in_z = (col_table == 0) && (row_table == 0);
+  AnsiString value = mp_active_table->get_cell_display_variable_precision(
+    a_col, a_row).c_str();
   if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)){
     if((a_col == table->Col) && (a_row == table->Row)){
       //цвет фона
@@ -1952,36 +1954,11 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
       table->Canvas->FillRect(a_rect);
       //красим текст
       table->Canvas->TextOutA(
-        a_rect.Left, a_rect.Top, table->Cells[a_col][a_row]);
-    }/*else if(false){
-      int rem = num_table%2;
-      //четное или нечетное число
-      if(rem == 0){
-        //цвет фона
-        table->Canvas->Brush->Color = clWindow;
-        //цвет текста
-        table->Canvas->Font->Color = clBlack;
-        //заливаем фон
-        table->Canvas->FillRect(a_rect);
-        //красим текст
-        table->Canvas->TextOutA(
-          a_rect.Left, a_rect.Top, table->Cells[a_col][a_row]);
-      }else{
-        //цвет фона
-        table->Canvas->Brush->Color = clMoneyGreen;
-        //цвет текста
-        table->Canvas->Font->Color = clBlack;
-        //cтиль текста (жирный)
-        //RawDataStringGrid->Canvas->Font->Style << fsBold;
-        //заливаем фон
-        table->Canvas->FillRect(a_rect);
-        //красим текст
-        table->Canvas->TextOutA(
-          a_rect.Left, a_rect.Top, table->Cells[a_col][a_row]);
-      }
-    }*/
-
-  //}else if((num_table > 0) && (select_cell_in_x || select_cell_in_y)){
+        a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
+    } else {
+      table->Canvas->FillRect(a_rect);
+      table->Canvas->TextOutA(a_rect.Left, a_rect.Top, value);
+    }
   } else {
     //цвет фона
     table->Canvas->Brush->Color = clBtnFace;
@@ -1991,7 +1968,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
     table->Canvas->FillRect(a_rect);
     //красим текст
     table->Canvas->TextOutA(
-      a_rect.Left, a_rect.Top, table->Cells[a_col][a_row]);
+      a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
   }
 }
 //---------------------------------------------------------------------------
@@ -2023,7 +2000,7 @@ void __fastcall TDataHandlingF::ClearTableButtonClick(TObject *Sender)
 void __fastcall TDataHandlingF::RawDataStringGridDrawCell(TObject *Sender,
       int ACol, int ARow, TRect &Rect, TGridDrawState State)
 {
-  special_style_cells(RawDataStringGrid, ACol, ARow, Rect);
+  special_style_cells(RawDataStringGrid, ACol, ARow, Rect);     
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::AddGroupCellsButtonClick(TObject *Sender)
@@ -3344,6 +3321,9 @@ void __fastcall TDataHandlingF::AboutActionExecute(TObject *Sender)
   AboutForm->ShowModal();
 }
 //---------------------------------------------------------------------------
+
+
+
 
 
 

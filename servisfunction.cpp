@@ -52,7 +52,7 @@ void table_string_grid_t::out_display(
               type_variable = a_inf_in_param.type_variable_param3;
             }
           }
-          mp_table->Cells[x][y1] = (value_str+" "+type_variable).c_str();
+          mp_table->Cells[x][y1] = (value_str/*+" "+type_variable*/).c_str();
         }else{
           mp_table->Cells[x][y1] = "";
         }
@@ -106,6 +106,16 @@ void table_string_grid_t::out_display_cell_variable_precision(
   const cell_t a_cell,
   const irs::string& a_type_variable)
 {
+  mp_table->Cells[a_col_displ][a_row_displ] =
+    get_display_cell_variable_precision(a_col_displ,
+    a_row_displ, a_cell, a_type_variable).c_str();
+}
+std::string table_string_grid_t::get_display_cell_variable_precision(
+  const int a_col_displ,
+  const int a_row_displ,
+  const cell_t a_cell,
+  const irs::string& a_type_variable)
+{
   irs::string cell_str = "";
   if(a_cell.init == true){ 
 
@@ -114,8 +124,9 @@ void table_string_grid_t::out_display_cell_variable_precision(
   }else{
     cell_str = "";
   }
-  mp_table->Cells[a_col_displ][a_row_displ] = cell_str.c_str();
+  return cell_str;
 }
+
 cell_t table_string_grid_t::in_display_cur_cell()
 {
   int col = mp_table->Col;
@@ -183,7 +194,7 @@ void table_data_t::cell_out_display_variable_precision(
   const int a_row_displ)
 {
   int table_count = mv_table.size();
-  if(table_count > 0){
+  if(table_count > 0) {
     int row_count = mv_table[0].row_count();
     div_t val = div(a_row_displ, row_count);
     int cur_table = val.quot;
@@ -218,6 +229,48 @@ void table_data_t::cell_out_display_variable_precision(
         a_col_displ, a_row_displ, cur_cell, type_variable);
     }
   }
+}
+
+std::string table_data_t::get_cell_display_variable_precision(
+  const int a_col_displ,
+  const int a_row_displ)
+{
+  std::string value;
+  int table_count = mv_table.size();
+  if(table_count > 0) {
+    int row_count = mv_table[0].row_count();
+    div_t val = div(a_row_displ, row_count);
+    int cur_table = val.quot;
+    int cur_row = val.rem;
+    irs::string type_variable;
+    bool select_cell_x = (a_col_displ > 0) && (cur_row == 0);
+    bool select_cell_y = (a_col_displ == 0) && (cur_row > 0);
+    if (select_cell_x) {
+      type_variable = m_inf_in_param.type_variable_param1;
+    } else if (select_cell_y) {
+      type_variable = m_inf_in_param.type_variable_param2;
+    } else {
+      if (m_inf_in_param.type_anchor == PARAMETR1) {
+        type_variable = m_inf_in_param.type_variable_param1;
+      } else if (m_inf_in_param.type_anchor == PARAMETR2) {
+        type_variable = m_inf_in_param.type_variable_param2;
+      } else {
+        type_variable = m_inf_in_param.type_variable_param3;
+      }
+    }
+    if(select_cell_x || select_cell_y){
+      int row_displ_begin = cur_row;
+      cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
+      int row_displ = row_displ_begin+cur_table*row_count;
+      value = mp_display_table->get_display_cell_variable_precision(
+        a_col_displ, row_displ, cur_cell, type_variable);
+    } else {
+      cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
+      value = mp_display_table->get_display_cell_variable_precision(
+        a_col_displ, a_row_displ, cur_cell, type_variable);
+    }
+  }
+  return value;
 }
 void table_data_t::create_col_table()
 {

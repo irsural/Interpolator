@@ -1,6 +1,6 @@
 object DataHandlingF: TDataHandlingF
-  Left = 518
-  Top = 174
+  Left = 437
+  Top = 141
   Width = 815
   Height = 531
   Caption = 'DataHandlingF'
@@ -52,6 +52,7 @@ object DataHandlingF: TDataHandlingF
       Align = alClient
       Constraints.MinHeight = 150
       Constraints.MinWidth = 150
+      DefaultColWidth = 80
       FixedCols = 0
       FixedRows = 0
       Font.Charset = DEFAULT_CHARSET
@@ -66,12 +67,6 @@ object DataHandlingF: TDataHandlingF
       OnGetEditText = RawDataStringGridGetEditText
       OnKeyDown = RawDataStringGridKeyDown
       OnSelectCell = RawDataStringGridSelectCell
-      ColWidths = (
-        64
-        64
-        64
-        64
-        64)
       RowHeights = (
         24
         24
