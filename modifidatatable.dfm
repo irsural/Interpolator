@@ -14,7 +14,7 @@ object ModifiDataTableF: TModifiDataTableF
   Font.Style = []
   OldCreateOrder = False
   ParentBiDiMode = False
-  Position = poDesktopCenter
+  Position = poMainFormCenter
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel

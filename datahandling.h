@@ -787,7 +787,8 @@ private:	// User declarations
   } m_cur_cell_table1;
   param_cur_cell_t m_default_param_cur_cell;
   irs_u32 m_cur_count_reset_over_bit;
-  double y_out;
+  double m_y_out;
+  param_filter_t m_y_out_filter;
   // ѕеременна€ используетс€ только дл€ многоканального режима
   // —татус, произошло ли событые onClose
   bool m_on_close_form_stat;

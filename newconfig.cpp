@@ -163,6 +163,18 @@ bool TNewConfigF::cell_illegal_ListParameterSG_stat(
   return cell_illegal_stat;
 }
 
+void TNewConfigF::out_parameter_options_components_update()
+{
+  OutParameterFilterCheckBox->Enabled =
+    ConsiderOutParameterForMeasurementCheckBox->Checked;
+  FilterSamplingTimeEdit->Enabled =
+    ConsiderOutParameterForMeasurementCheckBox->Checked &&
+    OutParameterFilterCheckBox->Checked;
+  FilterPointCountEdit->Enabled =
+    ConsiderOutParameterForMeasurementCheckBox->Checked &&
+    OutParameterFilterCheckBox->Checked;
+}
+
 void TNewConfigF::temperature_control_components_update()
 {
   TemperatureVariableIndexByteLabeledEdit->Enabled =
@@ -203,6 +215,24 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(
     ValueIndexEEPROMEdit->Text, m_config_calibr.index_pos_eeprom)) {
     messages.push_back("Неверно указан индекс \"eeprom\".");
+  }
+
+  m_config_calibr.out_param_config_for_measurement.consider_out_param =
+    ConsiderOutParameterForMeasurementCheckBox->Checked;
+  m_config_calibr.out_param_config_for_measurement.
+  out_param_filter_enabled =
+    OutParameterFilterCheckBox->Checked;
+  if (!irs::cbuilder::str_to_number(
+    FilterSamplingTimeEdit->Text,
+    m_config_calibr.out_param_config_for_measurement.filter_sampling_time)) {
+    messages.push_back("Неверно указано время дискретизации для фильтра "
+      "выходного значения");
+  }
+  if (!irs::cbuilder::str_to_number(
+    FilterPointCountEdit->Text,
+    m_config_calibr.out_param_config_for_measurement.filter_point_count)) {
+    messages.push_back("Неверно указано время дискретизации для фильтра "
+      "выходного значения");
   }
 
   m_config_calibr.out_param_control_config.enabled =
@@ -742,6 +772,17 @@ void TNewConfigF::config_calibr_out_displ(
   ValueIndexEEPROMEdit->Text = irs::cbuilder::number_to_str(
     a_config_calibr.index_pos_eeprom);
 
+  ConsiderOutParameterForMeasurementCheckBox->Checked =
+    m_config_calibr.out_param_config_for_measurement.
+    consider_out_param;
+  OutParameterFilterCheckBox->Checked =
+    m_config_calibr.out_param_config_for_measurement.
+    out_param_filter_enabled;
+  FilterSamplingTimeEdit->Text = irs::cbuilder::number_to_str(
+    m_config_calibr.out_param_config_for_measurement.filter_sampling_time);
+  FilterPointCountEdit->Text = irs::cbuilder::number_to_str(
+    m_config_calibr.out_param_config_for_measurement.filter_point_count);
+
   OutParameterControlCheckBox->Checked =
     m_config_calibr.out_param_control_config.enabled;
   MaxRelativeDifferenceOutParameterLabeledEdit->Text =
@@ -1065,4 +1106,18 @@ void __fastcall TNewConfigF::TemperatureControlCheckBoxClick(
 
 
 
+
+void __fastcall TNewConfigF::ConsiderOutParameterForMeasurementCheckBoxClick(
+      TObject *Sender)
+{
+  out_parameter_options_components_update();  
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::OutParameterFilterCheckBoxClick(
+      TObject *Sender)
+{
+  out_parameter_options_components_update();  
+}
+//---------------------------------------------------------------------------
 

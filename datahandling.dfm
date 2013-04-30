@@ -1,6 +1,6 @@
 object DataHandlingF: TDataHandlingF
-  Left = 367
-  Top = 181
+  Left = 428
+  Top = 192
   Width = 815
   Height = 531
   Caption = 'DataHandlingF'
@@ -12,7 +12,7 @@ object DataHandlingF: TDataHandlingF
   Font.Style = []
   Menu = MainMenu1
   OldCreateOrder = False
-  Position = poDesktopCenter
+  Position = poMainFormCenter
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96

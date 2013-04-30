@@ -11,6 +11,7 @@ object MessagesForm: TMessagesForm
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  Position = poMainFormCenter
   PixelsPerInch = 96
   TextHeight = 13
   object Button1: TButton
@@ -26,7 +27,7 @@ object MessagesForm: TMessagesForm
   object MessagesMemo: TMemo
     Left = 0
     Top = 0
-    Width = 795
+    Width = 803
     Height = 337
     Align = alTop
     ScrollBars = ssVertical

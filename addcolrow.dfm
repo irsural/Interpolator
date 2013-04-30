@@ -1,7 +1,7 @@
 object AddCorRowF: TAddCorRowF
-  Left = 318
-  Top = 307
-  Width = 636
+  Left = 370
+  Top = 290
+  Width = 635
   Height = 358
   Caption = #1044#1086#1073#1072#1074#1083#1077#1085#1080#1077' '#1089#1090#1086#1083#1073#1094#1086#1074' '#1080' '#1089#1090#1088#1086#1082
   Color = clBtnFace
@@ -11,6 +11,7 @@ object AddCorRowF: TAddCorRowF
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  Position = poMainFormCenter
   OnCreate = FormCreate
   OnShow = FormShow
   PixelsPerInch = 96
@@ -18,7 +19,7 @@ object AddCorRowF: TAddCorRowF
   object GroupBox1: TGroupBox
     Left = 0
     Top = 0
-    Width = 628
+    Width = 627
     Height = 81
     Align = alTop
     Caption = #1052#1077#1089#1090#1086' '#1074#1089#1090#1072#1074#1082#1080
@@ -53,7 +54,7 @@ object AddCorRowF: TAddCorRowF
   object GroupBox2: TGroupBox
     Left = 0
     Top = 81
-    Width = 628
+    Width = 627
     Height = 216
     Align = alTop
     Caption = #1044#1086#1073#1072#1074#1083#1077#1085#1080#1103' '#1089#1090#1086#1083#1073#1094#1086#1074' '#1080' '#1089#1090#1088#1086#1082

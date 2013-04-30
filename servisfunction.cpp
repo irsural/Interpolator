@@ -1497,6 +1497,7 @@ config_calibr_t::config_calibr_t():
   bit_type2_array(),
   index_work_time(0),
   index_pos_eeprom(0),
+  out_param_config_for_measurement(),
   out_param_control_config(),
   temperature_control(),
   type_sub_diapason(tsd_parameter2),
@@ -1860,6 +1861,16 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   ap_ini_file->add("IP-адрес", &reference_channel.ip_adress);
   ap_ini_file->add("Порт", &(irs_i32)reference_channel.port);
 
+  ap_ini_file->set_section("Опции выходного параметра для измерения");
+  ap_ini_file->add("Учитывать выходной параметр при измерении",
+    &out_param_config_for_measurement.consider_out_param);
+  ap_ini_file->add("Включить фильтрацию выходного параметра",
+    &out_param_config_for_measurement.out_param_filter_enabled);
+  ap_ini_file->add("Время дискретизации",
+    &out_param_config_for_measurement.filter_sampling_time);
+  ap_ini_file->add("Количество точек",
+    &out_param_config_for_measurement.filter_point_count);
+
   ap_ini_file->set_section("Контроль выходного параметра");
   ap_ini_file->add("Включение",
     &out_param_control_config.enabled);
@@ -1908,3 +1919,57 @@ bool correct_map_t::connect(
   return fsuccess;
 }
 
+// class param_filter_t
+param_filter_t::param_filter_t(double a_sampling_time,
+  size_type a_num_of_points):
+  m_sample_timer(new irs::loop_timer_t(irs::make_cnt_s(a_sampling_time))),
+  m_sko_calc(a_num_of_points),
+  m_started(false),
+  m_last_value(0)
+{
+}
+
+void param_filter_t::set_sampling_time(double a_sampling_time)
+{
+  m_sample_timer.reset(new irs::loop_timer_t(irs::make_cnt_s(a_sampling_time)));
+}
+
+void param_filter_t::resize(size_type a_point_count)
+{
+  m_sko_calc.resize(a_point_count);
+}
+
+void param_filter_t::add(double a_value)
+{
+  m_last_value = a_value;
+}
+
+double param_filter_t::get_value() const
+{
+  return m_sko_calc.average();
+}
+
+void param_filter_t::restart()
+{
+  m_started = true;
+  m_sko_calc.clear();
+}
+
+void param_filter_t::stop()
+{
+  m_started = false;
+}
+
+bool param_filter_t::started() const
+{
+  return m_started;
+}
+
+void param_filter_t::tick()
+{
+  if (m_sample_timer->check()) {
+    if (m_started) {
+      m_sko_calc.add(m_last_value);
+    }
+  }
+}

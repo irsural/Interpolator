@@ -14,6 +14,7 @@
 #include <irserror.h>
 #include <irscberror.h>
 #include <mxini.h>
+#include <irsalg.h>
 #include "addcolrow.h"
 #include <irstable.h>
 #include "table.h"
@@ -861,6 +862,21 @@ struct sub_diapason_calibr_t
   }
 };
 
+struct out_param_config_for_measurement_t
+{
+  bool consider_out_param;
+  bool out_param_filter_enabled;
+  double filter_sampling_time;
+  irs_u32 filter_point_count;
+  out_param_config_for_measurement_t():
+    consider_out_param(true),
+    out_param_filter_enabled(true),
+    filter_sampling_time(0.1),
+    filter_point_count(100)
+  {
+  }
+};
+
 struct temperature_control_config_t
 {
   bool enabled;
@@ -908,6 +924,7 @@ struct config_calibr_t
   vector<bit_type2_pos_t> bit_type2_array;
   irs_u32 index_work_time;
   irs_u32 index_pos_eeprom;
+  out_param_config_for_measurement_t out_param_config_for_measurement;
   out_param_control_config_t out_param_control_config;
   temperature_control_config_t temperature_control;
   type_sub_diapason_t type_sub_diapason;
@@ -953,6 +970,27 @@ struct correct_map_t
     irs::mxdata_t *ap_data,
     irs_uarc a_start_index,
     config_calibr_t& a_config_calibr);
+};
+
+class param_filter_t
+{
+public:
+  typedef std::size_t size_type;
+public:
+  param_filter_t(double a_sampling_time = 0.1, size_type a_num_of_points = 100);
+  void set_sampling_time(double a_sampling_time);
+  void resize(size_type a_point_count);
+  void add(double a_value);
+  double get_value() const;
+  void restart();
+  void stop();
+  bool started() const;
+  void tick();
+private:
+  irs::handle_t<irs::loop_timer_t> m_sample_timer;
+  irs::sko_calc_t<double, double> m_sko_calc;
+  bool m_started;
+  double m_last_value;
 };
 
 // ”ниверсальна€ функци€ перевода чисел в текст

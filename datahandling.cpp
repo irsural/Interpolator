@@ -165,7 +165,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_cur_cell_table1(1, 1, "", false),
   m_default_param_cur_cell(),
   m_cur_count_reset_over_bit(0),
-  y_out(0.),
+  m_y_out(0.),
+  m_y_out_filter(),
   m_on_close_form_stat(false),
   m_on_external(false),
   m_exec_progress(CommentProgressL, PercentProgressL, ProgressBar1),
@@ -344,6 +345,13 @@ void TDataHandlingF::load_config_calibr()
         mp_active_table->clear_table_def();
       }
       Caption = m_prog_name+AnsiString(" - ")+file_namedir;
+
+      out_param_config_for_measurement_t out_param_cfg_for_measurement =
+        m_config_calibr.out_param_config_for_measurement;
+
+      m_y_out_filter.set_sampling_time(
+        out_param_cfg_for_measurement.filter_sampling_time);
+      m_y_out_filter.resize(out_param_cfg_for_measurement.filter_point_count);
 
       out_param_control_config_t out_param_ctrl_cfg =
         m_config_calibr.out_param_control_config;
@@ -567,6 +575,9 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
 
 void TDataHandlingF::tick()
 {
+  m_y_out_filter.add(m_data_map.y_out);
+  m_y_out_filter.tick();
+
   m_on_block_reconfiguration = m_on_auto_meas;
   if(m_load_conf_calibr_device_success){
     for (int i = 0; i < 10; i++) {
@@ -1442,6 +1453,14 @@ void TDataHandlingF::process_volt_meas()
       AnsiString cur_multim =
         PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
       if (str_to_type_multimeter(cur_multim.c_str()) != tmul_none_multimeter) {
+        m_y_out_filter.stop();
+        double y_out = 0;
+        if (m_config_calibr.out_param_config_for_measurement.
+          out_param_filter_enabled) {
+          y_out = m_y_out_filter.get_value();
+        } else {
+          y_out = m_y_out;
+        }
         double calc_value = calc_meas_value(
           m_value_meas_multimetr, y_out, m_param_cur_cell);
         cell_t cell(calc_value, true);
@@ -1776,19 +1795,22 @@ double TDataHandlingF::calc_meas_value(
   const double out_param_value,
   const param_cur_cell_t& a_param_cell)
 {
-  double out_value = a_value_meas*
-    m_config_calibr.out_parametr.koef_shunt/out_param_value;
-  if (m_inf_in_param.type_anchor == PARAMETR1) {
-    if (a_param_cell.col_value.init) {
-      out_value = m_param_cur_cell.col_value.value*out_value;
-    }
-  } else if(m_inf_in_param.type_anchor == PARAMETR2) {
-    if (a_param_cell.row_value.init) {
-      out_value = m_param_cur_cell.row_value.value*out_value;
-    }
-  } else if(m_inf_in_param.type_anchor == PARAMETR3) {
-    if (a_param_cell.top_value.init) {
-      out_value = m_param_cur_cell.top_value.value*out_value;
+  double out_value = a_value_meas*m_config_calibr.out_parametr.koef_shunt;
+  if (m_config_calibr.out_param_config_for_measurement.
+    consider_out_param) {
+    out_value = out_value/out_param_value;
+    if (m_inf_in_param.type_anchor == PARAMETR1) {
+      if (a_param_cell.col_value.init) {
+        out_value = m_param_cur_cell.col_value.value*out_value;
+      }
+    } else if(m_inf_in_param.type_anchor == PARAMETR2) {
+      if (a_param_cell.row_value.init) {
+        out_value = m_param_cur_cell.row_value.value*out_value;
+      }
+    } else if(m_inf_in_param.type_anchor == PARAMETR3) {
+      if (a_param_cell.top_value.init) {
+        out_value = m_param_cur_cell.top_value.value*out_value;
+      }
     }
   }
   return out_value;
@@ -2509,7 +2531,11 @@ TDataHandlingF::device_mode_status_t
 void TDataHandlingF::meas_execute()
 {
   m_value_meas.execute_meas(m_type_meas, &m_value_meas_multimetr);
-  y_out = m_data_map.y_out;
+  m_y_out = m_data_map.y_out;
+  if (m_config_calibr.out_param_config_for_measurement.consider_out_param &&
+    m_config_calibr.out_param_config_for_measurement.out_param_filter_enabled) {
+    m_y_out_filter.restart();
+  }
   m_log << "Происходит измерение.";
 }
 
