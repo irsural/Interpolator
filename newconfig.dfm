@@ -1,6 +1,6 @@
 object NewConfigF: TNewConfigF
-  Left = 265
-  Top = 131
+  Left = 314
+  Top = 148
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
   ClientHeight = 631
@@ -97,8 +97,8 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 441
-      ActivePage = MeasAndCalibrationSettingsTabSheet
-      TabIndex = 2
+      ActivePage = SecondaryNetworkVariablesTabSheet
+      TabIndex = 1
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
@@ -177,14 +177,14 @@ object NewConfigF: TNewConfigF
           TabOrder = 0
           object Label1: TLabel
             Left = 8
-            Top = 16
+            Top = 24
             Width = 78
             Height = 13
             Caption = #1058#1080#1087' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
           end
           object MeasTypeCB: TComboBox
             Left = 8
-            Top = 32
+            Top = 40
             Width = 281
             Height = 21
             Style = csDropDownList
@@ -193,7 +193,7 @@ object NewConfigF: TNewConfigF
           end
           object Delay_MeasLE: TLabeledEdit
             Left = 8
-            Top = 112
+            Top = 120
             Width = 281
             Height = 21
             EditLabel.Width = 134
@@ -206,7 +206,7 @@ object NewConfigF: TNewConfigF
           end
           object CountResetOverBitLE: TLabeledEdit
             Left = 8
-            Top = 152
+            Top = 160
             Width = 281
             Height = 21
             EditLabel.Width = 232
@@ -218,7 +218,7 @@ object NewConfigF: TNewConfigF
           end
           object MeasRangeKoefLabeledEdit: TLabeledEdit
             Left = 8
-            Top = 72
+            Top = 80
             Width = 281
             Height = 21
             EditLabel.Width = 232

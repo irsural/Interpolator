@@ -53,6 +53,7 @@ __fastcall TNewConfigF::TNewConfigF(TComponent* Owner)
     "|Все файлы (*.*)|*.*";
   SaveDialogConfig->FileName = m_default_filename;
 
+
   MeasTypeCB->Items->Clear();
   type_meas_t type_meas = tm_first;
   int index = static_cast<int>(type_meas);
@@ -194,6 +195,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(PortLE->Text,  m_config_calibr.port)) {
     messages.push_back("Неверно указан порт.");
   }
+
   m_config_calibr.type_meas = MeasTypeCB->Text.c_str();
   if (!irs::cbuilder::str_to_number(
     MeasRangeKoefLabeledEdit->Text,
@@ -1120,4 +1122,5 @@ void __fastcall TNewConfigF::OutParameterFilterCheckBoxClick(
   out_parameter_options_components_update();  
 }
 //---------------------------------------------------------------------------
+
 

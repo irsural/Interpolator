@@ -126,33 +126,35 @@ void value_meas_t::process_meas()
       if(test_to_cnt(m_test_to)){
         #ifdef debug_avto_volt_meas
         #else
-        if(m_type_meas == tm_volt_dc){
+        if (m_type_meas == tm_value) {
+          m_multimeter->get_value(mp_value);
+        } else if(m_type_meas == tm_volt_dc) {
           m_multimeter->set_dc();
           m_multimeter->get_voltage(mp_value);
-        }else if(m_type_meas == tm_volt_ac){
+        } else if(m_type_meas == tm_volt_ac) {
           m_multimeter->set_ac();
           m_multimeter->get_voltage(mp_value);
-        }else if(m_type_meas == tm_current_dc){
+        } else if(m_type_meas == tm_current_dc) {
           m_multimeter->set_dc();
           m_multimeter->get_current(mp_value);
-        }else if(m_type_meas == tm_current_ac){
+        } else if(m_type_meas == tm_current_ac) {
           m_multimeter->set_ac();
           m_multimeter->get_current(mp_value);
-        }else if(m_type_meas == tm_resistance_2x){
+        } else if(m_type_meas == tm_resistance_2x) {
           m_multimeter->get_resistance2x(mp_value);
-        }else if(m_type_meas == tm_resistance_4x){
+        } else if(m_type_meas == tm_resistance_4x) {
           m_multimeter->get_resistance4x(mp_value);
-        }else if(m_type_meas == tm_frequency){
+        } else if(m_type_meas == tm_frequency) {
           m_multimeter->get_frequency(mp_value);
-        }else if(m_type_meas == tm_phase){
+        } else if(m_type_meas == tm_phase) {
           m_multimeter->get_phase(mp_value);
-        }else if(m_type_meas == tm_phase_average){
+        } else if(m_type_meas == tm_phase_average) {
           m_multimeter->get_phase_average(mp_value);
-        }else if(m_type_meas == tm_time_interval){
+        } else if(m_type_meas == tm_time_interval) {
           m_multimeter->get_time_interval(mp_value);
-        }else if(m_type_meas == tm_time_interval_average){
+        } else if(m_type_meas == tm_time_interval_average) {
          m_multimeter->get_time_interval_average(mp_value);
-        }else{
+        } else{
           // сообщение об ошибке
         }
         #endif

@@ -1,7 +1,7 @@
 object DataHandlingF: TDataHandlingF
-  Left = 428
-  Top = 192
-  Width = 815
+  Left = 365
+  Top = 165
+  Width = 980
   Height = 531
   Caption = 'DataHandlingF'
   Color = clWindow
@@ -20,7 +20,7 @@ object DataHandlingF: TDataHandlingF
   object TableValuePanel: TPanel
     Left = 249
     Top = 30
-    Width = 558
+    Width = 723
     Height = 406
     Align = alClient
     BevelOuter = bvLowered
@@ -29,7 +29,7 @@ object DataHandlingF: TDataHandlingF
     object LogMemo: TMemo
       Left = 1
       Top = 255
-      Width = 556
+      Width = 721
       Height = 150
       Align = alBottom
       Constraints.MaxHeight = 150
@@ -47,7 +47,7 @@ object DataHandlingF: TDataHandlingF
     object RawDataStringGrid: TStringGrid
       Left = 1
       Top = 105
-      Width = 556
+      Width = 721
       Height = 150
       Align = alClient
       Constraints.MinHeight = 150
@@ -78,7 +78,7 @@ object DataHandlingF: TDataHandlingF
     object Panel1: TPanel
       Left = 1
       Top = 1
-      Width = 556
+      Width = 721
       Height = 104
       Align = alTop
       TabOrder = 2
@@ -140,7 +140,7 @@ object DataHandlingF: TDataHandlingF
       object RightPanel: TPanel
         Left = 359
         Top = 1
-        Width = 196
+        Width = 361
         Height = 102
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
@@ -148,12 +148,12 @@ object DataHandlingF: TDataHandlingF
         BevelOuter = bvLowered
         TabOrder = 1
         DesignSize = (
-          196
+          361
           102)
         object PatternOfMeasuringInstrumentCB: TComboBox
           Left = 8
           Top = 36
-          Width = 173
+          Width = 338
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akRight]
@@ -164,7 +164,7 @@ object DataHandlingF: TDataHandlingF
         object Panel5: TPanel
           Left = 8
           Top = 11
-          Width = 171
+          Width = 336
           Height = 17
           Anchors = [akLeft, akRight]
           BevelOuter = bvLowered
@@ -365,12 +365,12 @@ object DataHandlingF: TDataHandlingF
   object ButtomPanel: TPanel
     Left = 0
     Top = 436
-    Width = 807
+    Width = 972
     Height = 49
     Align = alBottom
     TabOrder = 2
     DesignSize = (
-      807
+      972
       49)
     object CommentProgressL: TLabel
       Left = 8
@@ -381,7 +381,7 @@ object DataHandlingF: TDataHandlingF
       Caption = 'CommentProgress'
     end
     object PercentProgressL: TLabel
-      Left = 656
+      Left = 821
       Top = 24
       Width = 37
       Height = 13
@@ -389,7 +389,7 @@ object DataHandlingF: TDataHandlingF
       Caption = 'Percent'
     end
     object CloseFormButton: TButton
-      Left = 720
+      Left = 885
       Top = 15
       Width = 75
       Height = 25
@@ -401,7 +401,7 @@ object DataHandlingF: TDataHandlingF
     object ProgressBar1: TProgressBar
       Left = 8
       Top = 24
-      Width = 641
+      Width = 806
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
       Min = 0
@@ -412,7 +412,7 @@ object DataHandlingF: TDataHandlingF
   object CoolBar1: TCoolBar
     Left = 0
     Top = 0
-    Width = 807
+    Width = 972
     Height = 30
     AutoSize = True
     Bands = <
@@ -440,7 +440,7 @@ object DataHandlingF: TDataHandlingF
         Break = False
         Control = ActionToolBar4
         ImageIndex = -1
-        Width = 302
+        Width = 467
       end>
     Color = clBtnFace
     Images = ImageList1
@@ -490,7 +490,7 @@ object DataHandlingF: TDataHandlingF
     object ActionToolBar4: TActionToolBar
       Left = 510
       Top = 0
-      Width = 289
+      Width = 454
       Height = 25
       ActionManager = ActionManager1
       AllowHiding = True

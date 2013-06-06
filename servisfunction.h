@@ -179,7 +179,7 @@ private:
   // ширина поля в файле для чисел двойной точности
   static const int m_field_width = 30;
   // точность вывода чисел в файл
-  static const int m_precision = 10;
+  static const int m_precision = 15;
   // максимально возможное число столбцов
   static const int m_max_col_count = 50000;
   // максимально возможное число строк

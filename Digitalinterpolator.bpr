@@ -29,7 +29,8 @@
       ..\mxsrclib\arch\cbuilder\hardflow.obj 
       ..\mxsrclib\arch\cbuilder\counter.obj 
       ..\mxsrclib\arch\cbuilder\cbsysutils.obj 
-      ..\mxsrclib\arch\cbuilder\cbcomp.obj ..\mxsrclib\irsstring.obj"/>
+      ..\mxsrclib\arch\cbuilder\cbcomp.obj ..\mxsrclib\irsstring.obj 
+      ..\mxsrclib\irshfftp.obj ..\mxsrclib\irsdcp.obj"/>
     <RESFILES value="Digitalinterpolator.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
@@ -144,6 +145,8 @@
       <FILE FILENAME="..\mxsrclib\arch\cbuilder\cbsysutils.cpp" FORMNAME="" UNITNAME="cbsysutils.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\mxsrclib\arch\cbuilder\cbcomp.cpp" FORMNAME="" UNITNAME="cbcomp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\mxsrclib\irsstring.cpp" FORMNAME="" UNITNAME="irsstring" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irshfftp.cpp" FORMNAME="" UNITNAME="irshfftp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\mxsrclib\irsdcp.cpp" FORMNAME="" UNITNAME="irsdcp.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -155,7 +158,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=1
 Release=0
-Build=22
+Build=24
 Debug=1
 PreRelease=1
 Special=1
@@ -167,7 +170,7 @@ CodePage=1251
 [Version Info Keys]
 CompanyName=ИРС
 FileDescription=
-FileVersion=1.1.0.22
+FileVersion=1.1.0.24
 InternalName=
 LegalCopyright=
 LegalTrademarks=

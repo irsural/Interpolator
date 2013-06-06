@@ -1043,7 +1043,7 @@ inline void TDataHandlingF::set_connect_calibr_device(
             mp_mxnet_data_ref_channel.get(), m_config_calibr_ref_channel);
         }
       }
-    }  
+    }
   }
 }
 inline void TDataHandlingF::set_connect_multimetr()
@@ -1051,8 +1051,12 @@ inline void TDataHandlingF::set_connect_multimetr()
   int index_multimetr = PatternOfMeasuringInstrumentCB->ItemIndex;
   AnsiString cur_multimetr =
     PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
+  multimeter_mode_type_t mode = mul_mode_type_active;
+  if (m_type_meas == tm_value) {
+    mode = mul_mode_type_passive;
+  }
   m_value_meas.set_connect_multimetr(
-    str_to_type_multimeter(cur_multimetr.c_str()));  
+    str_to_type_multimeter(cur_multimetr.c_str()), mode);
 }
 inline void TDataHandlingF::reset_connect_multimetr()
 {

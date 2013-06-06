@@ -18,6 +18,7 @@ void table_string_grid_t::out_display(
   const vector<irs::matrix_t<cell_t> >& av_data,
   const inf_in_param_t& a_inf_in_param)
 {
+  //mp_table->Repaint();
   unsigned int size_z = av_data.size();
   unsigned int size_x = 0;
   unsigned int size_y = 0;
@@ -35,7 +36,7 @@ void table_string_grid_t::out_display(
         cell_t cell = av_data[z][x][y];
         if(cell.init){
           irs::string value_str;
-          irs::number_to_string(cell.value, &value_str, m_precision); 
+          irs::number_to_string(cell.value, &value_str/*, m_precision*/); 
           bool select_cell_x = (x > 0) && (y == 0);
           bool select_cell_y = (x == 0) && (y > 0);
           irs::string type_variable;
