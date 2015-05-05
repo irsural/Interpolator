@@ -1,48 +1,48 @@
 //---------------------------------------------------------------------------
 #include "dinamictypes.h"
 
-irs::string lang_type_to_str(lang_type_t a_type)
+irs::string_t lang_type_to_str(lang_type_t a_type)
 {
-  string typename_str = "";
+  irs::string_t typename_str;
   switch(a_type){
     case type_none:{
-      typename_str = "type_none";
+      typename_str = irst("type_none");
     } break;
     case type_irs_bool:{
-      typename_str = "type_irs_bool";
+      typename_str = irst("type_irs_bool");
     } break;
     case type_irs_i8:{
-      typename_str = "type_irs_i8";
-    } break;                              
+      typename_str = irst("type_irs_i8");
+    } break;
     case type_irs_u8:{
-      typename_str = "type_irs_u8";
+      typename_str = irst("type_irs_u8");
     } break;
     case type_irs_i16:{
-      typename_str = "type_irs_i16";
+      typename_str = irst("type_irs_i16");
     } break;
     case type_irs_u16:{
-      typename_str = "type_irs_u16";
+      typename_str = irst("type_irs_u16");
     } break;
     case type_irs_i32:{
-      typename_str = "type_irs_i32";
+      typename_str = irst("type_irs_i32");
     } break;
     case type_irs_u32:{
-      typename_str = "type_irs_u32";
+      typename_str = irst("type_irs_u32");
     } break;
     case type_irs_i64:{
-      typename_str = "type_irs_i64";
+      typename_str = irst("type_irs_i64");
     } break;
     case type_irs_u64:{
-      typename_str = "type_irs_u64";
+      typename_str = irst("type_irs_u64");
     } break;
     case type_float:{
-      typename_str = "type_float";
+      typename_str = irst("type_float");
     } break;
     case type_double:{
-      typename_str = "type_double";
+      typename_str = irst("type_double");
     } break;
     case type_long_double:{
-      typename_str = "type_long_double";
+      typename_str = irst("type_long_double");
     } break;
     default :{
       irs::error_trans_base_t* error_trans = irs::error_trans();
@@ -54,34 +54,34 @@ irs::string lang_type_to_str(lang_type_t a_type)
   }
   return typename_str;
 }
-bool str_to_lang_type(const irs::string& a_str, lang_type_t& a_type_irs)
+bool str_to_lang_type(const irs::string_t& a_str, lang_type_t& a_type_irs)
 {
   bool fsuccess = true;
-  if(a_str == "type_none"){
+  if(a_str == irst("type_none")){
     a_type_irs = type_none;
-  } else if(a_str == "type_irs_bool"){
+  } else if(a_str == irst("type_irs_bool")){
     a_type_irs = type_irs_bool;
-  } else if(a_str == "type_irs_i8"){
+  } else if(a_str == irst("type_irs_i8")){
     a_type_irs = type_irs_i8;
-  } else if(a_str == "type_irs_u8"){
+  } else if(a_str == irst("type_irs_u8")){
     a_type_irs = type_irs_u8;
-  } else if(a_str == "type_irs_i16"){
+  } else if(a_str == irst("type_irs_i16")){
     a_type_irs = type_irs_i16;
-  } else if(a_str == "type_irs_u16"){
+  } else if(a_str == irst("type_irs_u16")){
     a_type_irs = type_irs_u16;
-  } else if(a_str == "type_irs_i32"){
+  } else if(a_str == irst("type_irs_i32")){
     a_type_irs = type_irs_i32;
-  } else if(a_str == "type_irs_u32"){
+  } else if(a_str == irst("type_irs_u32")){
     a_type_irs = type_irs_u32;
-  } else if(a_str == "type_irs_i64"){
+  } else if(a_str == irst("type_irs_i64")){
     a_type_irs = type_irs_i64;
-  } else if(a_str == "type_irs_u64"){
+  } else if(a_str == irst("type_irs_u64")){
     a_type_irs = type_irs_u64;
-  } else if(a_str == "type_float"){
+  } else if(a_str == irst("type_float")){
     a_type_irs = type_float;
-  } else if(a_str == "type_double"){
+  } else if(a_str == irst("type_double")){
     a_type_irs = type_double;
-  } else if(a_str == "type_long_double"){
+  } else if(a_str == irst("type_long_double")){
     a_type_irs = type_long_double;
   } else{
     fsuccess = false;
@@ -93,6 +93,7 @@ bool str_to_lang_type(const irs::string& a_str, lang_type_t& a_type_irs)
 int size_type(lang_type_t a_type) //размер переменной
 {
 	switch (a_type) {
+    case type_irs_bool:
     case type_irs_i8:
 		case type_irs_u8: {
 			return sizeof(irs_u8);
@@ -118,6 +119,9 @@ int size_type(lang_type_t a_type) //размер переменной
     case type_long_double: {
       return sizeof(long double);
 		}
+    default: {
+      IRS_LIB_ASSERT_MSG("Неучтенный тип");
+    }
 	}
   return 0;
 }
@@ -131,13 +135,48 @@ dynamic_conn_data_t::dynamic_conn_data_t():
 dynamic_conn_data_t::operator long double()
 {
   switch (m_type) {
+    case type_irs_bool: {
+      irs_u8 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
+    case type_irs_i8: {
+      irs_i8 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
     case type_irs_u8: {
       irs_u8 var = 0;
       m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
       return var;
     }
+    case type_irs_i16: {
+      irs_i16 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
+    case type_irs_u16: {
+      irs_u16 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
+    case type_irs_i32: {
+      irs_i32 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
     case type_irs_u32: {
       irs_u32 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
+    case type_irs_i64: {
+      irs_i64 var = 0;
+      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      return var;
+    }
+    case type_irs_u64: {
+      irs_u64 var = 0;
       m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
       return var;
     }
@@ -156,36 +195,66 @@ dynamic_conn_data_t::operator long double()
       m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
       return var;
     }
+    default: {
+      IRS_LIB_ASSERT_MSG("Неучтенный тип");
+    }
   }
   return 0;
 }
 long double dynamic_conn_data_t::operator=(long double a_val)
 {
   switch (m_type) {
+    case type_irs_bool: {
+      irs_u8 var = (a_val == 0) ? 0 : 1;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
+    case type_irs_i8: {
+      irs_i8 var = a_val;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
     case type_irs_u8: {
       irs_u8 var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }break;
+    } break;
+    case type_irs_i16: {
+      irs_i16 var = a_val;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
+    case type_irs_u16: {
+      irs_u16 var = a_val;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
+    case type_irs_i32: {
+      irs_i32 var = a_val;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
     case type_irs_u32: {
       irs_u32 var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }
+    } break;
+    case type_irs_i64: {
+      irs_i64 var = a_val;
+      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+    } break;
     case type_irs_u64: {
       irs_u64 var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }break;
+    } break;
     case type_float: {
       float var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }break;
+    } break;
     case type_double: {
       double var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }break;
+    } break;
     case type_long_double: {
       long double var = a_val;
       m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
-    }break;
+    } break;
+    default: {
+      IRS_LIB_ASSERT_MSG("Неучтенный тип");
+    }
   }
   return a_val;
 }

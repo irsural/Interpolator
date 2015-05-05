@@ -4,8 +4,10 @@
 
 #include <irsalg.h>
 #include <measmul.h>
+#include <irssysutils.h>
 #include "servisfunction.h"
 #include <irscalc.h>
+#include <tstlan5lib.h>
 
 //---------------------------------------------------------------------------
 //table_string_grid_t
@@ -32,14 +34,14 @@ void table_string_grid_t::out_display(
   for(unsigned int z = 0; z < size_z; z++){
     for(unsigned int y = 0; y < size_y; y++){
       for(unsigned int x = 0; x < size_x; x++){
-        AnsiString cell_str;
+        String cell_str;
         cell_t cell = av_data[z][x][y];
         if(cell.init){
-          irs::string value_str;
+          string_type value_str;
           irs::number_to_string(cell.value, &value_str/*, m_precision*/); 
           bool select_cell_x = (x > 0) && (y == 0);
           bool select_cell_y = (x == 0) && (y > 0);
-          irs::string type_variable;
+          string_type type_variable;
           if (select_cell_x) {
             type_variable = a_inf_in_param.type_variable_param1;
           } else if (select_cell_y) {
@@ -55,7 +57,7 @@ void table_string_grid_t::out_display(
           }
           mp_table->Cells[x][y1] = (value_str/*+" "+type_variable*/).c_str();
         }else{
-          mp_table->Cells[x][y1] = "";
+          mp_table->Cells[x][y1] = String();
         }
       }
       y1++;
@@ -81,49 +83,46 @@ void table_string_grid_t::set_row(const int a_row)
 void table_string_grid_t::out_display_cell(
   const int a_col_displ, const int a_row_displ, const cell_t a_cell)
 {
-  irs::string cell_str = "";
+  string_type cell_str;
   if(a_cell.init == true){
     cell_str =  a_cell.value;     
-  }else{
-    cell_str = "";
   }
-  mp_table->Cells[a_col_displ][a_row_displ] = cell_str.c_str();
+  mp_table->Cells[a_col_displ][a_row_displ] = irs::str_conv<String>(cell_str);
 }
 void table_string_grid_t::out_display_cur_cell(const cell_t a_cell)
 {
   int col = mp_table->Col;
   int row = mp_table->Row;
-  irs::string cell_str = "";
+  string_type cell_str;
   if(a_cell.init == true){
     cell_str = a_cell.value;
-  }else{
-    cell_str = "";
   }
-  mp_table->Cells[col][row] = cell_str.c_str();
+  mp_table->Cells[col][row] = irs::str_conv<String>(cell_str);
 }
 void table_string_grid_t::out_display_cell_variable_precision(
   const int a_col_displ,
   const int a_row_displ,
   const cell_t a_cell,
-  const irs::string& a_type_variable)
+  const string_type& a_type_variable)
 {
   mp_table->Cells[a_col_displ][a_row_displ] =
     get_display_cell_variable_precision(a_col_displ,
     a_row_displ, a_cell, a_type_variable).c_str();
 }
-std::string table_string_grid_t::get_display_cell_variable_precision(
+table_string_grid_t::string_type
+table_string_grid_t::get_display_cell_variable_precision(
   const int a_col_displ,
   const int a_row_displ,
   const cell_t a_cell,
-  const irs::string& a_type_variable)
+  const string_type& a_type_variable)
 {
-  irs::string cell_str = "";
+  string_type cell_str;
   if(a_cell.init == true){ 
 
     irs::number_to_string(a_cell.value, &cell_str, m_precision);
-    cell_str += irs::string(" ")+a_type_variable.c_str();
+    cell_str += string_type(irst(" ")) + a_type_variable.c_str();
   }else{
-    cell_str = "";
+    cell_str.clear();
   }
   return cell_str;
 }
@@ -132,13 +131,13 @@ cell_t table_string_grid_t::in_display_cur_cell()
 {
   int col = mp_table->Col;
   int row = mp_table->Row;
-  AnsiString cell_str = mp_table->Cells[col][row];
+  String cell_str = mp_table->Cells[col][row];
   cell_t cell;
-  if(cell_str == ""){
+  if(cell_str.IsEmpty()){
     cell.value = 0.0;
     cell.init = false;
   }else{
-    irs::string str_value = cell_str.c_str();
+    string_type str_value = irs::str_conv<string_type>(cell_str);
     double value = 0.0;
     bool success = str_value.to_number(value);
     if(success){
@@ -171,13 +170,13 @@ int table_string_grid_t::row_count() const
   {return mp_table->RowCount;}
 //класс table_data_t
 table_data_t::table_data_t(display_table_t* ap_display_table,
-  AnsiString a_name):
+  String a_name):
   mp_error_trans(irs::error_trans()),
   m_min_fractional_part_count(0.00000000001),
   m_nan(2e300),    
   mp_display_table(ap_display_table),
   m_name(a_name),
-  m_file_namedir(""),
+  m_file_namedir(),
   mv_table(),
   m_cur_col(0),
   m_cur_row(0),
@@ -200,7 +199,7 @@ void table_data_t::cell_out_display_variable_precision(
     div_t val = div(a_row_displ, row_count);
     int cur_table = val.quot;
     int cur_row = val.rem;
-    irs::string type_variable;
+    string_type type_variable;
     bool select_cell_x = (a_col_displ > 0) && (cur_row == 0);
     bool select_cell_y = (a_col_displ == 0) && (cur_row > 0);
     if (select_cell_x) {
@@ -232,18 +231,18 @@ void table_data_t::cell_out_display_variable_precision(
   }
 }
 
-std::string table_data_t::get_cell_display_variable_precision(
+table_data_t::string_type table_data_t::get_cell_display_variable_precision(
   const int a_col_displ,
   const int a_row_displ)
 {
-  std::string value;
+  string_type value;
   int table_count = mv_table.size();
   if(table_count > 0) {
     int row_count = mv_table[0].row_count();
     div_t val = div(a_row_displ, row_count);
     int cur_table = val.quot;
     int cur_row = val.rem;
-    irs::string type_variable;
+    string_type type_variable;
     bool select_cell_x = (a_col_displ > 0) && (cur_row == 0);
     bool select_cell_y = (a_col_displ == 0) && (cur_row > 0);
     if (select_cell_x) {
@@ -507,10 +506,10 @@ void table_data_t::delete_subtable()
 
 //---------------------------------------------------------------------------
 
-void table_data_t::save_table_to_file(const string a_file_name)
+void table_data_t::save_table_to_file(const string_type a_file_name)
 {
   //запись в ini файл размеров кватерниона
-  auto_ptr<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
+  irs::handle_t<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
   unsigned int param_count = 0;
   if(m_inf_in_param.number_in_param == TWO_PARAM){
     param_count = 2;
@@ -527,7 +526,8 @@ void table_data_t::save_table_to_file(const string a_file_name)
 
   //запись значений ячеек кватерниона
   for(unsigned int z = 0; z < size_z; z++) {
-    String table_name = "table"+ IntToStr(z);
+    String table_name = irs::str_conv<String>(
+      string_type(irst("table")) + irs::num_to_str(z));
     for(unsigned int y = 0; y < size_y; y++) {
       std::stringstream row_str;
       row_str.imbue(locale::classic()); 
@@ -542,7 +542,8 @@ void table_data_t::save_table_to_file(const string a_file_name)
         row_str<<setw(m_field_width)<<left<<setprecision(m_precision)<<
           value_cell;
       }
-      String row_name = "row"+ IntToStr(y);
+      String row_name = irs::str_conv<String>(
+        string_type(irst("row"))+ irs::num_to_str(y));
       inifile->WriteString(table_name, row_name,
         irs::str_conv<String>(row_str.str()));
     }
@@ -552,10 +553,10 @@ void table_data_t::save_table_to_file(const string a_file_name)
   #endif
 }
 void table_data_t::save_table_to_microsoft_excel_csv_file(
-  const string a_file_name)
+  const string_type a_file_name)
 {
-  irs::string file_name = a_file_name;
-  std::ofstream outfile(file_name.c_str(), ios::trunc);
+  std::string file_name = irs::str_conv<std::string>(a_file_name);
+  ofstream_type outfile(file_name.c_str(), std::ofstream::out|std::ofstream::trunc);
   if (!outfile){
     outfile.close();
     ShowMessage("Файл создать не удалось!");
@@ -573,7 +574,7 @@ void table_data_t::save_table_to_microsoft_excel_csv_file(
           cell_t cell = mv_table[table][col][row];
           if (cell.init == true) {
             for (int i = 0; i < delimiter_char_count; i++) {
-              outfile << ';';
+              outfile << irst(';');
             }
             delimiter_char_count = 0;    
             outfile << setprecision(m_precision) << cell.value;
@@ -588,7 +589,7 @@ void table_data_t::save_table_to_microsoft_excel_csv_file(
   }
   outfile.close();
 }
-void table_data_t::save_table_to_m_file(const irs::string a_file_name) const
+void table_data_t::save_table_to_m_file(const string_type a_file_name) const
 {
   #ifdef NOP
   string file_name = "";
@@ -604,7 +605,7 @@ void table_data_t::save_table_to_m_file(const irs::string a_file_name) const
     return;
   }
   //запись значений координат X
-  AnsiString num_str = "";
+  String num_str;
   outfile<<"x = ["<<flush;
   for(int x = 0; x < mp_table->ColCount-2; x++){
     num_str = mp_table->Cells[x+2][1];
@@ -690,7 +691,7 @@ void table_data_t::save_table_to_m_file(const irs::string a_file_name) const
   outfile.close();
   #endif //NOP
 }
-void table_data_t::load_table_from_file(const string a_file_name)
+void table_data_t::load_table_from_file(const string_type a_file_name)
 {
   std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
@@ -708,7 +709,7 @@ void table_data_t::load_table_from_file(const string a_file_name)
   }
 }
 //---------------------------------------------------------------------------
-void table_data_t::load_subtable_from_file(const string a_file_name)
+void table_data_t::load_subtable_from_file(const string_type& a_file_name)
 {
   std::vector<irs::matrix_t<cell_t> > subtable;
   number_in_param_t param_count_from_file = TWO_PARAM;
@@ -746,7 +747,7 @@ const table_data_t& table_data_t::
   return *this;
 }
 //---------------------------------------------------------------------------
-void table_data_t::clear_table() const
+void table_data_t::clear_table()
 {
   int table_count = mv_table.size();
   if(table_count > 0){
@@ -876,10 +877,10 @@ void table_data_t::search_pip(const double a_limit)
 void table_data_t::clear_coord_special_cells()
   {mv_coord_special_cells.resize(0);}
 
-void table_data_t::set_file_namedir(AnsiString a_file_namedir)
+void table_data_t::set_file_namedir(String a_file_namedir)
   {m_file_namedir = a_file_namedir;}
 
-AnsiString table_data_t::get_file_namedir()
+String table_data_t::get_file_namedir()
   {return m_file_namedir;}
 /*void table_data_t::out_display(const vector<matrix_t<cell_t> >& av_data)
 {
@@ -1017,14 +1018,15 @@ illegal_cells_t table_data_t::get_illegal_cells() const
 
 void table_data_t::load_table_from_file(
   number_in_param_t& a_number_in_param,
-  const string& a_file_name,
+  const string_type& a_file_name,
   std::vector<irs::matrix_t<cell_t> >& a_table)
 {
   //чтение из ini файла размеров кватерниона
-  auto_ptr<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
+  irs::handle_t<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
 
   unsigned int param_count = 100;
-  param_count = inifile->ReadInteger("Setting", "parameter_count", param_count);
+  param_count = inifile->ReadInteger(irst("Setting"),
+    irst("parameter_count"), param_count);
   if(param_count == 2){
     a_number_in_param = TWO_PARAM;
   }else if(param_count == 3){
@@ -1032,20 +1034,22 @@ void table_data_t::load_table_from_file(
   }
 
   unsigned int size_x = 0;
-  size_x = inifile->ReadInteger("Setting", "size_x", size_x);
+  size_x = inifile->ReadInteger(irst("Setting"), "size_x", size_x);
   unsigned int size_y = 0;
-  size_y = inifile->ReadInteger("Setting", "size_y", size_y);
+  size_y = inifile->ReadInteger(irst("Setting"), "size_y", size_y);
   unsigned int size_z = 0;
-  size_z = inifile->ReadInteger("Setting", "size_z", size_z);
+  size_z = inifile->ReadInteger(irst("Setting"), "size_z", size_z);
   a_table.clear();
   a_table.reserve(size_z);
   // чтение значений ячеек кватерниона
   for(unsigned int z = 0; z < size_z; z++){
     irs::matrix_t<cell_t> matrix(size_x, size_y);
-    String table_name = "table"+ IntToStr(z);
+    String table_name = String(irst("table")) +
+      irs::str_conv<String>(irs::num_to_str(z));
     for(unsigned int y = 0; y < size_y; y++){
-      AnsiString row_str_string;   
-      String row_name = "row"+ IntToStr(y);
+      String row_str_string;
+      String row_name = String(irst("row")) +
+        irs::str_conv<String>(irs::num_to_str(y));
       row_str_string =
         inifile->ReadString(table_name, row_name, row_str_string);
       std::stringstream row_str(irs::str_conv<std::string>(row_str_string));
@@ -1303,11 +1307,11 @@ void table_data_t::inversion_sign_conrent_table()
   }
 }
 
-void table_data_t::modifi_content_table(const irs::string& a_str)
+void table_data_t::modifi_content_table(const string_type& a_str)
 {
-  const irs::string z_name = "z";
-  const irs::string x_name = "x";
-  const irs::string y_name = "y";
+  const string_type z_name = irst("z");
+  const string_type x_name = irst("x");
+  const string_type y_name = irst("y");
   const int z_name_size = z_name.size();
   const int x_name_size = x_name.size();
   const int y_name_size = y_name.size();
@@ -1328,11 +1332,11 @@ void table_data_t::modifi_content_table(const irs::string& a_str)
           cell_t cell_param_row = mv_table[table][0][row];
           cell_t cell = mv_table[table][col][row];
           bool replace_str_success = true;
-          irs::string mathem_expression_str = a_str;
-          int z_param_pos = mathem_expression_str.find(z_name);
+          string_type mathem_expression_str = a_str;
+          size_type z_param_pos = mathem_expression_str.find(z_name);
           while(z_param_pos != irs::string::npos) {
             if (cell.init) {
-              irs::string param_z_str = cell.value;
+              string_type param_z_str = cell.value;
               mathem_expression_str.replace(
                 z_param_pos, z_name_size, param_z_str);
               z_param_pos = mathem_expression_str.find(z_name);
@@ -1341,10 +1345,10 @@ void table_data_t::modifi_content_table(const irs::string& a_str)
               break;
             }
           }
-          int x_param_pos = mathem_expression_str.find(x_name);
+          size_type x_param_pos = mathem_expression_str.find(x_name);
           while (x_param_pos != irs::string::npos) {
             if (cell_param_col.init) {
-              irs::string param_col_str = cell_param_col.value;
+              string_type param_col_str = cell_param_col.value;
               mathem_expression_str.replace(
                 x_param_pos, x_name_size, param_col_str);
             }  else {
@@ -1353,10 +1357,10 @@ void table_data_t::modifi_content_table(const irs::string& a_str)
             }
             x_param_pos = mathem_expression_str.find(x_name);
           }
-          int y_param_pos = mathem_expression_str.find(y_name);
+          size_type y_param_pos = mathem_expression_str.find(y_name);
           while (y_param_pos != irs::string::npos) {
             if (cell_param_row.init) {
-              irs::string param_row_str = cell_param_row.value;
+              string_type param_row_str = cell_param_row.value;
               mathem_expression_str.replace(
                 y_param_pos, y_name_size, param_row_str);
             } else {
@@ -1403,7 +1407,7 @@ table_data_size_t::size_type table_data_size_t::get_row_count() const
 }
 
 //-------------------------------------------------------------
-log_t::log_t(TMemo* ap_memo, string a_file_name):
+log_t::log_t(TMemo* ap_memo, string_type a_file_name):
   m_error_open_file_log(0),
   #ifdef type_log_stream
   m_buflog(ap_memo),
@@ -1411,7 +1415,7 @@ log_t::log_t(TMemo* ap_memo, string a_file_name):
   #else
   mp_memo(ap_memo),
   #endif
-  m_outfile(a_file_name.c_str(), ios::app)
+  m_outfile(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()), ios::app)
 {
   if(!m_outfile)
     m_error_open_file_log = false;
@@ -1424,9 +1428,10 @@ log_t::~log_t()
   m_outfile.close();
 }
 
-void log_t::operator<<(AnsiString a_str)
+void log_t::operator<<(String a_str)
 {
-  AnsiString time_str = "", date_time_str = "";
+  String time_str;
+  String date_time_str;
 
   TDateTime time;
   TDateTime date_time;
@@ -1436,25 +1441,24 @@ void log_t::operator<<(AnsiString a_str)
   date_time_str = DateTimeToStr(date_time);
   if(m_error_open_file_log == true) {
     m_outfile << setw(m_field_width_file_date_time) << left <<
-    date_time_str.c_str() << a_str.c_str() << endl;
+      date_time_str.c_str() << a_str.c_str() << endl;
   }
   #ifdef type_log_stream
   m_log_display << setw(m_field_width_display_time) << left <<
     time_str.c_str() << a_str.c_str()<<endl;
   #else
-  std::ostrstream ostr;
+  ostringstream_type ostr;
   ostr << setw(m_field_width_file_date_time) << left <<
-    date_time_str.c_str() << a_str.c_str() << ends;
-  mp_memo->Lines->Add(ostr.str());
-  ostr.rdbuf()->freeze(false);
+    date_time_str.c_str() << a_str.c_str();
+  mp_memo->Lines->Add(irs::str_conv<String>(ostr.str()));
   #endif
 }
 
 //извлекает из имени файла(без пути) имя файла без расширения
-AnsiString extract_short_filename(const AnsiString& a_filename)
+String extract_short_filename(const String& a_filename)
 {
-  AnsiString ext_filename = ExtractFileExt(a_filename);
-  AnsiString short_filename = "";
+  String ext_filename = ExtractFileExt(a_filename);
+  String short_filename;
   int length_filename = a_filename.Length();
   int length_ext = ext_filename.Length();
   if(length_filename > length_ext){
@@ -1465,7 +1469,7 @@ AnsiString extract_short_filename(const AnsiString& a_filename)
 //-------------------------------------------------------------------------
 int get_index_row_combo_box_str(
   const TComboBox* const ap_combo_box,
-  const AnsiString& a_text)
+  const String& a_text)
 {
   int index = 0;
   for(int i = 0; i < ap_combo_box->Items->Count; i++){
@@ -1514,10 +1518,10 @@ void config_calibr_t::clear()
 {
   *this = config_calibr_t();
 }
-bool config_calibr_t::save(const irs::string& a_filename)
+bool config_calibr_t::save(const string_type& a_filename)
 {
   bool fsuccess = true;
-  if (a_filename == "") {
+  if (a_filename.empty()) {
     fsuccess = false;
     return fsuccess;
   }
@@ -1527,29 +1531,29 @@ bool config_calibr_t::save(const irs::string& a_filename)
   add_static_param(&ini_file);
   ini_file.save();
   ini_file.clear_control();
-  irs::string in_parametr1_unit_str =
+  string_type in_parametr1_unit_str =
     lang_type_to_str(in_parametr1.unit);
-  irs::string in_parametr2_unit_str =
+  string_type in_parametr2_unit_str =
     lang_type_to_str(in_parametr2.unit);
-  irs::string in_parametr3_unit_str =
+  string_type in_parametr3_unit_str =
     lang_type_to_str(in_parametr3.unit);
-  irs::string out_parametr_unit_str =
+  string_type out_parametr_unit_str =
     lang_type_to_str(out_parametr.unit);
-  ini_file.set_section("Входной параметр 1");
-  ini_file.add("Тип параметра", &in_parametr1_unit_str);
-  ini_file.set_section("Входной параметр 2");
-  ini_file.add("Тип параметра", &in_parametr2_unit_str);
-  ini_file.set_section("Входной параметр 3");
-  ini_file.add("Тип параметра", &in_parametr3_unit_str);
-  ini_file.set_section("Выходной параметр");
-  ini_file.add("Тип параметра", &out_parametr_unit_str);
+  ini_file.set_section(irst("Входной параметр 1"));
+  ini_file.add(irst("Тип параметра"), &in_parametr1_unit_str);
+  ini_file.set_section(irst("Входной параметр 2"));
+  ini_file.add(irst("Тип параметра"), &in_parametr2_unit_str);
+  ini_file.set_section(irst("Входной параметр 3"));
+  ini_file.add(irst("Тип параметра"), &in_parametr3_unit_str);
+  ini_file.set_section(irst("Выходной параметр"));
+  ini_file.add(irst("Тип параметра"), &out_parametr_unit_str);
   ini_file.save();
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   int sub_diapason_count = v_sub_diapason_calibr.size();
-  ini_file.add("Количество поддиапазонов", &(irs_i32)sub_diapason_count);
+  ini_file.add(String(irst("Количество поддиапазонов")), &sub_diapason_count);
   int num_param_sub_diapason = 0;
-  ini_file.add("Тип поддиапазона", &(irs_i32)num_param_sub_diapason);
+  ini_file.add(irst("Тип поддиапазона"), &num_param_sub_diapason);
   if (type_sub_diapason == tsd_parameter1) {
     num_param_sub_diapason = 1;
   } else {
@@ -1557,19 +1561,19 @@ bool config_calibr_t::save(const irs::string& a_filename)
   }
   ini_file.save();
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   for (int i = 0; i < sub_diapason_count; i++) {
-    AnsiString diapason_id_key = " д" + IntToStr(i);
-    AnsiString index_start_key = "Начальный индекс" + diapason_id_key;
-    AnsiString size_key = "Размер" + diapason_id_key;
-    AnsiString value_begin_key = "Начальное значение" + diapason_id_key;
-    AnsiString value_end_key = "Конечное значение" + diapason_id_key;
+    String diapason_id_key = irst(" д") + IntToStr(i);
+    String index_start_key = irst("Начальный индекс") + diapason_id_key;
+    String size_key = irst("Размер") + diapason_id_key;
+    String value_begin_key = irst("Начальное значение") + diapason_id_key;
+    String value_end_key = irst("Конечное значение") + diapason_id_key;
     int index_start = v_sub_diapason_calibr[i].index_start;
     int size = v_sub_diapason_calibr[i].size;
     double value_begin = v_sub_diapason_calibr[i].value_begin;
     double value_end = v_sub_diapason_calibr[i].value_end;
-    ini_file.add(index_start_key, &(irs_i32)index_start);
-    ini_file.add(size_key, &(irs_i32)size);
+    ini_file.add(index_start_key, &index_start);
+    ini_file.add(size_key, &size);
     ini_file.add(value_begin_key, &value_begin);
     ini_file.add(value_end_key, &value_end);
     ini_file.save();
@@ -1577,24 +1581,24 @@ bool config_calibr_t::save(const irs::string& a_filename)
   }
   // сохранение доп.параметров
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   int param_ex_count = v_parametr_ex.size();
-  ini_file.add("Количество доп.параметров", &(irs_i32)param_ex_count);
+  ini_file.add(irst("Количество доп.параметров"), &param_ex_count);
   ini_file.save();
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   for (int i = 0; i < param_ex_count; i++) {
-    AnsiString param_ex_id_key = " доп.параметр" + IntToStr(i);
-    AnsiString name_key = "Имя параметра" + param_ex_id_key;
-    AnsiString unit_key = "Единицы измерения" + param_ex_id_key;
-    AnsiString type_variable_key = "Тип параметра" + param_ex_id_key;
-    AnsiString index_key = "Индекс байта" + param_ex_id_key;
-    AnsiString value_working_key = "Рабочее значение" + param_ex_id_key;
-    AnsiString value_default_key = "Значение по умолчанию" + param_ex_id_key;
+    String param_ex_id_key = irst(" доп.параметр") + IntToStr(i);
+    String name_key = irst("Имя параметра") + param_ex_id_key;
+    String unit_key = irst("Единицы измерения") + param_ex_id_key;
+    String type_variable_key = irst("Тип параметра") + param_ex_id_key;
+    String index_key = irst("Индекс байта") + param_ex_id_key;
+    String value_working_key = irst("Рабочее значение") + param_ex_id_key;
+    String value_default_key = irst("Значение по умолчанию") + param_ex_id_key;
 
-    AnsiString name = v_parametr_ex[i].name.c_str();
-    AnsiString unit = lang_type_to_str(v_parametr_ex[i].unit).c_str();
-    AnsiString type_variable = v_parametr_ex[i].type_variable.c_str();
+    String name = v_parametr_ex[i].name.c_str();
+    String unit = lang_type_to_str(v_parametr_ex[i].unit).c_str();
+    String type_variable = v_parametr_ex[i].type_variable.c_str();
     irs_i32 index = v_parametr_ex[i].index;
     double value_working = v_parametr_ex[i].value_working;
     double value_default = v_parametr_ex[i].value_default;
@@ -1610,27 +1614,27 @@ bool config_calibr_t::save(const irs::string& a_filename)
   }
   // сохранение доп.битов
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   int bit_type2_count = bit_type2_array.size();
-  ini_file.add("Количество доп.битов", &(irs_i32)bit_type2_count);
+  ini_file.add(irst("Количество доп.битов"), &bit_type2_count);
   ini_file.save();
   ini_file.clear_control();
-  ini_file.set_section("Опции");
+  ini_file.set_section(irst("Опции"));
   for (int i = 0; i < bit_type2_count; i++) {
-    AnsiString bit_type2_id_key = " доп.бит" + IntToStr(i);
-    AnsiString bitname_key = "Имя бита" + bit_type2_id_key;
-    AnsiString byte_index_key = "Индекс байта" + bit_type2_id_key;
-    AnsiString bit_index_key = "Индекс бита" + bit_type2_id_key;
-    AnsiString value_working_key = "Рабочее значение" + bit_type2_id_key;
-    AnsiString value_def_key = "Значение по умолчанию" + bit_type2_id_key;
-    AnsiString bitname = bit_type2_array[i].bitname.c_str();
+    String bit_type2_id_key = irst(" доп.бит") + IntToStr(i);
+    String bitname_key = irst("Имя бита") + bit_type2_id_key;
+    String byte_index_key = irst("Индекс байта") + bit_type2_id_key;
+    String bit_index_key = irst("Индекс бита") + bit_type2_id_key;
+    String value_working_key = irst("Рабочее значение") + bit_type2_id_key;
+    String value_def_key = irst("Значение по умолчанию") + bit_type2_id_key;
+    String bitname = bit_type2_array[i].bitname.c_str();
     int index_byte = bit_type2_array[i].index_byte;
     int index_bit = bit_type2_array[i].index_bit;
     bool value_working = bit_type2_array[i].value_working;
     bool value_def = bit_type2_array[i].value_def;
     ini_file.add(bitname_key, &bitname);
-    ini_file.add(byte_index_key, &(irs_i32)index_byte);
-    ini_file.add(bit_index_key, &(irs_i32)index_bit);
+    ini_file.add(byte_index_key, &index_byte);
+    ini_file.add(bit_index_key, &index_bit);
     ini_file.add(value_working_key, &value_working);
     ini_file.add(value_def_key, &value_def);
     ini_file.save();
@@ -1638,7 +1642,7 @@ bool config_calibr_t::save(const irs::string& a_filename)
   }
   return fsuccess;
 }
-bool config_calibr_t::load(const irs::string& a_filename)
+bool config_calibr_t::load(const string_type& a_filename)
 {
   bool fsuccess = true;
   irs::ini_file_t ini_file;
@@ -1647,18 +1651,18 @@ bool config_calibr_t::load(const irs::string& a_filename)
   add_static_param(&ini_file);
   ini_file.load();
   ini_file.clear_control();
-  irs::string in_parametr1_unit_str;
-  irs::string in_parametr2_unit_str;
-  irs::string in_parametr3_unit_str;
-  irs::string out_parametr_unit_str;
-  ini_file.set_section("Входной параметр 1");
-  ini_file.add("Тип параметра", &in_parametr1_unit_str);
+  string_type in_parametr1_unit_str;
+  string_type in_parametr2_unit_str;
+  string_type in_parametr3_unit_str;
+  string_type out_parametr_unit_str;
+  ini_file.set_section(irst("Входной параметр 1"));
+  ini_file.add(irst("Тип параметра"), &in_parametr1_unit_str);
   ini_file.set_section("Входной параметр 2");
-  ini_file.add("Тип параметра", &in_parametr2_unit_str);
+  ini_file.add(irst("Тип параметра"), &in_parametr2_unit_str);
   ini_file.set_section("Входной параметр 3");
-  ini_file.add("Тип параметра", &in_parametr3_unit_str);
+  ini_file.add(irst("Тип параметра"), &in_parametr3_unit_str);
   ini_file.set_section("Выходной параметр");
-  ini_file.add("Тип параметра", &out_parametr_unit_str);
+  ini_file.add(irst("Тип параметра"), &out_parametr_unit_str);
   ini_file.load();
   ini_file.clear_control();
   if (fsuccess) {
@@ -1675,11 +1679,12 @@ bool config_calibr_t::load(const irs::string& a_filename)
     str_to_lang_type(out_parametr_unit_str.c_str(), out_parametr.unit);
   }
   if (fsuccess) {
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     int sub_diapason_count = 0;
-    ini_file.add("Количество поддиапазонов", &(irs_i32)sub_diapason_count);
+    ini_file.add(irst("Количество поддиапазонов"),
+      &sub_diapason_count);
     int num_param_sub_diapason = 0;
-    ini_file.add("Тип поддиапазона", &(irs_i32)num_param_sub_diapason);
+    ini_file.add(irst("Тип поддиапазона"), &num_param_sub_diapason);
     ini_file.load();
     ini_file.clear_control();
     v_sub_diapason_calibr.clear();
@@ -1688,16 +1693,16 @@ bool config_calibr_t::load(const irs::string& a_filename)
     } else {
       type_sub_diapason = tsd_parameter2;
     }
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     for (int i = 0; i < sub_diapason_count; i++) {
       sub_diapason_calibr_t sub_diapason_calibr;
-      AnsiString diapason_id_key = " д" + IntToStr(i);
-      AnsiString index_start_key = "Начальный индекс" + diapason_id_key;
-      AnsiString size_key = "Размер" + diapason_id_key;
-      AnsiString value_begin_key = "Начальное значение" + diapason_id_key;
-      AnsiString value_end_key = "Конечное значение" + diapason_id_key;
-      ini_file.add(index_start_key, &(irs_i32)sub_diapason_calibr.index_start);
-      ini_file.add(size_key, &(irs_i32)sub_diapason_calibr.size);
+      String diapason_id_key = irst(" д") + IntToStr(i);
+      String index_start_key = irst("Начальный индекс") + diapason_id_key;
+      String size_key = irst("Размер") + diapason_id_key;
+      String value_begin_key = irst("Начальное значение") + diapason_id_key;
+      String value_end_key = irst("Конечное значение") + diapason_id_key;
+      ini_file.add(index_start_key, &sub_diapason_calibr.index_start);
+      ini_file.add(size_key, &sub_diapason_calibr.size);
       ini_file.add(value_begin_key, &sub_diapason_calibr.value_begin);
       ini_file.add(value_end_key, &sub_diapason_calibr.value_end);
       ini_file.load();
@@ -1706,24 +1711,24 @@ bool config_calibr_t::load(const irs::string& a_filename)
     }
     // загрузка доп.параметров
     ini_file.clear_control();
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     int param_ex_count = 0;
-    ini_file.add("Количество доп.параметров", &(irs_i32)param_ex_count);
+    ini_file.add(irst("Количество доп.параметров"), &param_ex_count);
     ini_file.load();
     ini_file.clear_control();
     v_parametr_ex.clear();
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     for (int i = 0; i < param_ex_count; i++) {
       parametr_ex_t parametr_ex;
-      AnsiString param_ex_id_key = " доп.параметр" + IntToStr(i);
-      AnsiString name_key = "Имя параметра" + param_ex_id_key;
-      AnsiString unit_key = "Единицы измерения" + param_ex_id_key;
-      AnsiString type_variable_key = "Тип параметра" + param_ex_id_key;
-      AnsiString index_key = "Индекс байта" + param_ex_id_key;
-      AnsiString value_working_key = "Рабочее значение" + param_ex_id_key;
-      AnsiString value_default_key = "Значение по умолчанию" + param_ex_id_key;
+      String param_ex_id_key = irst(" доп.параметр") + IntToStr(i);
+      String name_key = irst("Имя параметра") + param_ex_id_key;
+      String unit_key = irst("Единицы измерения") + param_ex_id_key;
+      String type_variable_key = irst("Тип параметра") + param_ex_id_key;
+      String index_key = irst("Индекс байта") + param_ex_id_key;
+      String value_working_key = irst("Рабочее значение") + param_ex_id_key;
+      String value_default_key = irst("Значение по умолчанию") + param_ex_id_key;
 
-      AnsiString unit_str;
+      String unit_str;
 
       ini_file.add(name_key, &parametr_ex.name);
       ini_file.add(unit_key, &unit_str);
@@ -1743,25 +1748,25 @@ bool config_calibr_t::load(const irs::string& a_filename)
   if (fsuccess) {
     // загрузка доп.битов
     ini_file.clear_control();
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     int bit_type2_count = 0;
-    ini_file.add("Количество доп.битов", &(irs_i32)bit_type2_count);
+    ini_file.add(irst("Количество доп.битов"), &bit_type2_count);
     ini_file.load();
     ini_file.clear_control();
     bit_type2_array.clear();
-    ini_file.set_section("Опции");
+    ini_file.set_section(irst("Опции"));
     for (int i = 0; i < bit_type2_count; i++) {
       bit_type2_pos_t bit_type2_pos;
-      AnsiString bit_type2_id_key = " доп.бит" + IntToStr(i);
-      AnsiString bitname_key = "Имя бита" + bit_type2_id_key;
-      AnsiString byte_index_key = "Индекс байта" + bit_type2_id_key;
-      AnsiString bit_index_key = "Индекс бита" + bit_type2_id_key;
-      AnsiString value_working_key = "Рабочее значение" + bit_type2_id_key;
-      AnsiString value_def_key = "Значение по умолчанию" + bit_type2_id_key;
-      AnsiString bitname;
+      String bit_type2_id_key = irst(" доп.бит") + IntToStr(i);
+      String bitname_key = irst("Имя бита") + bit_type2_id_key;
+      String byte_index_key = irst("Индекс байта") + bit_type2_id_key;
+      String bit_index_key = irst("Индекс бита") + bit_type2_id_key;
+      String value_working_key = irst("Рабочее значение") + bit_type2_id_key;
+      String value_def_key = irst("Значение по умолчанию") + bit_type2_id_key;
+      String bitname;
       ini_file.add(bitname_key, &bitname);
-      ini_file.add(byte_index_key, &(irs_i32)bit_type2_pos.index_byte);
-      ini_file.add(bit_index_key, &(irs_i32)bit_type2_pos.index_bit);
+      ini_file.add(byte_index_key, &bit_type2_pos.index_byte);
+      ini_file.add(bit_index_key, &bit_type2_pos.index_bit);
       ini_file.add(value_working_key, &bit_type2_pos.value_working);
       ini_file.add(value_def_key, &bit_type2_pos.value_def);
       ini_file.load();
@@ -1779,112 +1784,112 @@ bool config_calibr_t::load(const irs::string& a_filename)
 }
 void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
 {
-  ap_ini_file->set_section("Свойства сетевого подключения");
-  ap_ini_file->add("IP-адрес", &ip_adress);
-  ap_ini_file->add("Порт",&(irs_i32)port);
+  ap_ini_file->set_section(irst("Свойства сетевого подключения"));
+  ap_ini_file->add(irst("IP-адрес"), &ip_adress);
+  ap_ini_file->add(irst("Порт"),&port);
 
-  ap_ini_file->set_section("Входной параметр 1");
-  ap_ini_file->add("Имя параметра", &in_parametr1.name);
-  ap_ini_file->add("Единицы измерения", &in_parametr1.type_variable);
+  ap_ini_file->set_section(irst("Входной параметр 1"));
+  ap_ini_file->add(irst("Имя параметра"), &in_parametr1.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parametr1.type_variable);
 
   //ap_ini_file->add("Тип параметра", &in_parametr1.unit);
-  ap_ini_file->add("Привязка", &in_parametr1.anchor);
-  ap_ini_file->add("Индекс", &(irs_i32)in_parametr1.index);
-  ap_ini_file->add("Коэффициент", &in_parametr1.koef);
-  ap_ini_file->add("Значение по умолчанию", &in_parametr1.default_val);
+  ap_ini_file->add(irst("Привязка"), &in_parametr1.anchor);
+  ap_ini_file->add(irst("Индекс"), &in_parametr1.index);
+  ap_ini_file->add(irst("Коэффициент"), &in_parametr1.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr1.default_val);
 
-  ap_ini_file->set_section("Входной параметр 2");
-  ap_ini_file->add("Имя параметра", &in_parametr2.name);
-  ap_ini_file->add("Единицы измерения", &in_parametr2.type_variable);
+  ap_ini_file->set_section(irst("Входной параметр 2"));
+  ap_ini_file->add(irst("Имя параметра"), &in_parametr2.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parametr2.type_variable);
   //ap_ini_file->add("Тип параметра", &in_parametr2.unit);
-  ap_ini_file->add("Привязка", &in_parametr2.anchor);
-  ap_ini_file->add("Индекс", &(irs_i32)in_parametr2.index);
-  ap_ini_file->add("Коэффициент", &in_parametr2.koef);
-  ap_ini_file->add("Значение по умолчанию", &in_parametr2.default_val);
+  ap_ini_file->add(irst("Привязка"), &in_parametr2.anchor);
+  ap_ini_file->add(irst("Индекс"), &in_parametr2.index);
+  ap_ini_file->add(irst("Коэффициент"), &in_parametr2.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr2.default_val);
 
-  ap_ini_file->set_section("Входной параметр 3");
-  ap_ini_file->add("Имя параметра", &in_parametr3.name);
-  ap_ini_file->add("Единицы измерения", &in_parametr3.type_variable);
+  ap_ini_file->set_section(irst("Входной параметр 3"));
+  ap_ini_file->add(irst("Имя параметра"), &in_parametr3.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parametr3.type_variable);
   //ap_ini_file->add("Тип параметра", &in_parametr3.unit);
-  ap_ini_file->add("Индекс", &(irs_i32)in_parametr3.index);
-  ap_ini_file->add("Коффициент", &in_parametr3.koef);
-  ap_ini_file->add("Значение по умолчанию", &in_parametr3.default_val);
+  ap_ini_file->add(irst("Индекс"), &in_parametr3.index);
+  ap_ini_file->add(irst("Коффициент"), &in_parametr3.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr3.default_val);
 
-  ap_ini_file->set_section("Выходной параметр");
-  ap_ini_file->add("Имя параметра", &out_parametr.name);
-  ap_ini_file->add("Единицы измерения", &out_parametr.type_variable);
+  ap_ini_file->set_section(irst("Выходной параметр"));
+  ap_ini_file->add(irst("Имя параметра"), &out_parametr.name);
+  ap_ini_file->add(irst("Единицы измерения"), &out_parametr.type_variable);
   //ap_ini_file->add("Тип параметра", &out_parametr.unit);
-  ap_ini_file->add("Индекс", &(irs_i32)out_parametr.index);
-  ap_ini_file->add("Коэффициент шунта", &out_parametr.koef_shunt);
+  ap_ini_file->add(irst("Индекс"), &out_parametr.index);
+  ap_ini_file->add(irst("Коэффициент шунта"), &out_parametr.koef_shunt);
 
-  ap_ini_file->set_section("Опции");
-  ap_ini_file->add("Вид измерения", &type_meas);
-  ap_ini_file->add("Коэффициент диапазона измерения", &meas_range_koef);
-  ap_ini_file->add("Задержка измерения", &delay_meas);
-  ap_ini_file->add("Количество допустимых сбросов ошибок",
+  ap_ini_file->set_section(irst("Опции"));
+  ap_ini_file->add(irst("Вид измерения"), &type_meas);
+  ap_ini_file->add(irst("Коэффициент диапазона измерения"), &meas_range_koef);
+  ap_ini_file->add(irst("Задержка измерения"), &delay_meas);
+  ap_ini_file->add(irst("Количество допустимых сбросов ошибок"),
     &count_reset_over_bit);
   /*ap_ini_file->add("Режим расстройки",
     &mismatch_mode);*/
-  ap_ini_file->add("Индекс счетчика", &index_work_time);
+  ap_ini_file->add(irst("Индекс счетчика"), &index_work_time);
   //ap_ini_file->add("Индекс коррекции в воронке", &index_pos_offset_eeprom);
-  ap_ini_file->add("Индекс воронки", &index_pos_eeprom);
+  ap_ini_file->add(irst("Индекс воронки"), &index_pos_eeprom);
   //ap_ini_file->add("Максимальный размер коррекции", &max_size_correct);
 
-  ap_ini_file->add("Режим расстройки. Индекс байта",
+  ap_ini_file->add(irst("Режим расстройки. Индекс байта"),
     &bit_pos_mismatch_state.index_byte);
-  ap_ini_file->add("Режим расстройки. Индекс бита",
+  ap_ini_file->add(irst("Режим расстройки. Индекс бита"),
     &bit_pos_mismatch_state.index_bit);
-  ap_ini_file->add("Режим коррекции. Индекс байта",
+  ap_ini_file->add(irst("Режим коррекции. Индекс байта"),
     &bit_pos_correct_mode.index_byte);
-  ap_ini_file->add("Режим коррекции. Индекс бита",
+  ap_ini_file->add(irst("Режим коррекции. Индекс бита"),
     &bit_pos_correct_mode.index_bit);
-  ap_ini_file->add("Готовность регулятора. Индекс байта",
+  ap_ini_file->add(irst("Готовность регулятора. Индекс байта"),
     &bit_pos_operating_duty.index_byte);
-  ap_ini_file->add("Готовность регулятора. Индекс бита",
+  ap_ini_file->add(irst("Готовность регулятора. Индекс бита"),
     &bit_pos_operating_duty.index_bit);
-  ap_ini_file->add("Бит наличия ошибки. Индекс байта",
+  ap_ini_file->add(irst("Бит наличия ошибки. Индекс байта"),
     &bit_pos_error_bit.index_byte);
-  ap_ini_file->add("Бит наличия ошибки. Индекс бита",
+  ap_ini_file->add(irst("Бит наличия ошибки. Индекс бита"),
     &bit_pos_error_bit.index_bit);
-  ap_ini_file->add("Бит сброса ошибки. Индекс байта",
+  ap_ini_file->add(irst("Бит сброса ошибки. Индекс байта"),
     &bit_pos_reset_over_bit.index_byte);
-  ap_ini_file->add("Бит сброса ошибки. Индекс бита",
+  ap_ini_file->add(irst("Бит сброса ошибки. Индекс бита"),
     &bit_pos_reset_over_bit.index_bit);
-  ap_ini_file->add("Бит предустановки фазы. Индекс байта",
+  ap_ini_file->add(irst("Бит предустановки фазы. Индекс байта"),
     &bit_pos_phase_preset_bit.index_byte);
-  ap_ini_file->add("Бит предустановки фазы. Индекс бита",
+  ap_ini_file->add(irst("Бит предустановки фазы. Индекс бита"),
     &bit_pos_phase_preset_bit.index_bit);
 
-  ap_ini_file->add("Последний активный файл", &active_filename);
+  ap_ini_file->add(irst("Последний активный файл"), &active_filename);
 
-  ap_ini_file->set_section("Опции опорного канала");
-  ap_ini_file->add("Статус включения", &reference_channel.enabled);
-  ap_ini_file->add("IP-адрес", &reference_channel.ip_adress);
-  ap_ini_file->add("Порт", &(irs_i32)reference_channel.port);
+  ap_ini_file->set_section(irst("Опции опорного канала"));
+  ap_ini_file->add(irst("Статус включения"), &reference_channel.enabled);
+  ap_ini_file->add(irst("IP-адрес"), &reference_channel.ip_adress);
+  ap_ini_file->add(irst("Порт"), &reference_channel.port);
 
-  ap_ini_file->set_section("Опции выходного параметра для измерения");
-  ap_ini_file->add("Учитывать выходной параметр при измерении",
+  ap_ini_file->set_section(irst("Опции выходного параметра для измерения"));
+  ap_ini_file->add(irst("Учитывать выходной параметр при измерении"),
     &out_param_config_for_measurement.consider_out_param);
-  ap_ini_file->add("Включить фильтрацию выходного параметра",
+  ap_ini_file->add(irst("Включить фильтрацию выходного параметра"),
     &out_param_config_for_measurement.out_param_filter_enabled);
-  ap_ini_file->add("Время дискретизации",
+  ap_ini_file->add(irst("Время дискретизации"),
     &out_param_config_for_measurement.filter_sampling_time);
-  ap_ini_file->add("Количество точек",
+  ap_ini_file->add(irst("Количество точек"),
     &out_param_config_for_measurement.filter_point_count);
 
-  ap_ini_file->set_section("Контроль выходного параметра");
-  ap_ini_file->add("Включение",
+  ap_ini_file->set_section(irst("Контроль выходного параметра"));
+  ap_ini_file->add(irst("Включение"),
     &out_param_control_config.enabled);
-  ap_ini_file->add("Допустимое относительное отклонение",
+  ap_ini_file->add(irst("Допустимое относительное отклонение"),
     &out_param_control_config.max_relative_difference);
-  ap_ini_file->add("Временное окно", &out_param_control_config.time);
+  ap_ini_file->add(irst("Временное окно"), &out_param_control_config.time);
 
-  ap_ini_file->set_section("Контроль температуры");
-  ap_ini_file->add("Включение",
+  ap_ini_file->set_section(irst("Контроль температуры"));
+  ap_ini_file->add(irst("Включение"),
     &temperature_control.enabled);
-  ap_ini_file->add("Индекс", &temperature_control.index);
-  ap_ini_file->add("Уставка", &temperature_control.reference);
-  ap_ini_file->add("Допустимое отклонение",
+  ap_ini_file->add(irst("Индекс"), &temperature_control.index);
+  ap_ini_file->add(irst("Уставка"), &temperature_control.reference);
+  ap_ini_file->add(irst("Допустимое отклонение"),
     &temperature_control.difference);
 }
 
@@ -1922,7 +1927,8 @@ bool correct_map_t::connect(
 
 // class param_filter_t
 param_filter_t::param_filter_t(double a_sampling_time,
-  size_type a_num_of_points):
+  size_type a_num_of_points
+):
   m_sample_timer(new irs::loop_timer_t(irs::make_cnt_s(a_sampling_time))),
   m_sko_calc(a_num_of_points),
   m_started(false),
@@ -1974,3 +1980,528 @@ void param_filter_t::tick()
     }
   }
 }
+
+// struct file_name_service_t
+file_name_service_t::file_name_service_t():
+  m_path_prog(ExtractFilePath(Application->ExeName)),
+  m_default_ext(irst("cpc")),
+  m_multimeter_config_ext(irst("ini")),
+  m_default_filename(irst("config1.cpc")),
+  m_foldername_conf(irst("configuration")),
+  m_multimeter_foldername_conf(irst("multimeter_configurations")),
+  m_device_default_ext(irst("ini")),
+  m_device_grid_options_default_ext(
+    irs::str_conv<String>(irs::tstlan::get_grid_options_file_ext())),
+  m_device_suffix(irst("_device")),
+  m_ref_device_default_ext(irst("ini")),
+  m_ref_device_suffix(irst("_reference_device")),
+  m_device_options_section(irst("device"))
+{
+}
+
+String file_name_service_t::get_config_ext() const
+{
+  return m_default_ext;
+}
+
+String file_name_service_t::get_config_dir() const
+{
+  return m_path_prog + m_foldername_conf;
+}
+
+String file_name_service_t::get_multimeter_config_ext() const
+{
+  return m_multimeter_config_ext;
+}
+
+String file_name_service_t::get_multimeter_config_dir() const
+{
+  return m_path_prog + m_multimeter_foldername_conf;
+}
+
+
+String file_name_service_t::make_config_full_file_name(
+  String a_config_name) const
+{
+  return m_path_prog + m_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_default_ext;
+}
+
+String file_name_service_t::make_device_config_full_file_name(
+  String a_config_name) const
+{
+  return m_path_prog + m_foldername_conf +
+    irst("\\") + a_config_name + m_device_suffix  + irst(".") +
+    m_device_default_ext;
+}
+
+String file_name_service_t::make_ref_device_config_full_file_name(
+  String a_config_name) const
+{
+  return m_path_prog + m_foldername_conf +
+    irst("\\") + a_config_name + m_ref_device_suffix  + irst(".") +
+    m_ref_device_default_ext;
+}
+
+String file_name_service_t::make_device_grid_config_full_name(
+  String a_config_name) const
+{
+  return m_path_prog + m_foldername_conf +
+    irst("\\") + a_config_name + m_device_suffix  + irst(".") +
+    m_device_grid_options_default_ext;
+}
+
+String file_name_service_t::make_ref_device_grid_config_full_name(
+  String a_config_name) const
+{
+  return m_path_prog + m_foldername_conf +
+    irst("\\") + a_config_name + m_ref_device_suffix  + irst(".") +
+    m_device_grid_options_default_ext;
+}
+
+
+String file_name_service_t::get_device_options_section() const
+{
+  return m_device_options_section;
+}
+
+String file_name_service_t::get_config_name(
+  const String& a_full_file_name) const
+{
+  return extract_short_filename(ExtractFileName(a_full_file_name));
+}
+
+void file_name_service_t::create_config_dir()
+{
+  String dir = get_config_dir();
+  if (!DirectoryExists(dir)) {
+    if (!ForceDirectories(dir)) {
+      throw Exception(irst("Не удалось создать директорию ") + dir);
+    }
+  }
+}
+
+String file_name_service_t::make_multimeter_config_full_file_name(
+  String a_config_name)  const
+{
+  return m_path_prog + m_multimeter_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_multimeter_config_ext;
+}
+
+// class vars_ini_file_t
+vars_ini_file_t::vars_ini_file_t(const string_type& a_file_name):
+  m_section_prefix(),
+  m_section_name(irst("vars")),
+  m_section_full_name(m_section_prefix + m_section_name),
+  m_name_row_count(irst("_row_count")),
+  m_type_column_prefix(irst("Type_")),
+  mp_encoding(TEncoding::Default),
+  mp_ini_file(new TMemIniFile(a_file_name.c_str(), mp_encoding))
+{
+}
+
+vars_ini_file_t::size_type vars_ini_file_t::load_row_count()
+{
+  return mp_ini_file->ReadInteger(m_section_full_name.c_str(),
+    m_name_row_count.c_str(),
+    0);
+}
+
+irs::tstlan::type_t vars_ini_file_t::load_type(
+  size_type a_row_index)
+{
+  string_type name = m_type_column_prefix + string_type(a_row_index);
+  String type_bstr =
+    mp_ini_file->ReadString(
+      m_section_full_name.c_str(), name.c_str(), irst(""));
+  irs::tstlan::type_t type;
+  if (!str_to_type(irs::str_conv<string_type>(type_bstr), &type)) {
+    type = irs::tstlan::type_i32;
+  }
+  return type;
+}
+
+// class netconn_t
+netconn_t::netconn_t():
+  items(),
+  mp_data(IRS_NULL)
+{
+}
+
+void netconn_t::add_conn(vector<irs::bit_data_t>& a_vec, int a_var_index,
+  int& a_conn_index, int& a_bit_index)
+{
+  if ((size_t)a_conn_index < mp_data->size()) {
+    items[a_var_index].type = irs::tstlan::type_bit;
+    items[a_var_index].index = a_vec.size();
+    items[a_var_index].conn_index = a_conn_index;
+    items[a_var_index].bit_index = a_bit_index;
+    a_vec.push_back(irs::bit_data_t());
+    a_conn_index = a_vec.back().connect(mp_data, a_conn_index,
+      a_bit_index);
+    a_bit_index++;
+    if (a_bit_index >= bit_in_byte) {
+      a_bit_index = 0;
+      a_conn_index++;
+    }
+
+  } else {
+    items[a_var_index].type = irs::tstlan::type_unknown;
+    items[a_var_index].index = 0;
+    items[a_var_index].conn_index = 0;
+    items[a_var_index].bit_index = 0;
+  }
+}
+
+int netconn_t::connect(irs::mxdata_t* ap_data, const string_type& a_file_name)
+{
+  vars_ini_file_t vars_ini_file(a_file_name);
+
+  const size_type row_count = vars_ini_file.load_row_count();
+
+  mp_data = ap_data;
+
+  bit_vec.clear();
+  bool_vec.clear();
+  i8_vec.clear();
+  u8_vec.clear();
+  i16_vec.clear();
+  u16_vec.clear();
+  i32_vec.clear();
+  u32_vec.clear();
+  i64_vec.clear();
+  u64_vec.clear();
+  float_vec.clear();
+  double_vec.clear();
+  long_double_vec.clear();
+
+  items.clear();
+  items.resize(row_count);
+
+  int conn_index = 0;
+  int bit_index = 0;
+  for (int row = 0; row < static_cast<int>(row_count); row++) {
+    const type_type type = vars_ini_file.load_type(row);
+
+    const int var_index = row;
+    int conn_index_grid = conn_index;
+    int bit_index_grid = bit_index;
+    bool is_cur_item_bit = false;
+
+    switch (type) {
+      case irs::tstlan::type_bit: {
+        add_conn(bit_vec, var_index, conn_index, bit_index);
+        is_cur_item_bit = true;
+      } break;
+      case irs::tstlan::type_bool: {
+        add_conn(bool_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_bool);
+      } break;
+      case irs::tstlan::type_i8: {
+        add_conn(i8_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_i8);
+      } break;
+      case irs::tstlan::type_u8: {
+        add_conn(u8_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_u8);
+      } break;
+      case irs::tstlan::type_i16: {
+        add_conn(i16_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_i16);
+      } break;
+      case irs::tstlan::type_u16: {
+        add_conn(u16_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_u16);
+      } break;
+      case irs::tstlan::type_i32: {
+        add_conn(i32_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_i32);
+      } break;
+      case irs::tstlan::type_u32: {
+        add_conn(u32_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_u32);
+      } break;
+      case irs::tstlan::type_i64: {
+        add_conn(i64_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_i64);
+      } break;
+      case irs::tstlan::type_u64: {
+        add_conn(u64_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_u64);
+      } break;
+      case irs::tstlan::type_float: {
+        add_conn(float_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_float);
+      } break;
+      case irs::tstlan::type_double: {
+        add_conn(double_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_double);
+      } break;
+      case irs::tstlan::type_long_double: {
+        add_conn(long_double_vec, var_index, conn_index, bit_index,
+          irs::tstlan::type_long_double);
+      } break;
+    }
+
+    if (!is_cur_item_bit) {
+      if (bit_index_grid != 0) {
+        bit_index_grid = 0;
+        conn_index_grid++;
+      }
+    }
+  }
+  return conn_index;
+}
+
+// class device2_t
+device2_t::device2_t(irs::chart_window_t* ap_chart,
+  file_name_service_t* ap_file_name_service
+):
+  mp_chart(ap_chart),
+  mp_file_name_service(ap_file_name_service),
+  m_config_calibr(),
+  m_type(),
+  mp_tstlan4lib(),
+  mp_mxdata_assembly(),
+  mp_connection_log(),
+  m_data_map()
+{
+}
+
+device2_t::~device2_t()
+{
+  /*m_tstlan4lib.reset();
+  m_mxdata_assembly.reset();
+  m_connection_log.reset();*/
+}
+
+/*void device2_t::set_configuration(config_calibr_t a_config_calibr)
+{
+  m_config_calibr = a_config_calibr;
+} */
+
+void device2_t::enable(config_calibr_t a_config_calibr)
+{
+  if (!created()) {
+    return;
+  }
+  if (mp_mxdata_assembly->enabled()) {
+    return;
+  }
+  m_config_calibr = a_config_calibr;
+  mp_mxdata_assembly->enabled(true);
+  m_data_map.reset_connection();
+}
+
+void device2_t::disable()
+{
+  if (!created()) {
+    return;
+  }
+  if (!mp_mxdata_assembly->enabled()) {
+    return;
+  }
+  mp_mxdata_assembly->enabled(false);
+  m_data_map.reset_connection();
+}
+
+String device2_t::get_type() const
+{
+  return irs::str_conv<String>(m_type);
+}
+
+data_map_t* device2_t::get_data()
+{
+  return &m_data_map;
+}
+
+irs::mxdata_t* device2_t::get_mxdata()
+{
+  IRS_LIB_ASSERT(created());
+  return mp_mxdata_assembly->mxdata();
+}
+
+bool device2_t::created() const
+{
+  return !mp_mxdata_assembly.is_empty();
+}
+
+bool device2_t::enabled() const
+{
+  if (!created()) {
+    return false;
+  }
+  return mp_mxdata_assembly->enabled();
+}
+
+bool device2_t::connected() const
+{
+  bool connected = false;
+  if (mp_mxdata_assembly->mxdata()) {
+    connected = m_data_map.is_connected() &&
+      mp_mxdata_assembly->mxdata()->connected();
+  }
+  return m_data_map.is_connected();
+}
+
+void device2_t::load(const String& a_device_file_name)
+{
+  irs::ini_file_t ini_file;
+  ini_file.set_ini_name(a_device_file_name);
+  ini_file.set_section(mp_file_name_service->get_device_options_section());
+  device_options_t device_options;
+  device_options.type = irst("mxnet");
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+  if (FileExists(a_device_file_name)) {
+    ini_file.load();
+  } else {
+    ini_file.save();
+  }
+  reset(a_device_file_name.c_str(), device_options);
+}
+
+void device2_t::create_config_from_old(const String& a_device_file_name,
+  const String& a_type,
+  const String& a_ip_address,
+  const irs_u32 a_port)
+{
+  irs::ini_file_t ini_file;
+  ini_file.set_ini_name(a_device_file_name);
+  ini_file.set_section(mp_file_name_service->get_device_options_section());
+  device_options_t device_options;
+  device_options.type = irst("mxnet");
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+
+  if (FileExists(a_device_file_name)) {
+    ini_file.load();
+  } else {
+    ini_file.save();
+  }
+
+  device_options.type = a_type.c_str();
+  ini_file.save();
+  reset(a_device_file_name.c_str(), device_options);
+
+  //change_device_type(a_config_name, a_type);
+
+  mp_mxdata_assembly->options()->set_option(irst("IP"),
+    irs::str_conv<string_type>(a_ip_address));
+  mp_mxdata_assembly->options()->set_option(irst("Порт"),
+    irs::num_to_str(a_port));
+
+  reset(a_device_file_name.c_str(), device_options);
+}
+
+void device2_t::change_type(const String& a_device_file_name,
+  const String& a_type)
+{
+  irs::ini_file_t ini_file;
+  ini_file.set_ini_name(a_device_file_name);
+  ini_file.set_section(mp_file_name_service->get_device_options_section());
+  device_options_t device_options;
+  device_options.type = irst("mxnet");
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+  ini_file.load();
+  if (!FileExists(a_device_file_name)) {
+    ini_file.save();
+  }
+
+  device_options.type = a_type.c_str();
+  ini_file.save();
+  reset(a_device_file_name.c_str(), device_options);
+}
+
+void device2_t::show_options()
+{
+  IRS_LIB_ASSERT(created());
+  mp_mxdata_assembly->show_options();
+}
+
+void device2_t::show_tstlan()
+{
+  IRS_LIB_ASSERT(created());
+  mp_tstlan4lib->show();
+}
+
+void device2_t::show_connection_log()
+{
+  IRS_LIB_ASSERT(created());
+  mp_connection_log->Show();
+}
+
+void device2_t::reset()
+{
+  m_data_map.reset_connection();
+  mp_mxdata_assembly->enabled(false);
+  mp_tstlan4lib.reset();
+  mp_mxdata_assembly.reset();
+  mp_connection_log.reset();
+}
+
+void device2_t::reset(const string_type& a_device_file_name,
+  const device_options_t& a_device)
+{
+  m_data_map.reset_connection();
+
+  mp_tstlan4lib.reset();
+  mp_tstlan4lib = make_tstlan4lib();
+
+  if (!mp_tstlan4lib.is_empty()) {
+    mp_tstlan4lib->ini_name(a_device_file_name);
+    mp_tstlan4lib->load_conf();
+    mp_mxdata_assembly.reset();
+    mp_mxdata_assembly = irs::mxdata_assembly_types()->
+      make_assembly(a_device.type, mp_tstlan4lib.get(),
+        a_device_file_name);
+
+
+    if (!mp_mxdata_assembly.is_empty()) {
+      //ap_device->mxdata_assembly->enabled(a_device.enabled);
+      m_type = a_device.type;
+      mp_connection_log.reset(new TConnectionLogForm(NULL));
+      mp_tstlan4lib->connect(mp_mxdata_assembly->mxdata());
+    }
+  }
+}
+
+irs::handle_t<irs::tstlan4_base_t> device2_t::make_tstlan4lib()
+{
+  const counter_t update_time = irs::make_cnt_ms(100);
+  const string_type ini_name = irst("tstlan.ini");
+  typedef irs::tstlan::view_t view_type;
+  irs::handle_t<irs::tstlan4_base_t> tstlan5(new irs::tstlan::view_t(
+    irs::tstlan::view_t::ft_internal,
+    mp_chart,
+    ini_name,
+    string_type(),
+    update_time,
+    irs::tstlan::view_t::global_log_unchange));
+  return tstlan5;
+}
+
+void device2_t::tick()
+{
+  if (!created()) {
+    return;
+  }
+  if (!mp_mxdata_assembly->enabled()) {
+    return;
+  }
+  mp_mxdata_assembly->tick();
+  mp_tstlan4lib->tick();
+
+  mp_connection_log->add_errors(
+    mp_mxdata_assembly->get_last_error_string_list());
+  if (mp_mxdata_assembly->mxdata()) {
+    if (mp_mxdata_assembly->mxdata()->connected()) {
+      if (!m_data_map.is_connected()) {
+        m_data_map.connect(mp_mxdata_assembly->mxdata(),
+          m_config_calibr);
+      }
+    }
+  }
+}
+

@@ -106,10 +106,10 @@ enum type_jump_next_elem_t{
   VERTICAL_BACK,
   VERTICAL_BACK_SMOOTH
 };
-irs::string type_jump_next_elem_to_str(
+irs::string_t type_jump_next_elem_to_str(
   const type_jump_next_elem_t a_type_jump_next_elem);
 type_jump_next_elem_t str_to_type_jump_next_elem(
-  const irs::string a_type_jump_next_elem_str);
+  const irs::string_t& a_type_jump_next_elem_str);
 
 struct illegal_cells_t
 {

@@ -1,9 +1,9 @@
 object MessagesForm: TMessagesForm
   Left = 253
   Top = 418
-  Width = 811
-  Height = 400
   Caption = 'Messages'
+  ClientHeight = 361
+  ClientWidth = 795
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -27,7 +27,7 @@ object MessagesForm: TMessagesForm
   object MessagesMemo: TMemo
     Left = 0
     Top = 0
-    Width = 803
+    Width = 795
     Height = 337
     Align = alTop
     ScrollBars = ssVertical

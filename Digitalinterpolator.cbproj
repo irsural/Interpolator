@@ -1,0 +1,596 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5F9F78D2-7E76-4961-8D5D-717E0BA73C5E}</ProjectGuid>
+        <ProjectType>CppVCLApplication</ProjectType>
+        <MainSource>Digitalinterpolator.cpp</MainSource>
+        <Base>True</Base>
+        <Config Condition="'$(Config)'==''">Debug</Config>
+        <FrameworkType>VCL</FrameworkType>
+        <ProjectVersion>14.4</ProjectVersion>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <TargetedPlatforms>1</TargetedPlatforms>
+        <AppType>Application</AppType>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
+        <Base_Win64>true</Base_Win64>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+        <Cfg_1>true</Cfg_1>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+        <Cfg_1_Win64>true</Cfg_1_Win64>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+        <Cfg_2>true</Cfg_2>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+        <Cfg_2_Win64>true</Cfg_2_Win64>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base)'!=''">
+        <BCC_waus>false</BCC_waus>
+        <BCC_wiip>false</BCC_wiip>
+        <BCC_wdpr>false</BCC_wdpr>
+        <BCC_wpch>false</BCC_wpch>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <BCC_wpar>false</BCC_wpar>
+        <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;$(Defines)</Defines>
+        <Manifest_File>None</Manifest_File>
+        <Icon_MainIcon>Digitalinterpolator_Icon.ico</Icon_MainIcon>
+        <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+        <VerInfo_Build>28</VerInfo_Build>
+        <VerInfo_MinorVer>2</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
+        <IncludePath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\winapi\hid\;$(IncludePath)</IncludePath>
+        <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>1049</VerInfo_Locale>
+        <OutputExt>exe</OutputExt>
+        <BRCC_IncludePath>..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BDS)\include;$(BDS)\include\vcl;..\maxvlib;$(BRCC_IncludePath)</BRCC_IncludePath>
+        <AllPackageLibs>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</AllPackageLibs>
+        <DCC_AdditionalSwitches> -M</DCC_AdditionalSwitches>
+        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+        <TASM_Debugging>Full</TASM_Debugging>
+        <DCC_UnitSearchPath>.\;$(BDS)\lib;$(BDS)\lib\obj;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+        <TASM_AdditionalSwitches> /w2</TASM_AdditionalSwitches>
+        <TASM_IncludePath>..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BDS)\include;$(BDS)\include\vcl;..\maxvlib;$(TASM_IncludePath)</TASM_IncludePath>
+        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+        <DCC_IncludePath>.\;$(BDS)\lib;$(BDS)\lib\obj;$(DCC_IncludePath)</DCC_IncludePath>
+        <PackageImports>rtl.bpi;vcl.bpi;vclx.bpi;vcljpg.bpi;bcbsmp.bpi;dbrtl.bpi;vcldb.bpi;bdertl.bpi;ibsmp.bpi;vcldbx.bpi;teeui.bpi;teedb.bpi;tee.bpi;$(PackageImports)</PackageImports>
+        <FinalOutputDir>.</FinalOutputDir>
+        <BCC_IncludePath>..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BDS)\include;$(BCC_IncludePath)</BCC_IncludePath>
+        <BCC_GenerateWindowsApp>true</BCC_GenerateWindowsApp>
+        <ILINK_AppType>Windows</ILINK_AppType>
+        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+        <BCC_PCHCache>true</BCC_PCHCache>
+        <ILINK_LibraryPath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BDS)\lib\obj;$(BDS)\lib;..\maxvlib;$(BDS)\lib\psdk;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <VerInfo_Build>27</VerInfo_Build>
+        <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve</BCC_UserSuppliedOptions>
+        <IncludePath>$(BDSINCLUDE)\windows\vcl;$(IncludePath)</IncludePath>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.27;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <TASM_Defines>_DEBUG;$(TASM_Defines)</TASM_Defines>
+        <BRCC_Defines>_DEBUG;$(BRCC_Defines)</BRCC_Defines>
+        <BCC_Defines>NO_STRICT;$(BCC_Defines)</BCC_Defines>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <Icon_MainIcon>Digitalinterpolator_Icon.ico</Icon_MainIcon>
+        <IncludePath>$(BDSINCLUDE)\windows\vcl;$(IncludePath)</IncludePath>
+        <TASM_Defines>_DEBUG;$(TASM_Defines)</TASM_Defines>
+        <BRCC_Defines>_DEBUG;$(BRCC_Defines)</BRCC_Defines>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <DCC_Define>DEBUG;$(DCC_Define);$(DCC_Define)</DCC_Define>
+        <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+        <TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+        <IntermediateOutputDir>Debug_Build</IntermediateOutputDir>
+        <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+        <DCC_AdditionalSwitches> -M -V</DCC_AdditionalSwitches>
+        <ILINK_LibraryPath>$(BDS)\lib\debug;$(ILINK_LibraryPath);$(ILINK_LibraryPath)</ILINK_LibraryPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve -k</BCC_UserSuppliedOptions>
+        <BCC_Defines>_DEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+        <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <BCC_Defines>_DEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <TASM_Debugging>None</TASM_Debugging>
+        <IntermediateOutputDir>Release_Build</IntermediateOutputDir>
+        <BCC_OptimizationLevel>Level2</BCC_OptimizationLevel>
+        <ILINK_LibraryPath>$(BDS)\lib\release;$(ILINK_LibraryPath);$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <BCC_InlineFunctionExpansion>true</BCC_InlineFunctionExpansion>
+        <DCC_AdditionalSwitches> -M -$O+</DCC_AdditionalSwitches>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve -r</BCC_UserSuppliedOptions>
+        <BCC_Defines>NDEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <BCC_Defines>NDEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
+    </PropertyGroup>
+    <ItemGroup>
+        <CppCompile Include="About.cpp">
+            <BuildOrder>44</BuildOrder>
+            <Form>AboutForm</Form>
+            <DependentOn>About.h</DependentOn>
+            <BuildOrder>42</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="addcolrow.cpp">
+            <BuildOrder>5</BuildOrder>
+            <Form>AddCorRowF</Form>
+            <DependentOn>addcolrow.h</DependentOn>
+            <BuildOrder>47</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="connectionlog.cpp">
+            <Form>ConnectionLogForm</Form>
+            <DependentOn>connectionlog.h</DependentOn>
+            <BuildOrder>69</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="copytable.cpp">
+            <BuildOrder>8</BuildOrder>
+            <Form>CopyTableForm</Form>
+            <DependentOn>copytable.h</DependentOn>
+            <BuildOrder>44</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="datahandling.cpp">
+            <Form>DataHandlingF</Form>
+            <DependentOn>datahandling.h</DependentOn>
+            <BuildOrder>72</BuildOrder>
+        </CppCompile>
+        <None Include="datahandling.h">
+            <BuildOrder>73</BuildOrder>
+        </None>
+        <CppCompile Include="Digitalinterpolator.cpp">
+            <BuildOrder>46</BuildOrder>
+            <BuildOrder>2</BuildOrder>
+        </CppCompile>
+        <ResFiles Include="Digitalinterpolator.res">
+            <BuildOrder>73</BuildOrder>
+        </ResFiles>
+        <CppCompile Include="dinamictypes.cpp">
+            <BuildOrder>50</BuildOrder>
+            <BuildOrder>14</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="managerf.cpp">
+            <BuildOrder>38</BuildOrder>
+            <Form>ManagerDGIF</Form>
+            <DependentOn>managerf.h</DependentOn>
+            <BuildOrder>32</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="measutils.cpp">
+            <BuildOrder>41</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="modifidatatable.cpp">
+            <Form>ModifiDataTableF</Form>
+            <DependentOn>modifidatatable.h</DependentOn>
+            <BuildOrder>35</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="newconfig.cpp">
+            <BuildOrder>51</BuildOrder>
+            <Form>NewConfigF</Form>
+            <DependentOn>newconfig.h</DependentOn>
+            <BuildOrder>17</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="optionsoptimize.cpp">
+            <BuildOrder>48</BuildOrder>
+            <Form>OptionsF</Form>
+            <DependentOn>optionsoptimize.h</DependentOn>
+            <BuildOrder>20</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="parsemathematic.cpp">
+            <BuildOrder>49</BuildOrder>
+            <BuildOrder>23</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="servisfunction.cpp">
+            <DependentOn>servisfunction.h</DependentOn>
+            <BuildOrder>73</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="showmessages.cpp">
+            <BuildOrder>38</BuildOrder>
+            <Form>MessagesForm</Form>
+            <DependentOn>showmessages.h</DependentOn>
+            <BuildOrder>36</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="table.cpp">
+            <BuildOrder>47</BuildOrder>
+            <BuildOrder>39</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\cbcomp.cpp">
+            <BuildOrder>194</BuildOrder>
+            <BuildOrder>18</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\cbsysutils.cpp">
+            <BuildOrder>191</BuildOrder>
+            <BuildOrder>17</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\counter.cpp">
+            <BuildOrder>20</BuildOrder>
+            <BuildOrder>188</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\hardflow.cpp">
+            <BuildOrder>19</BuildOrder>
+            <BuildOrder>185</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\irscberror.cpp">
+            <BuildOrder>25</BuildOrder>
+            <BuildOrder>182</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\irsparam.cpp">
+            <BuildOrder>31</BuildOrder>
+            <BuildOrder>179</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\MxBase.cpp">
+            <BuildOrder>30</BuildOrder>
+            <BuildOrder>176</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\MxChart.cpp">
+            <BuildOrder>33</BuildOrder>
+            <BuildOrder>173</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\mxifa.cpp">
+            <BuildOrder>32</BuildOrder>
+            <BuildOrder>170</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\mxini.cpp">
+            <BuildOrder>27</BuildOrder>
+            <BuildOrder>167</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\tstlan4lib.cpp">
+            <BuildOrder>26</BuildOrder>
+            <BuildOrder>164</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\arch\cbuilder\tstlan5lib.cpp">
+            <DependentOn>..\mxsrclib\arch\cbuilder\tstlan5lib.h</DependentOn>
+            <BuildOrder>71</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\correct_alg.cpp">
+            <BuildOrder>50</BuildOrder>
+            <BuildOrder>40</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\csvwork.cpp">
+            <BuildOrder>63</BuildOrder>
+            <BuildOrder>53</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\dbgprn.cpp">
+            <BuildOrder>64</BuildOrder>
+            <BuildOrder>56</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\hardflowg.cpp">
+            <BuildOrder>61</BuildOrder>
+            <BuildOrder>59</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsadc.cpp">
+            <BuildOrder>62</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsalg.cpp">
+            <BuildOrder>67</BuildOrder>
+            <BuildOrder>65</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irscalc.cpp">
+            <BuildOrder>68</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irscpu.cpp">
+            <BuildOrder>71</BuildOrder>
+            <BuildOrder>65</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsdbgutil.cpp">
+            <BuildOrder>74</BuildOrder>
+            <BuildOrder>66</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsdcp.cpp">
+            <BuildOrder>21</BuildOrder>
+            <BuildOrder>203</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsdev.cpp">
+            <BuildOrder>77</BuildOrder>
+            <BuildOrder>60</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsdevices.cpp">
+            <DependentOn>..\mxsrclib\irsdevices.h</DependentOn>
+            <BuildOrder>70</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsdsp.cpp">
+            <BuildOrder>80</BuildOrder>
+            <BuildOrder>54</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irserror.cpp">
+            <BuildOrder>83</BuildOrder>
+            <BuildOrder>55</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsexcept.cpp">
+            <BuildOrder>86</BuildOrder>
+            <BuildOrder>52</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsfilter.cpp">
+            <BuildOrder>89</BuildOrder>
+            <BuildOrder>53</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsfunnel.cpp">
+            <BuildOrder>92</BuildOrder>
+            <BuildOrder>58</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irshfftp.cpp">
+            <BuildOrder>24</BuildOrder>
+            <BuildOrder>200</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsint.cpp">
+            <BuildOrder>95</BuildOrder>
+            <BuildOrder>59</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irskbd.cpp">
+            <BuildOrder>98</BuildOrder>
+            <BuildOrder>56</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irslocale.cpp">
+            <BuildOrder>57</BuildOrder>
+            <BuildOrder>101</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsmath.cpp">
+            <BuildOrder>34</BuildOrder>
+            <BuildOrder>104</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsmatrix.cpp">
+            <BuildOrder>11</BuildOrder>
+            <BuildOrder>107</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsmbus.cpp">
+            <BuildOrder>12</BuildOrder>
+            <BuildOrder>110</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsmem.cpp">
+            <BuildOrder>9</BuildOrder>
+            <BuildOrder>113</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsmenu.cpp">
+            <BuildOrder>116</BuildOrder>
+            <BuildOrder>10</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsprop.cpp">
+            <BuildOrder>15</BuildOrder>
+            <BuildOrder>119</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsstd.cpp">
+            <BuildOrder>16</BuildOrder>
+            <BuildOrder>122</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsstring.cpp">
+            <BuildOrder>23</BuildOrder>
+            <BuildOrder>197</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irssysutils.cpp">
+            <DependentOn>..\mxsrclib\irssysutils.h</DependentOn>
+            <BuildOrder>72</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irstcpip.cpp">
+            <BuildOrder>13</BuildOrder>
+            <BuildOrder>125</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irstime.cpp">
+            <BuildOrder>14</BuildOrder>
+            <BuildOrder>128</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irsvariant.cpp">
+            <BuildOrder>8</BuildOrder>
+            <BuildOrder>131</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\irs_chart_data.cpp">
+            <BuildOrder>22</BuildOrder>
+            <BuildOrder>206</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\measmul.cpp">
+            <BuildOrder>2</BuildOrder>
+            <BuildOrder>134</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\meassup.cpp">
+            <BuildOrder>3</BuildOrder>
+            <BuildOrder>137</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\mxdata.cpp">
+            <BuildOrder>140</BuildOrder>
+            <BuildOrder>0</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\mxifar.cpp">
+            <BuildOrder>143</BuildOrder>
+            <BuildOrder>1</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\mxnet.cpp">
+            <BuildOrder>6</BuildOrder>
+            <BuildOrder>146</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\mxnetc.cpp">
+            <BuildOrder>7</BuildOrder>
+            <BuildOrder>149</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\mxnetr.cpp">
+            <BuildOrder>4</BuildOrder>
+            <BuildOrder>152</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\niusbgpib.cpp">
+            <BuildOrder>5</BuildOrder>
+            <BuildOrder>155</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\niusbgpib_hardflow.cpp">
+            <BuildOrder>28</BuildOrder>
+            <BuildOrder>158</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\mxsrclib\timer.cpp">
+            <BuildOrder>29</BuildOrder>
+            <BuildOrder>161</BuildOrder>
+        </CppCompile>
+        <FormResources Include="modifidatatable.dfm"/>
+        <FormResources Include="newconfig.dfm"/>
+        <FormResources Include="managerf.dfm"/>
+        <FormResources Include="optionsoptimize.dfm"/>
+        <FormResources Include="showmessages.dfm"/>
+        <FormResources Include="connectionlog.dfm"/>
+        <FormResources Include="copytable.dfm"/>
+        <FormResources Include="About.dfm"/>
+        <FormResources Include="addcolrow.dfm"/>
+        <FormResources Include="datahandling.dfm"/>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Debug">
+            <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+    </ItemGroup>
+    <Import Project="$(BDS)\Bin\CodeGear.Cpp.Targets"/>
+    <ProjectExtensions>
+        <Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
+        <Borland.ProjectType>CppVCLApplication</Borland.ProjectType>
+        <BorlandProject>
+            <CPlusPlusBuilder.Personality>
+                <VersionInfo>
+                    <VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+                    <VersionInfo Name="AutoIncBuild">False</VersionInfo>
+                    <VersionInfo Name="MajorVer">1</VersionInfo>
+                    <VersionInfo Name="MinorVer">1</VersionInfo>
+                    <VersionInfo Name="Release">0</VersionInfo>
+                    <VersionInfo Name="Build">26</VersionInfo>
+                    <VersionInfo Name="Debug">False</VersionInfo>
+                    <VersionInfo Name="PreRelease">False</VersionInfo>
+                    <VersionInfo Name="Special">False</VersionInfo>
+                    <VersionInfo Name="Private">False</VersionInfo>
+                    <VersionInfo Name="DLL">False</VersionInfo>
+                    <VersionInfo Name="Locale">1049</VersionInfo>
+                    <VersionInfo Name="CodePage">1251</VersionInfo>
+                </VersionInfo>
+                <VersionInfoKeys>
+                    <VersionInfoKeys Name="CompanyName">ИРС</VersionInfoKeys>
+                    <VersionInfoKeys Name="FileDescription"/>
+                    <VersionInfoKeys Name="FileVersion">1.2.0.26</VersionInfoKeys>
+                    <VersionInfoKeys Name="InternalName"/>
+                    <VersionInfoKeys Name="LegalCopyright"/>
+                    <VersionInfoKeys Name="LegalTrademarks"/>
+                    <VersionInfoKeys Name="OriginalFilename"/>
+                    <VersionInfoKeys Name="ProductName"/>
+                    <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+                    <VersionInfoKeys Name="Comments">Программа автокалибровки приборов.</VersionInfoKeys>
+                    <VersionInfoKeys Name="SpecialBuild"/>
+                    <VersionInfoKeys Name="PrivateBuild"/>
+                </VersionInfoKeys>
+                <HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Count">5</HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Item0">..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl;..\maxvlib</HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Item1">..\maxvlib;..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl</HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Item2">..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl</HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Item3">C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\include;$(BCB)\include\vcl</HistoryLists_hlIncludePath>
+                    <HistoryLists_hlIncludePath Name="Item4">C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;..\..\mxsrclib\arch\cur;..\..\mxsrclib;..\..\Program Files\Borland\CBuilder4\Projects;$(BCB)\include;$(BCB)\include\vcl</HistoryLists_hlIncludePath>
+                </HistoryLists_hlIncludePath>
+                <HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Count">5</HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Item0">..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib;..\maxvlib</HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Item1">..\maxvlib;..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib</HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Item2">..\mxsrclib\arch\cbuilder;C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib</HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Item3">C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;$(BCB)\lib\obj;$(BCB)\lib</HistoryLists_hlLibraryPath>
+                    <HistoryLists_hlLibraryPath Name="Item4">C:\Program Files\Borland\CBuilder6\Projects;..\mxsrclib\arch\cur;..\mxsrclib;..\..\mxsrclib\arch\cur;..\..\mxsrclib;..\..\Program Files\Borland\CBuilder4\Projects;$(BCB)\lib\obj;$(BCB)\lib</HistoryLists_hlLibraryPath>
+                </HistoryLists_hlLibraryPath>
+                <HistoryLists_hlDebugSourcePath>
+                    <HistoryLists_hlDebugSourcePath Name="Count">1</HistoryLists_hlDebugSourcePath>
+                    <HistoryLists_hlDebugSourcePath Name="Item0">$(BCB)\source\vcl</HistoryLists_hlDebugSourcePath>
+                </HistoryLists_hlDebugSourcePath>
+                <HistoryLists_hlConditionals>
+                    <HistoryLists_hlConditionals Name="Count">1</HistoryLists_hlConditionals>
+                    <HistoryLists_hlConditionals Name="Item0">_DEBUG</HistoryLists_hlConditionals>
+                </HistoryLists_hlConditionals>
+                <Debugging>
+                    <Debugging Name="DebugSourceDirs">$(BCB)\source\vcl</Debugging>
+                </Debugging>
+                <Parameters>
+                    <Parameters Name="RunParams"/>
+                    <Parameters Name="Launcher"/>
+                    <Parameters Name="UseLauncher">0</Parameters>
+                    <Parameters Name="DebugCWD"/>
+                    <Parameters Name="HostApplication"/>
+                    <Parameters Name="RemoteHost"/>
+                    <Parameters Name="RemotePath"/>
+                    <Parameters Name="RemoteLauncher"/>
+                    <Parameters Name="RemoteCWD"/>
+                    <Parameters Name="RemoteDebug">0</Parameters>
+                </Parameters>
+                <Compiler>
+                    <Compiler Name="ShowInfoMsgs">0</Compiler>
+                    <Compiler Name="LinkDebugVcl">1</Compiler>
+                    <Compiler Name="LinkCGLIB">0</Compiler>
+                </Compiler>
+                <CORBA>
+                    <CORBA Name="AddServerUnit">1</CORBA>
+                    <CORBA Name="AddClientUnit">1</CORBA>
+                    <CORBA Name="PrecompiledHeaders">1</CORBA>
+                </CORBA>
+                <ProjectProperties>
+                    <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
+                    <ProjectProperties Name="ManagePaths">True</ProjectProperties>
+                    <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+                </ProjectProperties>
+                <Source>
+                    <Source Name="MainSource">Digitalinterpolator.cpp</Source>
+                </Source>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k170.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp170.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k170.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp170.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                </Excluded_Packages>
+            </CPlusPlusBuilder.Personality>
+            <Platforms>
+                <Platform value="Win32">True</Platform>
+                <Platform value="Win64">False</Platform>
+            </Platforms>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+    <Import Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj" Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')"/>
+</Project>

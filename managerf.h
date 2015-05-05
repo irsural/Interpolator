@@ -111,6 +111,7 @@ __published:	// IDE-managed Components
   void __fastcall ConstTimerFilterLEKeyPress(TObject *Sender, char &Key);
   void __fastcall CheckBoxPhasaNorm180Click(TObject *Sender);
 private:	// User declarations
+  typedef irs::string_t string_type;
   bool m_start_prog;
   //класс работы с ini-файлом настроек программы
   irs::ini_file_t m_main_opt_ini_file;
@@ -124,20 +125,20 @@ private:	// User declarations
   irs::loop_timer_t m_interval_read_out_param;
   counter_t m_between_reg_ready_and_filter_preset_sec;
   irs::timer_t m_timer_delay_filter_preset;
-  const irs::string m_filename_options_channel1;
-  const irs::string m_filename_options_channel2;
-  const irs::string m_filename_options_channel3;
-  const irs::string m_filename_options_channel4;
-  const irs::string m_filename_options_channel5;
-  const irs::string m_filename_options_channel6;
+  const string_type m_filename_options_channel1;
+  const string_type m_filename_options_channel2;
+  const string_type m_filename_options_channel3;
+  const string_type m_filename_options_channel4;
+  const string_type m_filename_options_channel5;
+  const string_type m_filename_options_channel6;
 
-  auto_ptr<TDataHandlingF> mp_channel_1;
-  auto_ptr<TDataHandlingF> mp_channel_2;
-  auto_ptr<TDataHandlingF> mp_channel_3;
-  auto_ptr<TDataHandlingF> mp_channel_4;
-  auto_ptr<TDataHandlingF> mp_channel_5;
-  auto_ptr<TDataHandlingF> mp_channel_6;
-  std::vector<auto_ptr<TDataHandlingF>* > mv_channels;
+  irs::handle_t<TDataHandlingF> mp_channel_1;
+  irs::handle_t<TDataHandlingF> mp_channel_2;
+  irs::handle_t<TDataHandlingF> mp_channel_3;
+  irs::handle_t<TDataHandlingF> mp_channel_4;
+  irs::handle_t<TDataHandlingF> mp_channel_5;
+  irs::handle_t<TDataHandlingF> mp_channel_6;
+  std::vector<irs::handle_t<TDataHandlingF>* > mv_channels;
   static const bool m_block_message = 0;
   log_t m_log;
   log_message_t m_log_message;
@@ -157,6 +158,7 @@ public:		// User declarations
 private:
 
   __fastcall TManagerDGIF(TComponent* Owner);
+  __fastcall ~TManagerDGIF();
   void tick();
   void meas_tick();
   // Переустановить опорный канал
@@ -174,7 +176,7 @@ private:
     const double a_value_meas_ref_channel,
     const double a_value_out_param);
   void processing_data_phase_cur_channel(
-    auto_ptr<TDataHandlingF>* a_channel, const coord_cell_t& a_coord_cur_cell);
+    TDataHandlingF* a_channel, const coord_cell_t& a_coord_cur_cell);
   void set_param_channels(const param_cur_cell_t& a_param_cur_cell);
   void set_phase_preset_channels();
   double filter_phase_normalize(double a_value);

@@ -75,7 +75,7 @@ public:		// User declarations
   void select_options_mnk();
   void select_options_correct();
   void select_options_coef();
-  inline status_options_t status_options();
+  inline status_options_t status_options() const;
   void reset_status_options();
   inline options_optimize_type_mnk_t read_options_mnk();
   inline options_optimize_type_correct_t read_options_correct();
@@ -85,7 +85,7 @@ public:		// User declarations
   inline void write_options_coef(options_calculating_coef_t a_options);
 
 };
-inline status_options_t TOptionsF::status_options()
+inline status_options_t TOptionsF::status_options() const
   {return m_status_options;}
 inline options_optimize_type_mnk_t TOptionsF::read_options_mnk()
   {return m_options_mnk;}

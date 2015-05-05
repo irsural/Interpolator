@@ -9,6 +9,7 @@
 #include <irscpp.h>
 #include <irsstd.h>
 #include <irsfunnel.h>
+#include <irsdevices.h>
 #include <mxnetc.h>
 #include <inifiles.hpp>
 #include <timer.h>
@@ -17,6 +18,7 @@
 #include <cbcomp.h>
 #include <irsalg.h>
 #include <irstable.h>
+
 
 #include <Classes.hpp>
 #include <Controls.hpp>
@@ -53,10 +55,13 @@
 //#include "newconfig.h"
 //#include "dinamictypes.h"
 #include "debugdigitalinterpolator.h"
-#include "newconfig.h"
+
 //#include "configdevice.h"
 #include "modifidatatable.h"
+#include "connectionlog.h"
 #include "About.h"
+#include <System.Actions.hpp>
+#include <Vcl.PlatformDefaultStyleActnCtrls.hpp>
 
 enum mode_program_t {
   mode_prog_multi_channel,
@@ -65,6 +70,7 @@ enum mode_program_t {
 
 enum status_process_meas_t {
   spm_off_process,
+  spb_wait_connect,
   spm_jump_next_elem,
   spm_wait_ext_trig_set_range,
   spm_set_range,
@@ -79,7 +85,8 @@ enum status_process_meas_t {
   spm_wait_external_trig_processing_data,
   spm_processing_data,
   spm_wait_ext_trig_process_data_to_next_elem,
-  spm_reset
+  spm_reset,
+  spm_wait_set_extra_vars
 };
 
 template <class T>
@@ -161,6 +168,20 @@ T stability_control_t<T>::difference(T a_first, T a_second) const
 }
 
 //---------------------------------------------------------------------------
+class test1_t
+{
+public:
+  test1_t()
+  {
+  }
+  ~test1_t()
+  {
+    int a = 0;
+  }
+};
+
+
+
 class TDataHandlingF : public TForm
 {
 __published:	// IDE-managed Components
@@ -322,6 +343,15 @@ __published:	// IDE-managed Components
   TLabeledEdit *ReferenceOutParamLabeledEdit;
   TLabeledEdit *AbsoluteDiffOutParamLabeledEdit;
   TLabeledEdit *RemainingTimeForStableState;
+  TMenuItem *N18;
+  TMenuItem *TSTLANMenuItem;
+  TMenuItem *ConnectionLogMenuItem;
+  TMenuItem *ConnectMenuItem;
+  TAction *ConnectAction;
+  TAction *TSTLANAction;
+  TAction *ConnectionLogAction;
+  TButton *DeleteConfigButton;
+  TButton *ShowMultimeterOptionsButton;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -372,7 +402,7 @@ __published:	// IDE-managed Components
   void __fastcall AddSubtableActionExecute(TObject *Sender);
   void __fastcall DelSubtableActionExecute(TObject *Sender);
   void __fastcall RawDataStringGridGetEditText(TObject *Sender, int ACol,
-          int ARow, AnsiString &Value);
+          int ARow, UnicodeString &Value);
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall EditConfigButtonClick(TObject *Sender);
   void __fastcall CorrectModeActionExecute(TObject *Sender);
@@ -382,7 +412,6 @@ __published:	// IDE-managed Components
   void __fastcall WriteDataActionExecute(TObject *Sender);
   void __fastcall Panel1Resize(TObject *Sender);
   void __fastcall ConfigCBChange(TObject *Sender);
-  void __fastcall PatternOfMeasuringInstrumentCBChange(TObject *Sender);
   void __fastcall SetPhaseMeasActionExecute(TObject *Sender);
   void __fastcall SetPhaseAverageMeasActionExecute(TObject *Sender);
   void __fastcall SetTimeIntervalMeasActionExecute(TObject *Sender);
@@ -402,15 +431,25 @@ __published:	// IDE-managed Components
   void __fastcall ModifiTableDataActionExecute(TObject *Sender);
   void __fastcall AboutActionExecute(TObject *Sender);
   void __fastcall RawDataStringGridExit(TObject *Sender);
+  void __fastcall ConnectionLogMenuItemClick(TObject *Sender);
+  void __fastcall ConnectActionExecute(TObject *Sender);
+  void __fastcall TSTLANActionExecute(TObject *Sender);
+  void __fastcall ConnectionLogActionExecute(TObject *Sender);
+  void __fastcall DeleteConfigButtonClick(TObject *Sender);
+  void __fastcall ShowMultimeterOptionsButtonClick(TObject *Sender);
+  void __fastcall PatternOfMeasuringInstrumentCBChange(TObject *Sender);
 
 private:	// User declarations
+  typedef irs::string_t string_type;
+  typedef irs::ostringstream_t ostringstream_type;
   //имя программы
-  AnsiString m_prog_name;
+  String m_prog_name;
   mode_program_t m_mode_program;
+  file_name_service_t m_file_name_service;
   //директория, где находится программа
-  AnsiString m_path_prog;
+  //String m_path_prog;
   //имя файла настроек программы
-  AnsiString m_name_main_opt_ini_file;
+  String m_name_main_opt_ini_file;
   //класс работы с ini-файлом настроек программы
   irs::ini_file_t m_main_opt_ini_file;
   //класс работы с ini-файлом конфигураций устройства
@@ -419,107 +458,20 @@ private:	// User declarations
   log_t m_log;
   log_message_t m_log_message;
   TForm* mp_manager_channel;
+  irs::handle_t<TOptionsF> mp_options_form;
   //имя каталога программы для хранения конфгураций
-  const AnsiString m_foldername_conf;
+  //const String m_foldername_conf;
   //расширение файла конфигурации процесса калибровки
-  const AnsiString m_default_ext;
+  //const String m_default_ext;
   //идентификатор файла конфигурации процесса калибровки
-  const AnsiString m_fileid_conf;
-  config_calibr_t m_config_calibr, m_conf_calibr_buf,
-    m_config_calibr_ref_channel;
+  const String m_fileid_conf;
+  config_calibr_t m_config_calibr;
+  config_calibr_t m_conf_calibr_buf;
+  config_calibr_t m_config_calibr_ref_channel;
 
+  test1_t m_test1;  
   inf_in_param_t m_inf_in_param;
-  struct data_map_t
-  {
-    dynamic_conn_data_t x_in;
-    dynamic_conn_data_t y_in;
-    dynamic_conn_data_t q_in;
-    dynamic_conn_data_t y_out;
-    irs::conn_data_t<irs_u32> work_time;
-    irs::conn_data_t<irs_u32> status;
-    irs::conn_data_t<float> temperature;
-    irs::bit_data_t mismatch_state_bit;
-    irs::bit_data_t correct_mode_bit;
-    irs::bit_data_t operating_duty_bit;
-    irs::bit_data_t error_bit;
-    irs::bit_data_t reset_over_bit;
-    irs::bit_data_t phase_preset_bit;
-    vector<dynamic_conn_data_t> v_extra_param;
-    vector<irs::bit_data_t> v_extra_bit;
-    void connect(irs::mxdata_t *ap_data,
-      config_calibr_t& a_config_calibr)
-    {
-      x_in.connect(
-        a_config_calibr.in_parametr1.unit,
-        ap_data,
-        a_config_calibr.in_parametr1.index);
-
-      y_in.connect(
-        a_config_calibr.in_parametr2.unit,
-        ap_data,
-        a_config_calibr.in_parametr2.index);
-
-      if(a_config_calibr.in_parametr1.anchor == false
-        && a_config_calibr.in_parametr2.anchor == false){
-        q_in.connect(
-          a_config_calibr.in_parametr3.unit,
-          ap_data,
-          a_config_calibr.in_parametr3.index);
-      }
-      y_out.connect(
-        a_config_calibr.out_parametr.unit,
-        ap_data,
-        a_config_calibr.out_parametr.index);
-
-      int extra_param_count = a_config_calibr.v_parametr_ex.size();
-      v_extra_param.resize(extra_param_count);
-      for (int i = 0; i < extra_param_count; i++) {
-        v_extra_param[i].connect(
-          a_config_calibr.v_parametr_ex[i].unit,
-          ap_data,
-          a_config_calibr.v_parametr_ex[i].index);
-      }
-
-      work_time.connect(ap_data,
-        a_config_calibr.index_work_time);
-      if (a_config_calibr.temperature_control.enabled) {
-        temperature.connect(ap_data, a_config_calibr.temperature_control.index);
-      }
-      mismatch_state_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_mismatch_state.index_byte,
-        a_config_calibr.bit_pos_mismatch_state.index_bit);
-      correct_mode_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_correct_mode.index_byte,
-        a_config_calibr.bit_pos_correct_mode.index_bit);
-      operating_duty_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_operating_duty.index_byte,
-        a_config_calibr.bit_pos_operating_duty.index_bit);
-      error_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_error_bit.index_byte,
-        a_config_calibr.bit_pos_error_bit.index_bit);
-      reset_over_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_reset_over_bit.index_byte,
-        a_config_calibr.bit_pos_reset_over_bit.index_bit);
-      phase_preset_bit.connect(
-        ap_data,
-        a_config_calibr.bit_pos_phase_preset_bit.index_byte,
-        a_config_calibr.bit_pos_phase_preset_bit.index_bit);
-
-      int extra_bit_count = a_config_calibr.bit_type2_array.size();
-      v_extra_bit.resize(extra_bit_count);
-      for (int i = 0; i < extra_bit_count; i++) {
-        v_extra_bit[i].connect(
-          ap_data,
-          a_config_calibr.bit_type2_array[i].index_byte,
-          a_config_calibr.bit_type2_array[i].index_bit);
-      }
-    }
-  };
+  ///
 
 
   TIniFile* mp_options_prog_ini_file;
@@ -538,24 +490,49 @@ private:	// User declarations
     sce_wait_write_eeprom,
     sce_reset};
 
-  const AnsiString m_name_file_options_ini;// = "options.ini";
+  const String m_name_file_options_ini;// = "options.ini";
   static const m_index_funnel = 40;
   correct_map_t correct_map, m_correct_map_local;
+  struct device_t
+  {
+    string_type type;
+    irs::handle_t<irs::tstlan4_base_t> tstlan4lib;
+    irs::handle_t<irs::mxdata_assembly_t> mxdata_assembly;
+    irs::handle_t<TConnectionLogForm> connection_log;
+    ~device_t()
+    {
+      tstlan4lib.reset();
+      mxdata_assembly.reset();
+      connection_log.reset();
+    }
+  };
+
   //vector<correct_map_t> mv_correct_map, mv_correct_map_local;
-  data_map_t m_data_map;
-  auto_ptr<data_map_t> mp_data_map_ref_channel;
-  mxnetc m_mxnet;
-  auto_ptr<mxnetc> mp_mxnet_ref_channel;
-  irs::mxdata_to_mxnet_t m_mxnet_data;
-  auto_ptr<irs::mxdata_to_mxnet_t> mp_mxnet_data_ref_channel;
-  auto_ptr<irs::funnel_client_t> mp_eeprom;
-  auto_ptr<irs::local_data_t> mp_local_data;
+  //data_map_t m_data_map;
+
+  irs::handle_t<data_map_t> mp_data_map_ref_channel;
+  irs::chart::builder_chart_window_t m_device_chart;
+  device2_t m_device;
+
+  irs::handle_t<device_t> mp_ref_device;
+  device2_t m_ref_device;
+  //mxnetc m_mxnet;
+  irs::handle_t<mxnetc> mp_mxnet_ref_channel;
+
+  //irs::mxdata_to_mxnet_t m_mxnet_data;
+  irs::handle_t<irs::mxdata_to_mxnet_t> mp_mxnet_data_ref_channel;
+
+  irs::handle_t<irs::funnel_client_t> mp_eeprom;
+  irs::handle_t<irs::local_data_t> mp_local_data;
   //irs::conn_data_t<irs_u32> work_time;
+
+  irs::handle_t<irs::mxmultimeter_assembly_t> mp_mxmultimeter_assembly;
 
   table_data_t* mp_active_table;
   status_connect_t status_connect;
   status_connect_eeprom_t status_connect_eeprom;
-  AnsiString m_cur_config_device, m_cur_config_multimetr;
+  String m_cur_config_device;
+  String m_cur_config_multimetr;
   // конфигурация калибровки успешно загружена
   bool m_load_conf_calibr_device_success;
   // флаг, если при расчете коэффициентов обнаружены ячейки
@@ -564,7 +541,7 @@ private:	// User declarations
   //блокировка перезагрузки конфигурации
   bool m_on_block_reconfiguration;
   // Имя текущего файла конфигурации
-  AnsiString m_cur_filename_conf_calibr_device;
+  String m_cur_filename_conf_calibr_device;
 
   bool m_on_write_data_eeprom;
   bool m_on_verification_data_eeprom;
@@ -598,7 +575,7 @@ private:	// User declarations
   vector<double> mv_top_optimal_data;
   vector<double> mv_coef_data;
 
-  vector<AnsiString> mv_list_config_calibr;
+  vector<String> mv_list_config_calibr;
 
   //структура графиков
   struct chart_t
@@ -609,8 +586,8 @@ private:	// User declarations
     //интерфейс класса графиков
     irs::chart_window_t* p_chart_window_z_of_x;
     irs::chart_window_t* p_chart_window_z_of_y;
-    vector<irs::string> z_of_x_charts;
-    vector<irs::string> z_of_y_charts;
+    vector<string_type> z_of_x_charts;
+    vector<string_type> z_of_y_charts;
   public:
     bool on_auto_update;
     bool adfa;
@@ -644,20 +621,20 @@ private:	// User declarations
       const int a_row_z_data,
       const bool a_on_update = false);
     void add_chart_z_of_x(
-      const irs::string& a_name_graph,
+      const string_type& a_name_graph,
       const std::vector<cell_t>& a_p_points,
       const std::vector<cell_t>& a_x_points,
       const inf_in_param_t& a_inf_in_param,
       const double a_norm_koef);
     void add_chart_z_of_y(
-      const irs::string& a_name_graph,
+      const string_type& a_name_graph,
       const std::vector<cell_t>& a_p_points,
       const std::vector<cell_t>& a_y_points,
       const inf_in_param_t& a_inf_in_param,
       const double a_norm_koef);
 
-    void save_name_chart_z_of_x(const irs::string& a_name_chart);
-    void save_name_chart_z_of_y(const irs::string& a_name_chart);
+    void save_name_chart_z_of_x(const string_type& a_name_chart);
+    void save_name_chart_z_of_y(const string_type& a_name_chart);
   } m_chart;
   irs::loop_timer_t m_timer_chart_auto_update;
 
@@ -684,7 +661,7 @@ private:	// User declarations
   bool m_on_jump_smooth;
 
   type_jump_next_elem_t m_type_jump_next_elem;
-  AnsiString m_str_type_jump_next_elem;
+  String m_str_type_jump_next_elem;
   status_process_meas_t m_status_process_meas;
 
   type_meas_t m_type_meas;
@@ -723,6 +700,7 @@ private:	// User declarations
   irs::timer_t m_timer_delay_operating_duty;
   irs::timer_t m_timer_delay_control_error_bit;
   irs::timer_t m_timer_delay_next_cell;
+  irs::timer_t m_timer_waiting_set_extra_vars;
   // Счетчик времени измерений
   irs::measure_time_t m_time_meas;
   // Количество измеренных точек
@@ -731,7 +709,7 @@ private:	// User declarations
   int m_previous_count_point_meas;
   // Скорость: ячеек в секунду
   double m_cell_per_sec;
-   // Оставшееся количество ячеек до конца таблицы
+  // Оставшееся количество ячеек до конца таблицы
   int m_cell_count_end;
   // Время измерения, сохраненное после измерения предыдущей ячейки
   double m_previous_time_meas_sec;
@@ -773,14 +751,18 @@ private:	// User declarations
   {
     int col;
     int row;
-    irs::string value_str;
+    string_type value_str;
     bool init;
-    cur_cell_t():col(0), row(0),value_str(""),init(false)
+    cur_cell_t():
+      col(0),
+      row(0),
+      value_str(),
+      init(false)
     {}
     cur_cell_t(
       const int a_col,
       const int a_row,
-      const irs::string a_value_str,
+      const string_type a_value_str,
       const bool a_init):
       col(a_col), row(a_row),value_str(a_value_str), init(a_init)
     {}
@@ -868,6 +850,7 @@ private:	// User declarations
   process_calibr_data_stat_t m_process_calibr_data_stat;
   int m_cur_sub_diapason;
   bool m_on_auto_verify;
+
 public:		// User declarations
   __fastcall TDataHandlingF(
     TComponent* Owner,
@@ -878,19 +861,24 @@ public:		// User declarations
     // Параметр импользуется только для многоканального режима
     const bool m_on_ref_channel = false,
     // Имя канала
-    const irs::string a_name = "",
+    const irs::string_t a_name = irs::string_t(),
     // Параметр импользуется только для многоканального режима
-    const irs::string a_opt_ini = "options.ini",
+    const irs::string_t a_opt_ini = irst("options.ini"),
     // Параметр импользуется только для многоканального режима
     const int a_num_mxifa_mxnetc = MXIFA_MXNETC);
   __fastcall ~TDataHandlingF();
   //вывод конфигураций калибровки на экран
-  void load_config_calibr_to_display(const AnsiString a_dir);
+  void load_config_calibr_to_display();
+  void select_config(const String& a_config_name);
+  String get_selected_config();
   //загрузка конфигурации калибровки
   void load_config_calibr();
-  inline void set_connect_calibr_device(bool a_forced_connect = false);
-  inline void set_connect_multimetr();
-  inline void reset_connect_multimetr();
+  void set_connect_if_enabled(bool a_forced_connect = false);
+  void set_connect_calibr_device(bool a_forced_connect = false);
+  void set_connect_multimetr();
+  String get_selected_multimeter();
+  void reset_connect_calibr_device();
+  void reset_connect_multimetr();
   // устанавливает или сбрасывает режим коррекции по изменению a_correct_stat
   inline void set_correct_mode(
     const bool a_correct_stat, const bool a_forcibly = 0);
@@ -899,6 +887,7 @@ public:		// User declarations
 
   void calculation_koef(irs::matrix_t<cell_t> a_matrix);
   void tick();
+  void eeprom_tick();
   inline void set_successfully_mode_setting_stat();
   inline int read_memory_capacity();
   void add_graph_z_of_x();
@@ -911,6 +900,8 @@ private:
   inline void save_cur_config_device();
 public:
   inline void set_inf_in_param(const inf_in_param_t a_inf_in_param);
+
+  void load_multimeters_list();
 
   inline void set_deley_volt_meas(const unsigned int a_delay);
   // изменить статус режима редактирования таблицы на противоположный
@@ -951,7 +942,7 @@ public:
   void config_button_stop_avto_volt_meas();
   void tick2();
   void set_setting_for_type_jump_next_cell(
-    const AnsiString& a_str_type_jump_next_elem);
+    const String& a_str_type_jump_next_elem);
   // Разсчет измеренных параметров
   double calc_meas_value(
     const double a_value_meas,
@@ -1022,60 +1013,56 @@ public:
   void set_value_working_extra_bits();
   // Установить значение по умолчанию доп. битов
   void set_value_default_extra_bits();
+  void show_main_device_options();
+  void show_ref_device_options();
+  //! \brief Загружает настройки соединения с устройством из файла. Если файл
+  //!   отсутствует, то создает файл с настройками по умолчанию
+  void load_main_device(const String& a_config_name);
+  //! \brief Загружает настройки соединения с устройством из файла. Если файл
+  //!   отсутствует, то создает файл с настройками по умолчанию
+  void load_ref_device(const String& a_config_name);
+  //void load_device(const String& a_device_file_name, device_t* ap_device);
+
+  bool is_main_device_config_exists(const String& a_config_name) const;
+  bool is_ref_device_config_exists(const String& a_config_name) const;
+  void create_main_device_config_from_old(const String& a_config_name,
+    const String& a_type,
+    const config_calibr_t& a_config_calibr);
+  void create_ref_device_config_from_old(const String& a_config_name,
+    const String& a_type,
+    const config_calibr_t& a_config_calibr);
+
+  void change_main_device_type(const String& a_config_name,
+    const String& a_type);
+  void change_ref_device_type(const String& a_config_name,
+    const String& a_type);
+  void load_device_config_file(const String& a_config_name);
+  void delete_device_config(const String& a_config_name);
+  void reset_main_device(const string_type& a_device_file_name,
+    const device_options_t& a_device);
+  void reset_ref_device(const string_type& a_ref_device_file_name,
+    const device_options_t& a_ref_device);
+  void unset_ref_device();
+  String get_device_type() const;
+  void reset_mxmultimeter_assembly();
+  irs::handle_t<irs::mxmultimeter_assembly_t> make_mxmultimeter_assembly(
+    const irs::string_t& a_device_name,
+    const irs::string_t& a_device_type);
 
 };
-inline void TDataHandlingF::set_connect_calibr_device(
-  bool a_forced_connect)
-{
-  if((!m_on_block_reconfiguration) || (a_forced_connect == true)){
-    int index_file = ConfigCB->ItemIndex;
-    if (index_file >= 0) {
-      AnsiString select_config_device = extract_short_filename(
-        ExtractFileName(mv_list_config_calibr[index_file]));
-      if((m_cur_config_device != select_config_device) || (a_forced_connect)){
-        m_log << "Установка соединения с устройством";
-        m_cur_config_device = select_config_device;
-        load_config_calibr();
-        m_data_map.connect(&m_mxnet_data, m_config_calibr);
 
-        if (m_config_calibr.reference_channel.enabled) {
-          mp_data_map_ref_channel->connect(
-            mp_mxnet_data_ref_channel.get(), m_config_calibr_ref_channel);
-        }
-      }
-    }
-  }
-}
-inline void TDataHandlingF::set_connect_multimetr()
-{
-  int index_multimetr = PatternOfMeasuringInstrumentCB->ItemIndex;
-  AnsiString cur_multimetr =
-    PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
-  multimeter_mode_type_t mode = mul_mode_type_active;
-  if (m_type_meas == tm_value) {
-    mode = mul_mode_type_passive;
-  }
-  m_value_meas.set_connect_multimetr(
-    str_to_type_multimeter(cur_multimetr.c_str()), mode);
-}
-inline void TDataHandlingF::reset_connect_multimetr()
-{
-  m_cur_config_multimetr = "";
-  m_value_meas.disconnect_multimetr();
-  PatternOfMeasuringInstrumentCB->Enabled = true;
-}
 inline void TDataHandlingF::set_correct_mode(
   const bool a_correct_stat, const bool a_forcibly)
 {
   if((a_correct_stat != m_correct_mode_previous_stat) || (a_forcibly == true)){
     m_correct_mode_previous_stat = a_correct_stat;
     if(a_correct_stat) {
-      m_data_map.correct_mode_bit = 0;
+      m_device.get_data()->correct_mode_bit = 0;
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->correct_mode_bit = 0;
       }
     } else {
-      m_data_map.correct_mode_bit = 1;
+      m_device.get_data()->correct_mode_bit = 1;
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->correct_mode_bit = 1;
       }
@@ -1089,7 +1076,7 @@ inline void TDataHandlingF::save_cur_config_device()
   // если выбран файл
   if (index_file >= 0) {
     // если файл существует
-    AnsiString filename_conf = mv_list_config_calibr[index_file];
+    String filename_conf = mv_list_config_calibr[index_file];
     if(FileExists(filename_conf)){
       m_config_calibr.save(filename_conf.c_str());
       //m_conf_calibr_buf = m_config_calibr;
@@ -1107,12 +1094,14 @@ inline void TDataHandlingF::set_mismatch_state(
     (a_mismatch_state != m_on_mismatch_state_previous) || (a_forcibly == true)){
     m_on_mismatch_state_previous = a_mismatch_state;
     if(a_mismatch_state) {
-      m_data_map.mismatch_state_bit = 1;
+      m_device.get_data()->mismatch_state_bit = 1;
+      m_log << irst("mismatch_state_bit = 1");
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->mismatch_state_bit = 1;
       }
     } else {
-      m_data_map.mismatch_state_bit = 0;
+      m_device.get_data()->mismatch_state_bit = 0;
+      m_log << irst("mismatch_state_bit = 0");
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->mismatch_state_bit = 0;
       }
@@ -1193,7 +1182,7 @@ inline void TDataHandlingF::mismatch_mode_change_stat(
 
 inline double TDataHandlingF::get_out_param()
 {
-  double out_param = m_data_map.y_out;
+  double out_param = m_device.get_data()->y_out;
   return out_param;
 }
 
@@ -1281,7 +1270,7 @@ inline void TDataHandlingF::set_row_displ(const int a_row)
 }
 inline void TDataHandlingF::set_phase_preset_bit()
 {
-  m_data_map.phase_preset_bit = 1;
+  m_device.get_data()->phase_preset_bit = 1;
 }
 inline param_cur_cell_t TDataHandlingF::get_param_cell(
   const int a_col, const int a_row)

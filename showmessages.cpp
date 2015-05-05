@@ -15,13 +15,14 @@ __fastcall TMessagesForm::TMessagesForm(TComponent* Owner)
 {
 }
 
-void TMessagesForm::show_messages(const std::vector<irs::string>& a_messages)
+void TMessagesForm::show_messages(const std::vector<string_type>& a_messages)
 {
   int message_count = a_messages.size();
   irs::string message_count_str = message_count;
-  Caption = "Messages: " + static_cast<AnsiString>(message_count_str.c_str());
+  Caption = irst("Messages: ") +
+    static_cast<AnsiString>(message_count_str.c_str());
   MessagesMemo->Clear();
-  for (int i = 0; i < message_count; i++) {  
+  for (int i = 0; i < message_count; i++) {
     MessagesMemo->Lines->Add(a_messages[i].c_str());
   }
 }

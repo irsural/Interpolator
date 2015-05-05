@@ -5,7 +5,7 @@ object AboutForm: TAboutForm
   BorderStyle = bsDialog
   Caption = #1054' '#1087#1088#1086#1075#1088#1072#1084#1084#1077' Ameas'
   ClientHeight = 92
-  ClientWidth = 228
+  ClientWidth = 284
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -38,10 +38,11 @@ object AboutForm: TAboutForm
     Caption = 'Build'
   end
   object OKButton: TButton
-    Left = 80
+    Left = 111
     Top = 64
     Width = 74
     Height = 25
+    Cancel = True
     Caption = #1054#1050
     Default = True
     ModalResult = 1

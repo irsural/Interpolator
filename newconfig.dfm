@@ -3,7 +3,7 @@ object NewConfigF: TNewConfigF
   Top = 148
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
-  ClientHeight = 631
+  ClientHeight = 726
   ClientWidth = 1044
   Color = clBtnFace
   Constraints.MinHeight = 550
@@ -18,7 +18,7 @@ object NewConfigF: TNewConfigF
   OnClose = FormClose
   DesignSize = (
     1044
-    631)
+    726)
   PixelsPerInch = 96
   TextHeight = 13
   object InformationPanel: TPanel
@@ -40,7 +40,7 @@ object NewConfigF: TNewConfigF
   end
   object CreateConfigButton: TButton
     Left = 881
-    Top = 599
+    Top = 694
     Width = 73
     Height = 25
     Anchors = [akRight, akBottom]
@@ -52,7 +52,7 @@ object NewConfigF: TNewConfigF
   end
   object ExitButton: TButton
     Left = 967
-    Top = 599
+    Top = 694
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -60,6 +60,7 @@ object NewConfigF: TNewConfigF
     Caption = #1054#1090#1084#1077#1085#1072
     ModalResult = 2
     TabOrder = 2
+    OnClick = ExitButtonClick
   end
   object Panel2: TPanel
     Left = 0
@@ -78,14 +79,22 @@ object NewConfigF: TNewConfigF
       EditLabel.Width = 97
       EditLabel.Height = 13
       EditLabel.Caption = #1048#1084#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1080
-      LabelPosition = lpAbove
-      LabelSpacing = 3
+      ReadOnly = True
       TabOrder = 0
+    end
+    object ChangeNameButton: TButton
+      Left = 559
+      Top = 17
+      Width = 34
+      Height = 26
+      Caption = '...'
+      TabOrder = 1
+      OnClick = ChangeNameButtonClick
     end
   end
   object Panel3: TPanel
     Left = 0
-    Top = 137
+    Top = 233
     Width = 1044
     Height = 456
     Align = alTop
@@ -97,8 +106,7 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 441
-      ActivePage = SecondaryNetworkVariablesTabSheet
-      TabIndex = 1
+      ActivePage = PrimaryNetworkVariablesTabSheet
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
@@ -188,7 +196,6 @@ object NewConfigF: TNewConfigF
             Width = 281
             Height = 21
             Style = csDropDownList
-            ItemHeight = 13
             TabOrder = 0
           end
           object Delay_MeasLE: TLabeledEdit
@@ -199,8 +206,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 134
             EditLabel.Height = 13
             EditLabel.Caption = #1047#1072#1076#1077#1088#1078#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 1
             Text = '1'
           end
@@ -212,8 +217,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 232
             EditLabel.Height = 13
             EditLabel.Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1087#1099#1090#1086#1082' '#1087#1077#1088#1077#1079#1072#1087#1091#1089#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 2
           end
           object MeasRangeKoefLabeledEdit: TLabeledEdit
@@ -224,8 +227,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 232
             EditLabel.Height = 13
             EditLabel.Caption = #1050#1086#1101#1092#1092#1080#1094#1080#1077#1085#1090' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1091#1089#1090#1072#1085#1086#1074#1082#1080' '#1076#1080#1072#1087#1072#1079#1086#1085#1072
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 3
           end
         end
@@ -337,8 +338,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 155
             EditLabel.Height = 13
             EditLabel.Caption = #1048#1085#1076#1077#1082#1089' '#1087#1077#1088#1077#1084#1077#1085#1085#1086#1081' ('#1074' '#1073#1072#1081#1090#1072#1093')'
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 1
           end
           object ReferenceTemperetureLabeledEdit: TLabeledEdit
@@ -349,8 +348,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 113
             EditLabel.Height = 13
             EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 2
           end
           object DifferenceTemperatureLabeledEdit: TLabeledEdit
@@ -361,8 +358,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 125
             EditLabel.Height = 13
             EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 3
           end
         end
@@ -389,8 +384,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 148
             EditLabel.Height = 13
             EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1085'. '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 1
           end
           object TimeCalcDifferenceLabeledEdit: TLabeledEdit
@@ -401,8 +394,6 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 96
             EditLabel.Height = 13
             EditLabel.Caption = #1042#1088#1077#1084#1077#1085#1085#1086#1077' '#1086#1082#1085#1086', '#1089
-            LabelPosition = lpAbove
-            LabelSpacing = 3
             TabOrder = 2
           end
         end
@@ -476,7 +467,7 @@ object NewConfigF: TNewConfigF
     Left = 0
     Top = 81
     Width = 1044
-    Height = 56
+    Height = 152
     Align = alTop
     BevelInner = bvRaised
     BevelOuter = bvLowered
@@ -495,64 +486,28 @@ object NewConfigF: TNewConfigF
       Height = 13
       Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1076#1086#1087'. '#1073#1080#1090#1086#1074
     end
-    object IPAdressLE: TLabeledEdit
+    object DeviceLabel: TLabel
       Left = 24
-      Top = 24
-      Width = 121
-      Height = 21
-      EditLabel.Width = 49
-      EditLabel.Height = 13
-      EditLabel.Caption = 'IP - '#1072#1076#1088#1077#1089
-      LabelPosition = lpAbove
-      LabelSpacing = 3
-      TabOrder = 0
-      Text = '127.0.0.1'
+      Top = 7
+      Width = 19
+      Height = 13
+      Caption = #1058#1080#1087
     end
-    object PortLE: TLabeledEdit
-      Left = 152
-      Top = 24
-      Width = 121
-      Height = 21
-      EditLabel.Width = 25
-      EditLabel.Height = 13
-      EditLabel.Caption = #1055#1086#1088#1090
-      LabelPosition = lpAbove
-      LabelSpacing = 3
-      TabOrder = 1
-      Text = '5500'
+    object RefDeviceLabel: TLabel
+      Left = 344
+      Top = 7
+      Width = 19
+      Height = 13
+      Caption = #1058#1080#1087
     end
     object ReferenceChannelCheckB: TCheckBox
-      Left = 344
-      Top = 24
+      Left = 241
+      Top = 26
       Width = 97
       Height = 17
       Caption = #1054#1087#1086#1088#1085#1099#1081' '#1082#1072#1085#1072#1083
-      TabOrder = 2
+      TabOrder = 0
       OnClick = ReferenceChannelCheckBClick
-    end
-    object IPAdressRefChannelLE: TLabeledEdit
-      Left = 448
-      Top = 24
-      Width = 121
-      Height = 21
-      EditLabel.Width = 49
-      EditLabel.Height = 13
-      EditLabel.Caption = 'IP - '#1072#1076#1088#1077#1089
-      LabelPosition = lpAbove
-      LabelSpacing = 3
-      TabOrder = 3
-    end
-    object PortRefChannelLE: TLabeledEdit
-      Left = 576
-      Top = 24
-      Width = 121
-      Height = 21
-      EditLabel.Width = 25
-      EditLabel.Height = 13
-      EditLabel.Caption = #1055#1086#1088#1090
-      LabelPosition = lpAbove
-      LabelSpacing = 3
-      TabOrder = 4
     end
     object BitsExCSpinEdit: TCSpinEdit
       Left = 864
@@ -561,7 +516,7 @@ object NewConfigF: TNewConfigF
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 5
+      TabOrder = 1
       OnChange = BitsExCSpinEditChange
     end
     object ParamsExCSpinEdit: TCSpinEdit
@@ -571,15 +526,43 @@ object NewConfigF: TNewConfigF
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 6
+      TabOrder = 2
       OnChange = ParamsExCSpinEditChange
     end
-  end
-  object SaveDialogConfig: TSaveDialog
-    DefaultExt = 'ini'
-    FileName = 'config1.ini'
-    Filter = #1060#1072#1081#1083#1099' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1080' (*.ini)|*.ini|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.*'
-    Left = 680
-    Top = 48
+    object DeviceComboBox: TComboBox
+      Left = 24
+      Top = 26
+      Width = 145
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 3
+      OnChange = DeviceComboBoxChange
+    end
+    object ChangeDeviceConfigButton: TButton
+      Left = 94
+      Top = 53
+      Width = 75
+      Height = 25
+      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+      TabOrder = 4
+      OnClick = ChangeDeviceConfigButtonClick
+    end
+    object RefDeviceComboBox: TComboBox
+      Left = 344
+      Top = 26
+      Width = 145
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 5
+    end
+    object ChangeRefDeviceConfigButton: TButton
+      Left = 414
+      Top = 53
+      Width = 75
+      Height = 25
+      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+      TabOrder = 6
+      OnClick = ChangeRefDeviceConfigButtonClick
+    end
   end
 end

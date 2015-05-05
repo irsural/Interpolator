@@ -3,8 +3,10 @@
 #include <vcl.h>
 #pragma hdrstop
 
-#include "datahandling.h"d
+#include "datahandling.h"
 #include <irscpp.h>
+#include <tstlan5lib.h>
+#include "newconfig.h"
 //#include "mathv.h"
 
 
@@ -19,44 +21,54 @@ __fastcall TDataHandlingF::TDataHandlingF(
   TForm* ap_manager_channel,
   const mode_program_t a_mode_program,
   const bool m_on_ref_channel,
-  const irs::string a_name,
-  const irs::string a_opt_ini,
+  const irs::string_t a_name,
+  const irs::string_t a_opt_ini,
   const int a_num_mxifa_mxnetc)
   : TForm(Owner),
 
-  m_prog_name("Digital interpolator"),
+  m_prog_name(irst("Digital interpolator")),
   m_mode_program(a_mode_program),
-  m_path_prog(""),
+  m_file_name_service(),
+  //m_path_prog(),
   m_name_main_opt_ini_file(a_opt_ini.c_str()),
   m_main_opt_ini_file(),
   //m_conf_device_ini_file(),
-  m_log(LogMemo, "Log.txt"),
+  m_log(LogMemo, irst("Log.txt")),
   m_log_message(&m_log),
   mp_manager_channel(ap_manager_channel),
+  mp_options_form(new TOptionsF(0)),
   m_value_meas(),
-  m_foldername_conf("configuration"),
-  m_default_ext("cpc"),
-  m_fileid_conf("Конфигурация настроек калибровки."),
+  //m_foldername_conf(irst("configuration")),
+  //m_default_ext(irst("cpc")),
+  m_fileid_conf(irst("Конфигурация настроек калибровки.")),
   m_config_calibr(),
   m_conf_calibr_buf(),
+  m_config_calibr_ref_channel(),
+  m_test1(),
   m_inf_in_param(),
   mp_options_prog_ini_file(0),
   status_connect(WAIT_CONNECT),
   status_connect_eeprom(sce_off),
 
-  m_name_file_options_ini("interpoptions.ini"),
-  m_data_map(),
+  m_name_file_options_ini(irst("interpoptions.ini")),
+  //m_data_map(),
   mp_data_map_ref_channel(NULL),
-  m_mxnet(a_num_mxifa_mxnetc),
-  m_mxnet_data(&m_mxnet, MS_TO_CNT(2000)),
+  m_device_chart(10000, 1000,
+    irs::chart::builder_chart_window_t::stay_on_top_off),
+  m_device(&m_device_chart, &m_file_name_service),
+  mp_ref_device(NULL),
+  m_ref_device(&m_device_chart, &m_file_name_service),
+  //m_mxnet(a_num_mxifa_mxnetc),
+  //m_mxnet_data(&m_mxnet, MS_TO_CNT(2000)),
   mp_mxnet_ref_channel(NULL),
   mp_mxnet_data_ref_channel(NULL),
 
   //обращение к массиву в памяти контроллера
   mp_eeprom(IRS_NULL),
   mp_local_data(IRS_NULL),
-  m_cur_config_device(""),
-  m_cur_config_multimetr(""),
+  mp_mxmultimeter_assembly(),
+  m_cur_config_device(),
+  m_cur_config_multimetr(),
   m_load_conf_calibr_device_success(false),
   m_bad_cells(false),
   m_on_block_reconfiguration(false),
@@ -130,6 +142,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_timer_delay_operating_duty(m_delay_operating_duty),
   m_timer_delay_control_error_bit(m_delay_control_error_bit),
   m_timer_delay_next_cell(m_delay_next_cell),
+  m_timer_waiting_set_extra_vars(irs::make_cnt_s(3)),
   m_time_meas(),
   m_count_point_meas(0),
   m_previous_count_point_meas(0),
@@ -162,7 +175,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_add_col_or_row_successfuly(false),
   m_enabled_fixes_cells(true),
   m_value_meas_multimetr(0.),
-  m_cur_cell_table1(1, 1, "", false),
+  m_cur_cell_table1(1, 1, irst(""), false),
   m_default_param_cur_cell(),
   m_cur_count_reset_over_bit(0),
   m_y_out(0.),
@@ -177,6 +190,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_cur_sub_diapason(0),
   m_on_auto_verify(true)
 {
+  m_log << irst("Старт");
+
   if (m_mode_program == mode_prog_single_channel) {
     // обработчик ошибок
     irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
@@ -187,67 +202,90 @@ __fastcall TDataHandlingF::TDataHandlingF(
       unset_ref_channel();
     }
   }
-  AnsiString ExeName = Application->ExeName;
-  m_path_prog = ExtractFilePath(ExeName);
-  AnsiString file_namedir_ini = m_path_prog + m_name_file_options_ini;
+  //String ExeName = Application->ExeName;
+  //m_path_prog = ExtractFilePath(ExeName);
+  //String file_namedir_ini = m_path_prog + m_name_file_options_ini;
   //если папка существует
   //определяет, существует ли каталог
-  AnsiString dir_config = m_path_prog + m_foldername_conf;
+  load_config_calibr_to_display();
+  /*String dir_config = m_file_name_service.get_config_dir();
   if(DirectoryExists(dir_config)){
     load_config_calibr_to_display(dir_config);
-  }
+  } */
 
-  PatternOfMeasuringInstrumentCB->Clear();
-  type_multimetr_t type_multimetr = tmul_first;
-  int index = static_cast<int>(type_multimetr);
-  while(true){
-    type_multimetr = static_cast<type_multimetr_t>(index);
-    irs::string type_multimetr_str = type_multimetr_to_str(type_multimetr);
-    PatternOfMeasuringInstrumentCB->Items->Add(type_multimetr_str.c_str());
-    if(type_multimetr == tmul_last)
-      break;
-    index++;
-  }
-  /*PatternOfMeasuringInstrumentCB->Items->Add(
-    "Вольтметр Универсальный Agilent 3458A");
-  PatternOfMeasuringInstrumentCB->Items->Add(
-    "Вольтметр универсальный Акип B7-78/1; M3500A");
-  PatternOfMeasuringInstrumentCB->Items->Add(
-    "Частотомер электронно-счетный Акип Ч3-85/3R;");*/
-  PatternOfMeasuringInstrumentCB->ItemIndex = 0;
+  load_multimeters_list();
+
   //устанавливаем имя файла настроек программы
   m_main_opt_ini_file.set_ini_name(m_name_main_opt_ini_file);
   m_main_opt_ini_file.set_section("Опции");
 
-  m_main_opt_ini_file.add(AnsiString("Текущая конфигурация"), ConfigCB);
+  m_main_opt_ini_file.add(String(irst("Текущая конфигурация")), ConfigCB);
   m_main_opt_ini_file.add(
-    AnsiString("Текущий мультиметр"),
+    String(irst("Текущий мультиметр")),
     PatternOfMeasuringInstrumentCB);
   m_main_opt_ini_file.add(
-    AnsiString("Режим коррекции"), &m_on_correct);
+    String(irst("Режим коррекции")), &m_on_correct);
   m_main_opt_ini_file.add(
-    AnsiString("Режим расстройки"), &m_on_mismatch_state);
+    String(irst("Режим расстройки")), &m_on_mismatch_state);
   m_main_opt_ini_file.add(
-    AnsiString("Стиль движения"), &m_str_type_jump_next_elem);
+    String(irst("Стиль движения")), &m_str_type_jump_next_elem);
   m_main_opt_ini_file.add(
-    AnsiString("Автообновление графиков"), &m_chart.on_auto_update);
+    String(irst("Автообновление графиков")), &m_chart.on_auto_update);
 
   m_main_opt_ini_file.load();
+  reset_mxmultimeter_assembly();
   correct_mode_change_stat(m_on_correct);
   mismatch_mode_change_stat(m_on_mismatch_state);
   set_setting_for_type_jump_next_cell(m_str_type_jump_next_elem);
   AutoUpdateChartAction->Checked = m_chart.on_auto_update;
 
-  set_connect_calibr_device();
+  set_connect_if_enabled();
+
   init_to_cnt();
   m_timer_chart_auto_update.start();
   m_exec_progress.hide();
   m_exec_progress.clear();
-  FileOpen->Enabled;
-  
+  FileOpen->Enabled;  
 }
+
+void TDataHandlingF::load_multimeters_list()
+{
+  PatternOfMeasuringInstrumentCB->Clear();
+  TSearchRec sr;
+  String dir = m_file_name_service.get_multimeter_config_dir();
+  String config_ext = m_file_name_service.get_multimeter_config_ext();
+  String filter = dir + String(irst("\\*")) + irst(".") + config_ext;
+
+  if (FindFirst(filter, faAnyFile, sr) == 0) {
+    //add_device(dir + irst("\\") + sr.Name);
+    String multimeter_name = extract_short_filename(sr.Name);
+    PatternOfMeasuringInstrumentCB->Items->Add(multimeter_name);
+    while (FindNext(sr) == 0) {
+      //add_device(dir + irst("\\") + sr.Name);
+      String multimeter_name = extract_short_filename(sr.Name);
+      PatternOfMeasuringInstrumentCB->Items->Add(multimeter_name);
+    }
+  }
+
+  FindClose(sr);
+  /*type_multimetr_t type_multimetr = tmul_first;
+  int index = static_cast<int>(type_multimetr);
+  while(true){
+    type_multimetr = static_cast<type_multimetr_t>(index);
+    string_type type_multimetr_str = type_multimetr_to_str(type_multimetr);
+    PatternOfMeasuringInstrumentCB->Items->Add(type_multimetr_str.c_str());
+    if(type_multimetr == tmul_last)
+      break;
+    index++;
+  }
+
+  PatternOfMeasuringInstrumentCB->ItemIndex = 0;*/
+}
+
 __fastcall TDataHandlingF::~TDataHandlingF()
 {
+  void* p = RawDataStringGrid;
+  //m_log << irst("Начало деструктора");
   reset_connect_multimetr();
   deinit_to_cnt();
   m_main_opt_ini_file.save();
@@ -257,40 +295,63 @@ __fastcall TDataHandlingF::~TDataHandlingF()
     // обработчик ошибок
     irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, IRS_NULL);
   }
-  //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, NULL);
+  //m_log << irst("Конец деструктора");
 }
 //загрузка конфигураций калибровки на экран
-void TDataHandlingF::load_config_calibr_to_display(const AnsiString a_dir)
+void TDataHandlingF::load_config_calibr_to_display()
 {
-  mv_list_config_calibr.clear();
-  ConfigCB->Clear();
-  TSearchRec sr;
-  AnsiString filter = a_dir+AnsiString("\\*")+"."+m_default_ext;
-  if(FindFirst(filter, faAnyFile, sr) == 0){
-    ConfigCB->Items->Add(extract_short_filename(sr.Name));
-    mv_list_config_calibr.push_back(a_dir+"\\"+sr.Name);
-    while(FindNext(sr) == 0){
+  String dir = m_file_name_service.get_config_dir();
+  if(DirectoryExists(dir)){
+    mv_list_config_calibr.clear();
+    ConfigCB->Clear();
+    const String ext = m_file_name_service.get_config_ext();
+    TSearchRec sr;
+    String filter = dir + String(irst("\\*")) + irst(".") + ext;
+    if(FindFirst(filter, faAnyFile, sr) == 0){
       ConfigCB->Items->Add(extract_short_filename(sr.Name));
-      mv_list_config_calibr.push_back(a_dir+"\\"+sr.Name);
+      mv_list_config_calibr.push_back(dir + irst("\\") + sr.Name);
+      while(FindNext(sr) == 0){
+        ConfigCB->Items->Add(extract_short_filename(sr.Name));
+        mv_list_config_calibr.push_back(dir + irst("\\") + sr.Name);
+      }
+      ConfigCB->ItemIndex = 0;
     }
+    FindClose(sr);
+  }
+}
+
+void TDataHandlingF::select_config(const String& a_config_name)
+{
+  const int index = ConfigCB->Items->IndexOf(a_config_name);
+  if (index >= 0) {
+    ConfigCB->ItemIndex = index;
+  } else {
     ConfigCB->ItemIndex = 0;
   }
-  FindClose(sr);
+}
+
+String TDataHandlingF::get_selected_config()
+{
+  if (ConfigCB->ItemIndex >= 0) {
+    return ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+  }
+  return String();
 }
 //загрузка конфигурации калибровки
 void TDataHandlingF::load_config_calibr()
 {
-  m_log<<"Загрузка конфигурации калибровки.";
+  m_log << irst("Загрузка конфигурации калибровки.");
   m_conf_calibr_buf.clear();
   m_load_conf_calibr_device_success = false;
   int index_file = ConfigCB->ItemIndex;
   // если выбран файл
   if(index_file >= 0){
   // если файл существует
-    AnsiString filename_conf = mv_list_config_calibr[index_file];
+    String filename_conf = mv_list_config_calibr[index_file];
     if(FileExists(filename_conf)){
       //m_conf_device_ini_file.set_ini_name(filename_conf);
       //m_conf_device_ini_file.load();
+
       m_cur_filename_conf_calibr_device = filename_conf.c_str();
       m_conf_calibr_buf.load(m_cur_filename_conf_calibr_device.c_str());
       m_config_calibr = m_conf_calibr_buf;
@@ -311,12 +372,23 @@ void TDataHandlingF::load_config_calibr()
         m_inf_in_param.type_anchor = PARAMETR3;
         m_inf_in_param.number_in_param = THREE_PARAM;
       }
-      m_log << ("Ip устройства " + m_config_calibr.ip_adress);
-      m_log << ("Порт устройства "+IntToStr(m_config_calibr.port));
-      m_mxnet.set_dest_port(m_config_calibr.port);
+      //m_log << (irst("Ip устройства ") + m_config_calibr.ip_adress);
+      //m_log << (irst("Порт устройства ") +
+        //irs::str_conv<String>(irs::num_to_str(m_config_calibr.port)));
+
+      const String config_name = ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+      if (is_main_device_config_exists(config_name)) {
+        load_main_device(config_name);
+      } else {
+        create_main_device_config_from_old(config_name, irst("mxnet"),
+          m_config_calibr);
+      }
+
+      /*m_mxnet.set_dest_port(m_config_calibr.port);
       mxip_t ip = {{192, 168, 0, 38}};
-      cstr_to_mxip(ip, m_config_calibr.ip_adress.c_str());
-      m_mxnet.set_dest_ip(ip);
+      str_to_mxip(m_config_calibr.ip_adress, &ip);
+      m_mxnet.set_dest_ip(ip);*/
+
       type_meas_t type_meas = tm_volt_dc;
       IRS_ASSERT(
         str_to_type_meas(m_config_calibr.type_meas.c_str(), type_meas));
@@ -337,14 +409,14 @@ void TDataHandlingF::load_config_calibr()
         ExtractFileName(mv_list_config_calibr[index_file]));
       mp_active_table->set_inf_in_param(m_inf_in_param);
       // загрузка последнего активного файла
-      AnsiString file_namedir = m_config_calibr.active_filename;
+      String file_namedir = m_config_calibr.active_filename;
       if(FileExists(file_namedir)){
         mp_active_table->set_file_namedir(file_namedir);
         mp_active_table->load_table_from_file(file_namedir.c_str());
       }else{
         mp_active_table->clear_table_def();
       }
-      Caption = m_prog_name+AnsiString(" - ")+file_namedir;
+      Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 
       out_param_config_for_measurement_t out_param_cfg_for_measurement =
         m_config_calibr.out_param_config_for_measurement;
@@ -374,14 +446,25 @@ void TDataHandlingF::load_config_calibr()
       }
       TemperatureControlGroupBox->Visible = temperature_ctrl_cft.enabled;   
       m_load_conf_calibr_device_success = true;
-      m_on_reset_functional_bits = true;
+      //m_on_reset_functional_bits = true;
       m_log<<"Загрузка конфигурации калибровки успешно завершена.";
 
       // загрузка конфигурации опорного канала
       if (m_config_calibr.reference_channel.enabled) {
-        mp_mxnet_ref_channel.reset(new mxnetc(MXIFA_MXNETC_2));
+        const String config_name =
+          ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+        if (is_ref_device_config_exists(config_name)) {
+          load_ref_device(config_name);
+        } else {
+          create_ref_device_config_from_old(config_name, irst("mxnet"),
+            m_config_calibr);
+        }
+
+
+
+        /*mp_mxnet_ref_channel.reset(new mxnetc(MXIFA_MXNETC_2));
         mp_mxnet_data_ref_channel.reset(new irs::mxdata_to_mxnet_t(
-          mp_mxnet_ref_channel.get(), MS_TO_CNT(2000)));
+          mp_mxnet_ref_channel.get(), MS_TO_CNT(2000)));*/
 
         m_config_calibr_ref_channel = m_config_calibr;
         m_config_calibr_ref_channel.ip_adress =
@@ -389,26 +472,130 @@ void TDataHandlingF::load_config_calibr()
         m_config_calibr_ref_channel.port =
           m_config_calibr_ref_channel.reference_channel.port;
         m_config_calibr_ref_channel.reference_channel.enabled = false;
-        mp_mxnet_ref_channel->set_dest_port(m_config_calibr_ref_channel.port);
+        /*mp_mxnet_ref_channel->set_dest_port(m_config_calibr_ref_channel.port);
         mxip_t ip = {{192, 168, 0, 38}};
-        cstr_to_mxip(ip, m_config_calibr_ref_channel.ip_adress.c_str());
-        mp_mxnet_ref_channel->set_dest_ip(ip);
+        str_to_mxip(m_config_calibr_ref_channel.ip_adress, &ip);
+        mp_mxnet_ref_channel->set_dest_ip(ip);*/
       }
 
     }else{
-      m_log << "Загрузка конфигурации прервана.";
-      m_log << ("Файл \""+ filename_conf +"\" отсутствует"+".");
-      MessageDlg("Файл \""+ filename_conf +"\" отсутствует"+".",
+      m_log << irst("Загрузка конфигурации прервана.");
+      m_log << (irst("Файл \"") + filename_conf + irst("\" отсутствует") +
+        irst("."));
+      MessageDlg(irst("Файл \"") + filename_conf + irst("\" отсутствует") +
+        irst("."),
         mtError,
         TMsgDlgButtons()<<mbOK,
         0);
-
     }
   }
 }
 
+void TDataHandlingF::set_connect_if_enabled(bool a_forced_connect)
+{
+  if (ConnectAction->Checked) {
+    set_connect_calibr_device(a_forced_connect);
+  } else {
+    load_config_calibr();
+  }
+}
+
+void TDataHandlingF::set_connect_calibr_device(
+  bool a_forced_connect)
+{
+  if((!m_on_block_reconfiguration) || (a_forced_connect == true)){
+    int index_file = ConfigCB->ItemIndex;
+    if (index_file >= 0) {
+      const String select_config_device = extract_short_filename(
+        ExtractFileName(mv_list_config_calibr[index_file]));
+      bool reset_connect = false;
+      if ((m_cur_config_device != select_config_device) || (a_forced_connect)) {
+        reset_connect = true;
+      }
+      if (!m_device.created()) {
+        reset_connect = true;
+      }
+      if (reset_connect) {
+        m_log << irst("Установка соединения с устройством");
+        m_cur_config_device = select_config_device;
+        load_config_calibr();
+      }
+      m_device.enable(m_config_calibr);
+      if (m_config_calibr.reference_channel.enabled) {
+        //mp_ref_device->mxdata_assembly->enabled(true);
+        m_ref_device.enable(m_config_calibr_ref_channel);
+      }
+      m_on_reset_functional_bits = true;
+      #ifdef NOP
+      if((m_cur_config_device != select_config_device) || (a_forced_connect)){
+        m_log << irst("Установка соединения с устройством");
+        m_cur_config_device = select_config_device;
+        load_config_calibr();
+
+
+        m_device.mxdata_assembly->enabled(true);
+        if (m_config_calibr.reference_channel.enabled) {
+          mp_ref_device->mxdata_assembly->enabled(true);
+        }
+        /*if (m_device.mxdata_assembly->enabled()) {
+          m_data_map.connect(m_device.mxdata_assembly->mxdata(),
+            m_config_calibr);
+        }
+
+        if (m_config_calibr.reference_channel.enabled) {
+          mp_data_map_ref_channel->connect(
+            mp_mxnet_data_ref_channel.get(), m_config_calibr_ref_channel);
+        }*/
+      }
+      #endif // NOP
+    }
+  }
+}
+
+void TDataHandlingF::set_connect_multimetr()
+{
+  /*String cur_multimetr = get_selected_multimeter();
+  multimeter_mode_type_t mode = mul_mode_type_active;
+  if (m_type_meas == tm_value) {
+    mode = mul_mode_type_passive;
+  }
+  m_value_meas.set_connect_multimetr(
+    str_to_type_multimeter(cur_multimetr.c_str()), mode);*/
+  if (!mp_mxmultimeter_assembly.is_empty()) {
+    multimeter_mode_type_t mode = mul_mode_type_active;
+    if (m_type_meas == tm_value) {
+      mode = mul_mode_type_passive;
+    }
+    mp_mxmultimeter_assembly->enable(mode);
+    m_value_meas.set_connect_multimetr(mp_mxmultimeter_assembly->mxmultimeter());
+  }
+}
+
+String TDataHandlingF::get_selected_multimeter()
+{
+  int index_multimetr = PatternOfMeasuringInstrumentCB->ItemIndex;
+  return PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
+}
+
+void TDataHandlingF::reset_connect_calibr_device()
+{
+  //m_data_map.reset_connection();
+  m_device.disable();
+  /*if (!mp_ref_device.is_empty()) {
+    mp_ref_device->mxdata_assembly->enabled(false);
+  } */
+  m_ref_device.disable();
+}
+
+void TDataHandlingF::reset_connect_multimetr()
+{
+  m_cur_config_multimetr = irst("");
+  m_value_meas.disconnect_multimetr();
+  PatternOfMeasuringInstrumentCB->Enabled = true;
+}
+
 void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
-{ 
+{
   const int size_of_ident = sizeof(irs_u32);
   const int size_of_size_x = sizeof(irs_u32);
   const int size_of_size_y = sizeof(irs_u32);
@@ -575,16 +762,11 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
 
 void TDataHandlingF::tick()
 {
-  m_y_out_filter.add(m_data_map.y_out);
-  m_y_out_filter.tick();
-
   m_on_block_reconfiguration = m_on_auto_meas;
-  if(m_load_conf_calibr_device_success){
-    for (int i = 0; i < 10; i++) {
-      m_mxnet.tick();
-    }
-    //mp_eeprom->tick();
-    m_mxnet_data.tick();
+  if (m_load_conf_calibr_device_success && m_device.enabled()) {
+    m_device.tick();
+    m_ref_device.tick();
+
     if (m_config_calibr.reference_channel.enabled) {
       for (int i = 0; i < 10; i++) {
         mp_mxnet_ref_channel->tick();
@@ -594,11 +776,18 @@ void TDataHandlingF::tick()
     #ifdef debug_irsdigint
     m_on_out_data = false;
     #endif //debug_irsdigint
-    if(m_mxnet_data.connected()) {
-      WorkTimeDeviceLE->Text = (AnsiString)m_data_map.work_time;
+
+    if(m_device.connected()) {
+
+      m_y_out_filter.add(m_device.get_data()->y_out);
+      m_y_out_filter.tick();
+
+      //return;
+      const irs_u32 work_time = m_device.get_data()->work_time;
+      WorkTimeDeviceLE->Text = num_to_cbstr(work_time);
       if (m_config_calibr.out_param_control_config.enabled) {
         if (m_on_auto_meas) {
-          double out_param = m_data_map.y_out;
+          double out_param = m_device.get_data()->y_out;
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           param_cur_cell_t param_cur_cell =
@@ -627,7 +816,7 @@ void TDataHandlingF::tick()
         }
       }
       if (m_config_calibr.temperature_control.enabled) {
-        double temperature = m_data_map.temperature;
+        double temperature = m_device.get_data()->temperature;
         bool temperature_allowable = fabs(temperature -
           m_config_calibr.temperature_control.reference) <=
           m_config_calibr.temperature_control.difference;
@@ -639,7 +828,7 @@ void TDataHandlingF::tick()
           CurrentTemperatureLabeledEdit->Font->Color = clRed;
         }
       }
-      if (m_data_map.operating_duty_bit == 1) {
+      if (m_device.get_data()->operating_duty_bit == 1) {
         m_on_reg_ready = true;
       } else {
         m_on_reg_ready = false;
@@ -666,7 +855,8 @@ void TDataHandlingF::tick()
     switch(status_connect)
     {
       case WAIT_CONNECT:      //ожидание коннекта
-        if(m_mxnet_data.connected()){
+        //if(m_device.mxdata_assembly->mxdata()->connected()){
+        if(m_device.connected()){
           status_connect = CONNECT;
           m_on_connect_mxnet_data = true;
           if(!m_non_first_connect_mxnet_data){
@@ -678,7 +868,8 @@ void TDataHandlingF::tick()
         }
         break;
       case CONNECT:{         //устойчивое состояние: считывание данных
-        if(!m_mxnet_data.connected())
+        //if(!m_device.mxdata_assembly->mxdata()->connected())
+        if(!m_device.connected())
         {
           m_on_connect_mxnet_data = false;
           m_on_connect_eeprom = false;
@@ -686,16 +877,19 @@ void TDataHandlingF::tick()
         } else {
           if(m_on_out_data)
           {
-            status_connect = OUT_DATA; 
+            status_connect = OUT_DATA;
           }
         }
       } break;
       case OUT_DATA: {
         if (m_param_cur_cell.col_value.init == true &&
           m_param_cur_cell.row_value.init == true) {
-          m_data_map.x_in =
+          if(!m_device.connected()) {
+            int a = 0;
+          }
+          m_device.get_data()->x_in =
             m_param_cur_cell.col_value.value;
-          m_data_map.y_in =
+          m_device.get_data()->y_in =
             m_param_cur_cell.row_value.value;
           if (m_config_calibr.reference_channel.enabled) {
              mp_data_map_ref_channel->x_in =
@@ -704,7 +898,7 @@ void TDataHandlingF::tick()
               m_param_cur_cell.row_value.value;
           }
           if (m_inf_in_param.number_in_param == THREE_PARAM) {
-            m_data_map.q_in = m_param_cur_cell.top_value.value;
+            m_device.get_data()->q_in = m_param_cur_cell.top_value.value;
             if (m_config_calibr.reference_channel.enabled) {
               mp_data_map_ref_channel->q_in = m_param_cur_cell.top_value.value;
             }
@@ -717,27 +911,48 @@ void TDataHandlingF::tick()
     switch(m_status_options)
     {
       case OFF_PROCESSING:{
-        m_status_options = OptionsF->status_options();
+        m_status_options = mp_options_form->status_options();
       } break;
       case ON_UPDAT:{
-        m_options_mnk = OptionsF->read_options_mnk();
-        m_options_correct = OptionsF->read_options_correct();
-        m_options_coef = OptionsF->read_options_coef();
+        m_options_mnk = mp_options_form->read_options_mnk();
+        m_options_correct = mp_options_form->read_options_correct();
+        m_options_coef = mp_options_form->read_options_coef();
         //сохранение в файл
         //...
-        OptionsF->reset_status_options();
+        mp_options_form->reset_status_options();
         m_status_options = OFF_PROCESSING;
       } break;
       case ON_READ:{
-        OptionsF->write_options_mnk(m_options_mnk);
-        OptionsF->write_options_correct(m_options_correct);
-        OptionsF->write_options_coef(m_options_coef);
-        OptionsF->reset_status_options();
+        mp_options_form->write_options_mnk(m_options_mnk);
+        mp_options_form->write_options_correct(m_options_correct);
+        mp_options_form->write_options_coef(m_options_coef);
+        mp_options_form->reset_status_options();
         m_status_options = OFF_PROCESSING;
       } break;
     }
   }//if(m_load_conf_calibr_device_success)
+  else {
+    CurrentStatusLabeledEdit->Font->Color = clBlack;
+    CurrentStatusLabeledEdit->Text = irst("Соединение выключено!");
+  }
 
+  eeprom_tick();
+
+  if (m_timer_chart_auto_update.check()) {
+    if (m_chart.get_auto_update_stat()) {
+      bool on_update = true;
+      m_chart.add_all_chart_z_of_x(mp_active_table, m_inf_in_param, on_update);
+      m_chart.add_all_chart_z_of_y(mp_active_table, m_inf_in_param, on_update);
+    }
+  }
+  #ifdef  debug_version_digital_interpolator
+  //mp_active_table->no_modifi();
+  #endif
+  tick_calibr_data();
+}
+
+void TDataHandlingF::eeprom_tick()
+{
   if (m_on_connect_mxnet_data) {
     switch(status_connect_eeprom){
       case sce_off: {
@@ -792,11 +1007,11 @@ void TDataHandlingF::tick()
             m_log << "Нет данных для верификации.";
             status_connect_eeprom = sce_reset;
           }
-        }     
+        }
       } break;
       case sce_create_interface_eeprom: {
         mp_eeprom.reset(new irs::funnel_client_t(
-          &m_mxnet_data,
+          m_device.get_mxdata(),
           m_config_calibr.index_pos_eeprom,
           MS_TO_CNT(200),
           m_index_pos_offset_eeprom,
@@ -991,20 +1206,7 @@ void TDataHandlingF::tick()
       } break;
     }
   }
-
-  if (m_timer_chart_auto_update.check()) {
-    if (m_chart.get_auto_update_stat()) {
-      bool on_update = true;
-      m_chart.add_all_chart_z_of_x(mp_active_table, m_inf_in_param, on_update);
-      m_chart.add_all_chart_z_of_y(mp_active_table, m_inf_in_param, on_update);
-    }
-  }
-  #ifdef  debug_version_digital_interpolator
-  //mp_active_table->no_modifi();
-  #endif
-  tick_calibr_data();
 }
-
 //---------------------------------------------------------------------------
 
 void TDataHandlingF::set_type_jump(
@@ -1072,7 +1274,7 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
 { 
   if (a_key == VK_RETURN) {
     if (m_cur_cell_table1.init){
-      irs::string latest_entry_previous_cell_str =
+      string_type latest_entry_previous_cell_str =
         RawDataStringGrid->Cells
         [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
       if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
@@ -1160,36 +1362,38 @@ void TDataHandlingF::process_volt_meas()
     m_on_auto_meas = false;
     //config_button_stop_avto_volt_meas();
     m_status_process_meas = spm_reset;
-    m_log << "Стоп.";
+    m_log << irst("Стоп.");
   }
   if (m_on_auto_meas) {
     config_button_start_avto_volt_meas();
     m_timer_delay_control_error_bit.check();
-    if (m_data_map.error_bit == 1 &&
-      m_timer_delay_control_error_bit.stopped()) {
-      if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
-        m_cur_count_reset_over_bit++;
-        m_data_map.reset_over_bit = 1;
-        m_on_process_auto_meas_active_cell = true;
-        if (m_mode_program == mode_prog_single_channel) {
-          m_status_process_meas = spm_set_range;
+    if (m_device.connected()) {
+      if (m_device.get_data()->error_bit == 1 &&
+        m_timer_delay_control_error_bit.stopped()) {
+        if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
+          m_cur_count_reset_over_bit++;
+          m_device.get_data()->reset_over_bit = 1;
+          m_on_process_auto_meas_active_cell = true;
+          if (m_mode_program == mode_prog_single_channel) {
+            m_status_process_meas = spm_set_range;
+          } else {
+            m_status_process_meas =
+              spm_wait_ext_trig_set_range;
+            m_log << "Ожидание внешнего запуска установки диапазона измерений.";
+          }
+          //m_status_process_meas = spm_jump_next_elem;
+          m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
+          m_timer_delay_next_cell.set(m_delay_next_cell);
+          m_log << "Сброс ошибки.";
+          m_log << ("Ждем " + FloatToStr(
+            (CNT_TO_DBLTIME(m_delay_next_cell))) +
+            " секунд перед продолжением измерений.");
         } else {
-          m_status_process_meas =
-            spm_wait_ext_trig_set_range;
-          m_log << "Ожидание внешнего запуска установки диапазона измерений.";
+          m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
+          m_log << "Прибор не можнет выйти на рабочий режим.";
+          m_log << "Автоматическое измерение завершилось с ошибкой.";
+          m_status_process_meas = spm_reset;
         }
-        //m_status_process_meas = spm_jump_next_elem;
-        m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
-        m_timer_delay_next_cell.set(m_delay_next_cell);
-        m_log << "Сброс ошибки.";
-        m_log << ("Ждем " + FloatToStr(
-          (CNT_TO_DBLTIME(m_delay_next_cell))) +
-          " секунд перед продолжением измерений.");
-      } else {
-        m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
-        m_log << "Прибор не можнет выйти на рабочий режим.";
-        m_log << "Автоматическое измерение завершилось с ошибкой.";
-        m_status_process_meas = spm_reset;
       }
     }
   }
@@ -1199,6 +1403,7 @@ void TDataHandlingF::process_volt_meas()
       if (m_on_start_new_auto_meas == true) {
         m_count_point_meas = 0;
         m_previous_count_point_meas = 0;
+        set_connect_calibr_device();
         set_connect_multimetr();
         reset_start_new_avto_volt_meas_stat();
         m_on_auto_meas = true;
@@ -1208,8 +1413,11 @@ void TDataHandlingF::process_volt_meas()
           mp_active_table->get_illegal_cells();
         m_manager_traffic_cell.set_illegal_cell(illegal_cells);
         m_cur_count_reset_over_bit = 0;
+        /*if(!m_device.connected()) {
+          int a = 0;
+        }
         set_value_working_extra_params();
-        set_value_working_extra_bits();
+        set_value_working_extra_bits();*/
         if (m_type_jump_next_elem == HORIZONTAL_DOWN ||
           m_type_jump_next_elem == HORIZONTAL_DOWN_SMOOTH ||
           m_type_jump_next_elem == VERTICAL_FORWARD ||
@@ -1225,28 +1433,45 @@ void TDataHandlingF::process_volt_meas()
             mp_active_table->get_col_displ(),
             mp_active_table->get_row_displ());
           m_on_process_auto_meas_active_cell = false;
-          m_log << "Запуск автоматического измерения с активной ячейки.";
+          m_log << irst("Запуск автоматического измерения с активной ячейки.");
         } else {
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           mp_active_table->set_col_displ(coord_cur_cell.col);
           mp_active_table->set_row_displ(coord_cur_cell.row);
-          m_log << "Запуск автоматического измерения.";
+          m_log << irst("Запуск автоматического измерения.");
         }
+        m_status_process_meas = spb_wait_connect;
+        /*if (m_mode_program == mode_prog_single_channel) {
+          m_status_process_meas = spm_set_range;
+        } else {
+          m_status_process_meas =
+            spm_wait_ext_trig_set_range;
+          m_log <<
+            irst("Ожидание внешнего запуска установки диапазона измерений.");
+        }*/
+        m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
+        m_cell_count_end++;
+        //m_time_meas.start();
+        m_exec_progress.show();
+        m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
+        m_exec_progress.p_percent_progress->Caption = irst("0%");
+        m_exec_progress.p_progress_bar->Position = 0;
+      }
+    } break;
+    case spb_wait_connect: {
+      if(m_device.connected()) {
+        set_value_working_extra_params();
+        set_value_working_extra_bits();
         if (m_mode_program == mode_prog_single_channel) {
           m_status_process_meas = spm_set_range;
         } else {
           m_status_process_meas =
             spm_wait_ext_trig_set_range;
-          m_log << "Ожидание внешнего запуска установки диапазона измерений.";
+          m_log <<
+            irst("Ожидание внешнего запуска установки диапазона измерений.");
         }
-        m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
-        m_cell_count_end++;
         m_time_meas.start();
-        m_exec_progress.show();
-        m_exec_progress.p_comment->Caption = "Процесс калибровки.";
-        m_exec_progress.p_percent_progress->Caption = "0%";
-        m_exec_progress.p_progress_bar->Position = 0;
       }
     } break;
     case spm_jump_next_elem:{
@@ -1291,15 +1516,15 @@ void TDataHandlingF::process_volt_meas()
       m_out_param_stability_control.set_diviation(reference*
         m_config_calibr.out_param_control_config.max_relative_difference);
       m_status_process_meas = spm_wait_set_range;
-      ostringstream msg;
-      msg << "Установка диапазона измерения: " << range;
-      m_log << irs::str_conv<AnsiString>(msg.str());
+      ostringstream_type msg;
+      msg << irst("Установка диапазона измерения: ") << range;
+      m_log << irs::str_conv<String>(msg.str());
     } break;
     case spm_wait_set_range: {
       status_range_t status_range = get_status_range();
       if (status_range == range_stat_success) {   
         m_status_process_meas = spm_mode_setting;
-        m_log << "Установка диапазона измерения завершена.";
+        m_log << irst("Установка диапазона измерения завершена.");
       }
     } break;
     case spm_mode_setting: {
@@ -1309,7 +1534,7 @@ void TDataHandlingF::process_volt_meas()
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
       out_param(param_cur_cell);
-      m_log << ("Ждем " + FloatToStr(
+      m_log << (irst("Ждем ") + FloatToStr(
         (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
         " секунд перед проверкой рабочего режима.");
       m_timer_delay_control.set(m_delay_start_control_reg);
@@ -1449,10 +1674,9 @@ void TDataHandlingF::process_volt_meas()
       }
     } break;
     case spm_processing_data: {
-      int index_multimetr = PatternOfMeasuringInstrumentCB->ItemIndex;
-      AnsiString cur_multim =
-        PatternOfMeasuringInstrumentCB->Items->Strings[index_multimetr];
-      if (str_to_type_multimeter(cur_multim.c_str()) != tmul_none_multimeter) {
+      String cur_multim = get_selected_multimeter();
+
+      if (!mp_mxmultimeter_assembly.is_empty()) {
         m_y_out_filter.stop();
         double y_out = 0;
         if (m_config_calibr.out_param_config_for_measurement.
@@ -1487,12 +1711,15 @@ void TDataHandlingF::process_volt_meas()
       set_value_default_extra_params();
       set_value_default_extra_bits();
       m_value_meas.disconnect_multimetr();
+      /*if (!ConnectAction->Checked) {
+        reset_connect_calibr_device();
+      } */
       m_param_cur_cell = m_default_param_cur_cell;
       m_on_out_data = true;
       m_on_auto_meas = false;
       m_on_process_auto_meas_active_cell = false;
       config_button_stop_avto_volt_meas();
-      m_status_process_meas = spm_off_process;
+      //m_status_process_meas = spm_off_process;
       TimeMeasLE->Text = String();
       IntervalTimeMeasLE->Text = String();
       CurrentOutParamLabeledEdit->Text = String();
@@ -1501,6 +1728,16 @@ void TDataHandlingF::process_volt_meas()
       RemainingTimeForStableState->Text = String();
       m_exec_progress.hide();
       m_exec_progress.clear();
+      m_timer_waiting_set_extra_vars.start();
+      m_status_process_meas = spm_wait_set_extra_vars;
+    } break;
+    case spm_wait_set_extra_vars: {
+      if (m_timer_waiting_set_extra_vars.check()) {
+        if (!ConnectAction->Checked) {
+          reset_connect_calibr_device();
+        }
+        m_status_process_meas = spm_off_process;
+      }
     } break;
   }
   if (m_on_auto_meas) {
@@ -1508,7 +1745,7 @@ void TDataHandlingF::process_volt_meas()
     irs::millisecond_t time_meas_ms =
       static_cast<irs::millisecond_t>(time_meas_sec*1000);
     const bool show_ms = false;
-    irs::string time_meas_str =  irs::ms_to_strtime(time_meas_ms, show_ms);
+    string_type time_meas_str = irs::ms_to_strtime(time_meas_ms, show_ms);
     TimeMeasLE->Text = time_meas_str.c_str();
     if (m_count_point_meas > 0) {
       double time_interval_end_meas_sec = 0.0;
@@ -1542,7 +1779,7 @@ void TDataHandlingF::process_volt_meas()
       }
       irs::millisecond_t time_interval_end_meas_ms =
         static_cast<irs::millisecond_t>(time_interval_end_meas_sec*1000);
-      irs::string time_interval_end_meas_str =
+      string_type time_interval_end_meas_str =
         irs::ms_to_strtime(time_interval_end_meas_ms, show_ms);
       IntervalTimeMeasLE->Text = time_interval_end_meas_str.c_str();
     } else {
@@ -1582,8 +1819,13 @@ void TDataHandlingF::config_button_start_avto_volt_meas()
   InversionSignConrentTableAction->Enabled = false;
   ExportTableToMExcelCsvFileAction->Enabled = false;
 
+
   CreateConfigButton->Enabled = false;
-  //EditConfigButton->Enabled = false;
+  EditConfigButton->Enabled = false;
+  DeleteConfigButton->Enabled = false;
+  ShowMultimeterOptionsButton->Enabled = false;
+
+  ConnectAction->Enabled = false;
 }
 void TDataHandlingF::config_button_stop_avto_volt_meas()
 {
@@ -1617,6 +1859,11 @@ void TDataHandlingF::config_button_stop_avto_volt_meas()
   ExportTableToMExcelCsvFileAction->Enabled = true;
 
   CreateConfigButton->Enabled = true;
+  EditConfigButton->Enabled = true;
+  DeleteConfigButton->Enabled = true;
+  ShowMultimeterOptionsButton->Enabled = true;
+
+  ConnectAction->Enabled = true;
 }
 
 //---------------------------------------------------------------------------
@@ -1625,7 +1872,7 @@ void __fastcall TDataHandlingF::RawDataStringGridSelectCell(
       TObject *Sender, int ACol, int ARow, bool &CanSelect)
 {
   if(m_cur_cell_table1.init){
-    irs::string latest_entry_previous_cell_str =
+    string_type latest_entry_previous_cell_str =
       RawDataStringGrid->Cells
       [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
     if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
@@ -1736,7 +1983,7 @@ void TDataHandlingF::tick2()
 }
 
 void TDataHandlingF::set_setting_for_type_jump_next_cell(
-  const AnsiString& a_str_type_jump_next_elem)
+  const String& a_str_type_jump_next_elem)
 {
   m_type_jump_next_elem =
     str_to_type_jump_next_elem(a_str_type_jump_next_elem.c_str());
@@ -1937,7 +2184,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   bool select_cell_in_x = (col_table > 0) && (row_table == 0);
   bool select_cell_in_y = (col_table == 0) && (row_table > 0);
   bool select_cell_in_z = (col_table == 0) && (row_table == 0);
-  AnsiString value = mp_active_table->get_cell_display_variable_precision(
+  String value = mp_active_table->get_cell_display_variable_precision(
     a_col, a_row).c_str();
   if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)){
     if((a_col == table->Col) && (a_row == table->Row)){
@@ -2074,14 +2321,12 @@ void __fastcall TDataHandlingF::AddGroupCellsActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::StartAutoVoltMeasActionExecute(
       TObject *Sender)
 {
-  //config_button_start_avto_volt_meas();
   m_on_start_new_auto_meas = true;
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::StopVoltMeasActionExecute(TObject *Sender)
 {
-  //config_button_stop_avto_volt_meas();
   m_on_stop_process_avto_volt_meas = true;
 }
 //---------------------------------------------------------------------------
@@ -2091,7 +2336,6 @@ void __fastcall TDataHandlingF::StopVoltMeasActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::StartAutoVoltMeasActiveCellsActionExecute(
       TObject *Sender)
 {
-  //config_button_start_avto_volt_meas();
   m_on_process_auto_meas_active_cell = true;
 }
 //---------------------------------------------------------------------------
@@ -2099,9 +2343,9 @@ void __fastcall TDataHandlingF::StartAutoVoltMeasActiveCellsActionExecute(
 
 void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
 {
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
-  if(file_namedir != ""){
+  if(!file_namedir.IsEmpty()){
     mp_active_table->save_table_to_file(file_namedir.c_str());
     mp_active_table->save_table_to_m_file(file_namedir.c_str());
   }else{
@@ -2112,21 +2356,21 @@ void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileSaveAsAccept(TObject *Sender)
 {
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = FileSaveAs->Dialog->FileName;
   mp_active_table->set_file_namedir(file_namedir);
   mp_active_table->save_table_to_file(file_namedir.c_str());
   m_config_calibr.active_filename = file_namedir;
-  Caption = m_prog_name + AnsiString(" - ") + file_namedir;
+  Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::FileSaveAsBeforeExecute(TObject *Sender)
 {   
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
-  if(file_namedir == ""){
-    FileSaveAs->Dialog->FileName = "Data.dgi";
+  if(file_namedir.IsEmpty()){
+    FileSaveAs->Dialog->FileName = irst("Data.dgi");
   }
   else{
     FileSaveAs->Dialog->FileName = file_namedir;
@@ -2136,9 +2380,9 @@ void __fastcall TDataHandlingF::FileSaveAsBeforeExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 {
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
-  if(file_namedir != ""){
+  if(!file_namedir.IsEmpty()){
     mp_active_table->load_table_from_file(file_namedir.c_str());
   }else{
     FileOpen->Execute();
@@ -2148,12 +2392,12 @@ void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
 {
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = FileOpen->Dialog->FileName;
   mp_active_table->set_file_namedir(file_namedir);
   mp_active_table->load_table_from_file(file_namedir.c_str());
   m_config_calibr.active_filename = file_namedir;
-  Caption = m_prog_name+AnsiString(" - ")+file_namedir;
+  Caption = m_prog_name + String(irst(" - "))+file_namedir;
 }
 //---------------------------------------------------------------------------
 
@@ -2301,7 +2545,7 @@ void __fastcall TDataHandlingF::ZX2Click(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::ZY2Click(TObject *Sender)
 {
- m_chart.add_all_chart_z_of_y(mp_active_table, m_inf_in_param);
+  m_chart.add_all_chart_z_of_y(mp_active_table, m_inf_in_param);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::N3Click(TObject *Sender)
@@ -2321,7 +2565,7 @@ void __fastcall TDataHandlingF::DelSubtableActionExecute(TObject *Sender)
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
-      TObject *Sender, int ACol, int ARow, AnsiString &Value)
+      TObject *Sender, int ACol, int ARow, UnicodeString &Value)
 {
   m_cur_cell_table1.col = ACol;
   m_cur_cell_table1.row = ARow;
@@ -2336,23 +2580,25 @@ void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
 
 void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 {
-  if (m_cur_filename_conf_calibr_device != "") {
+  if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << "Текущая конфигурация успешно сохранена.";
+      m_log << irst("Текущая конфигурация успешно сохранена.");
     }
   }
-  NewConfigF->set_path_program(m_path_prog);
-  NewConfigF->set_config_def();
-  if(NewConfigF->Visible == false){
-    int button_result = NewConfigF->ShowModal();
+  irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
+  //config_form->set_path_program(m_path_prog);
+  config_form->set_config_def();
+  //load_config_calibr_to_display();
+  if(config_form->Visible == false){
+    int button_result = config_form->ShowModal();
     if (button_result == mrOk) {
       m_on_block_reconfiguration = true;
       //перезагружаем список доступных конфигураций
-      AnsiString dir_config = m_path_prog+"\\"+m_foldername_conf;
+      String dir_config = m_file_name_service.get_config_dir();
       if (DirectoryExists(dir_config)) {
-        load_config_calibr_to_display(dir_config);
+        load_config_calibr_to_display();
         m_on_block_reconfiguration = false;
-        AnsiString name_new_config = NewConfigF->get_name_new_conf();
+        String name_new_config = config_form->get_name_new_conf();
         int index_pos_text = irs::cbuilder::combo_box_find_item(
           ConfigCB, name_new_config);
         if (index_pos_text == irs::cbuilder::npos) {
@@ -2365,32 +2611,33 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
       }
       bool forsed_connect = true;
       // устанавливаем принудительно реконнект
-      set_connect_calibr_device(forsed_connect);
+      set_connect_if_enabled(forsed_connect);
     }
   }
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
 {
-  if (m_cur_filename_conf_calibr_device != "") {
+  if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << "Текущая конфигурация успешно сохранена.";
+      m_log << irst("Текущая конфигурация успешно сохранена.");
     }
   }
-  NewConfigF->set_path_program(m_path_prog);
-  if(NewConfigF->Visible == false) {
+  irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
+  //config_form->set_path_program(m_path_prog);
+  if(config_form->Visible == false) {
     int index = ConfigCB->ItemIndex;
     if(index >= 0) {
-      NewConfigF->edit_config(mv_list_config_calibr[index]);
-      int button_result = NewConfigF->ShowModal();
+      config_form->edit_config(mv_list_config_calibr[index]);
+      int button_result = config_form->ShowModal();
       if (button_result == mrOk) {
         m_on_block_reconfiguration = true;
         //перезагружаем список доступных конфигураций
-        AnsiString dir_config = m_path_prog+"\\"+m_foldername_conf;
+        String dir_config = m_file_name_service.get_config_dir();
         if (DirectoryExists(dir_config)) {
-          load_config_calibr_to_display(dir_config);
+          load_config_calibr_to_display();
           m_on_block_reconfiguration = false;
-          AnsiString name_new_config = NewConfigF->get_name_new_conf();
+          String name_new_config = config_form->get_name_new_conf();
           int index_pos_text = irs::cbuilder::combo_box_find_item(
             ConfigCB, name_new_config);
           if (index_pos_text == irs::cbuilder::npos) {
@@ -2403,7 +2650,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
         }
         const bool forsed_connect = true;
         // устанавливаем принудительно реконнект
-        set_connect_calibr_device(forsed_connect);
+        set_connect_if_enabled(forsed_connect);
       }
     }
   }
@@ -2427,7 +2674,7 @@ void __fastcall TDataHandlingF::CloseFormButtonClick(TObject *Sender)
 
 void __fastcall TDataHandlingF::FormClose(TObject *Sender,
       TCloseAction &Action)
-{
+{  
   m_main_opt_ini_file.save();
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
   //save_cur_config_device();
@@ -2454,17 +2701,10 @@ void __fastcall TDataHandlingF::Panel1Resize(TObject *Sender)
 void __fastcall TDataHandlingF::ConfigCBChange(TObject *Sender)
 {
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
-  //save_cur_config_device();
-  set_connect_calibr_device();
+  set_connect_if_enabled();
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TDataHandlingF::PatternOfMeasuringInstrumentCBChange(
-      TObject *Sender)
-{
-  //set_connect_multimetr();
-}
-//---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetPhaseMeasActionExecute(TObject *Sender)
 {
@@ -2531,7 +2771,7 @@ TDataHandlingF::device_mode_status_t
 void TDataHandlingF::meas_execute()
 {
   m_value_meas.execute_meas(m_type_meas, &m_value_meas_multimetr);
-  m_y_out = m_data_map.y_out;
+  m_y_out = m_device.get_data()->y_out;
   if (m_config_calibr.out_param_config_for_measurement.consider_out_param &&
     m_config_calibr.out_param_config_for_measurement.out_param_filter_enabled) {
     m_y_out_filter.restart();
@@ -2554,11 +2794,11 @@ meas_status_t TDataHandlingF::meas_status()
 
 void __fastcall TDataHandlingF::AddTableActionExecute(TObject *Sender)
 {
-  AnsiString file_namedir = "";
+  String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
-  if(file_namedir != ""){
+  if(!file_namedir.IsEmpty()){
     if(FileOpenDialog1->Execute()){
-      AnsiString file_namedir = FileOpenDialog1->FileName;
+      String file_namedir = FileOpenDialog1->FileName;
       mp_active_table->load_subtable_from_file(file_namedir.c_str());
     }
   }else{
@@ -2595,36 +2835,33 @@ void TDataHandlingF::out_message_log_cur_param_cell(
   const param_cur_cell_t& a_param_cur_cell)
 {
   const int precision = 5;
-  irs::string message_param;
+  string_type message_param;
   if (m_inf_in_param.type_anchor == PARAMETR3) {
     if (a_param_cur_cell.top_value.init) {
-      ostrstream ostr_top;
-      ostr_top << setprecision(precision) << a_param_cur_cell.top_value.value <<
-        ends;
-      irs::string top_value_str = ostr_top.str();
-      ostr_top.freeze(false);
-      message_param += top_value_str+" "+m_inf_in_param.type_variable_param3;
-      message_param += "; ";
+      ostringstream_type ostr_top;
+      ostr_top << setprecision(precision) << a_param_cur_cell.top_value.value;
+      string_type top_value_str = ostr_top.str();
+      message_param += top_value_str + irst(" ") +
+        m_inf_in_param.type_variable_param3;
+      message_param += irst("; ");
     }
   }
   if (a_param_cur_cell.row_value.init) {
-    ostrstream ostr_row;
-    ostr_row << setprecision(precision) << a_param_cur_cell.row_value.value <<
-      ends;
-    irs::string row_value_str = ostr_row.str();
-    ostr_row.freeze(false);
-    message_param += row_value_str+" "+m_inf_in_param.type_variable_param2;
-    message_param += "; ";
+    ostringstream_type ostr_row;
+    ostr_row << setprecision(precision) << a_param_cur_cell.row_value.value;
+    string_type row_value_str = ostr_row.str();
+    message_param += row_value_str + irst(" ") +
+      m_inf_in_param.type_variable_param2;
+    message_param += irst("; ");
   }
   if (a_param_cur_cell.col_value.init) {
-    ostrstream ostr_col;
-    ostr_col << setprecision(precision) << a_param_cur_cell.col_value.value <<
-      ends;
-    irs::string col_value_str = ostr_col.str();
-    ostr_col.freeze(false);
-    message_param += col_value_str+" "+m_inf_in_param.type_variable_param1;
-    message_param += ";";
-  } 
+    ostringstream_type ostr_col;
+    ostr_col << setprecision(precision) << a_param_cur_cell.col_value.value;
+    string_type col_value_str = ostr_col.str();
+    message_param += col_value_str + irst(" ") +
+      m_inf_in_param.type_variable_param1;
+    message_param += irst(";");
+  }
   m_log << message_param.c_str();
 }
 bool TDataHandlingF::save_dirty_data()
@@ -2778,6 +3015,7 @@ void TDataHandlingF::tick_calibr_data()
         case calibr_data_stat_write:
         case calibr_data_stat_verify: {
           m_cur_sub_diapason = 0;
+          set_connect_calibr_device();
           m_process_calibr_data_stat = pcds_get_sub_diapason;
         } break;
       }
@@ -2835,6 +3073,9 @@ void TDataHandlingF::tick_calibr_data()
       }
     } break;
     case pcds_reset: {
+      if (!ConnectAction->Checked) {
+        reset_connect_calibr_device();
+      }
       m_calibr_data_stat = calibr_data_stat_off;
       m_process_calibr_data_stat = pcds_off;
       m_cur_sub_diapason = 0;
@@ -2843,12 +3084,13 @@ void TDataHandlingF::tick_calibr_data()
 }
 void TDataHandlingF::modifi_table_data()
 {
-  irs::string str;
-  auto_ptr<TModifiDataTableF> modifi_data_table(new TModifiDataTableF(0, &str));
+  string_type str;
+  irs::handle_t<TModifiDataTableF> modifi_data_table(
+    new TModifiDataTableF(0, &str));
   if (!modifi_data_table->Visible) {
     int result = modifi_data_table->ShowModal();
     if (result == mrOk) {
-      if (str != "") {
+      if (!str.empty()) {
         mp_active_table->modifi_content_table(str);
       }  
     }
@@ -2857,15 +3099,15 @@ void TDataHandlingF::modifi_table_data()
 void TDataHandlingF::set_value_working_extra_params()
 {
   int parametr_ex_count = m_config_calibr.v_parametr_ex.size();
-  int extra_param_count = m_data_map.v_extra_param.size();
+  int extra_param_count = m_device.get_data()->v_extra_param.size();
   if (parametr_ex_count == extra_param_count) {
     for (int i = 0; i < extra_param_count; i++) {
-      m_data_map.v_extra_param[i] =
+      m_device.get_data()->v_extra_param[i] =
         m_config_calibr.v_parametr_ex[i].value_working;
-      irs::string value_working_str =
+      string_type value_working_str =
         m_config_calibr.v_parametr_ex[i].value_working;
-      AnsiString message = m_config_calibr.v_parametr_ex[i].name;
-      message = message + " установлен в " + value_working_str.c_str();
+      String message = m_config_calibr.v_parametr_ex[i].name;
+      message = message + irst(" установлен в ") + value_working_str.c_str();
       m_log << message;
     }
   }
@@ -2874,15 +3116,15 @@ void TDataHandlingF::set_value_working_extra_params()
 void TDataHandlingF::set_value_default_extra_params()
 {
   int parametr_ex_count = m_config_calibr.v_parametr_ex.size();
-  int extra_param_count = m_data_map.v_extra_param.size();
+  int extra_param_count = m_device.get_data()->v_extra_param.size();
   if (parametr_ex_count == extra_param_count) {
     for (int i = 0; i < extra_param_count; i++) {
-      m_data_map.v_extra_param[i] =
+      m_device.get_data()->v_extra_param[i] =
         m_config_calibr.v_parametr_ex[i].value_default ;
-      irs::string value_default_str =
+      irs::string_t value_default_str =
         m_config_calibr.v_parametr_ex[i].value_default;
-      AnsiString message = m_config_calibr.v_parametr_ex[i].name;
-      message = message + " установлен в " + value_default_str.c_str();
+      String message = m_config_calibr.v_parametr_ex[i].name;
+      message = message + irst(" установлен в ") + value_default_str.c_str();
       m_log << message;
     }
   }
@@ -2891,15 +3133,15 @@ void TDataHandlingF::set_value_default_extra_params()
 void TDataHandlingF::set_value_working_extra_bits()
 {
   int bit_type2_count = m_config_calibr.bit_type2_array.size();
-  int extra_bit_count = m_data_map.v_extra_bit.size();
+  int extra_bit_count = m_device.get_data()->v_extra_bit.size();
   if (bit_type2_count == extra_bit_count) {
     for (int i = 0; i < extra_bit_count; i++) {
-      m_data_map.v_extra_bit[i] =
+      m_device.get_data()->v_extra_bit[i] =
         m_config_calibr.bit_type2_array[i].value_working;
-      irs::string value_working_str =
+      irs::string_t value_working_str =
         m_config_calibr.bit_type2_array[i].value_working;
-      AnsiString message = m_config_calibr.bit_type2_array[i].bitname.c_str();
-      message = message + " установлен в " + value_working_str.c_str();
+      String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
+      message = message + irst(" установлен в ") + value_working_str.c_str();
       m_log << message;
     }
   }
@@ -2907,19 +3149,173 @@ void TDataHandlingF::set_value_working_extra_bits()
 void TDataHandlingF::set_value_default_extra_bits()
 {
   int bit_type2_count = m_config_calibr.bit_type2_array.size();
-  int extra_bit_count = m_data_map.v_extra_bit.size();
+  int extra_bit_count = m_device.get_data()->v_extra_bit.size();
   IRS_ASSERT(bit_type2_count == extra_bit_count);
   if (bit_type2_count == extra_bit_count) {
     for (int i = 0; i < extra_bit_count; i++) {
-      m_data_map.v_extra_bit[i] =
+      m_device.get_data()->v_extra_bit[i] =
         m_config_calibr.bit_type2_array[i].value_def;
-      irs::string value_default_str =
+      irs::string_t value_default_str =
         m_config_calibr.bit_type2_array[i].value_def;
-      AnsiString message = m_config_calibr.bit_type2_array[i].bitname.c_str();
-      message = message + " установлен в " + value_default_str.c_str();
+      String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
+      message = message + irst(" установлен в ") + value_default_str.c_str();
       m_log << message;
     }
   }
+}
+
+void TDataHandlingF::show_main_device_options()
+{
+  m_device.show_options();
+}
+
+void TDataHandlingF::show_ref_device_options()
+{
+  if (m_ref_device.created()) {
+    m_ref_device.show_options();
+  }
+}
+
+void TDataHandlingF::load_main_device(const String& a_config_name)
+{
+  if (a_config_name != get_selected_config()) {
+    load_config_calibr_to_display();
+    select_config(a_config_name);
+  }
+
+  String device_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+
+  m_device.load(device_file_name.c_str());
+
+}
+
+void TDataHandlingF::load_ref_device(const String& a_config_name)
+{
+  if (a_config_name != get_selected_config()) {
+    load_config_calibr_to_display();
+    select_config(a_config_name);
+  }
+
+  String ref_device_file_name =
+    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
+
+  m_ref_device.load(ref_device_file_name.c_str());
+}
+
+
+bool TDataHandlingF::is_main_device_config_exists(
+  const String& a_config_name) const
+{
+  String device_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+  return FileExists(device_file_name);
+}
+
+bool TDataHandlingF::is_ref_device_config_exists(
+  const String& a_config_name) const
+{
+  String device_file_name =
+    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
+  return FileExists(device_file_name);
+}
+
+void TDataHandlingF::create_main_device_config_from_old(
+  const String& a_config_name,
+  const String& a_type, const config_calibr_t& a_config_calibr)
+{
+  String device_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+  m_device.create_config_from_old(device_file_name, a_type,
+    a_config_calibr.ip_adress,
+    a_config_calibr.port);
+}
+
+void TDataHandlingF::create_ref_device_config_from_old(
+  const String& a_config_name,
+  const String& a_type, const config_calibr_t& a_config_calibr)
+{
+  String device_file_name =
+    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
+
+  m_ref_device.create_config_from_old(device_file_name, a_type,
+    a_config_calibr.reference_channel.ip_adress,
+    a_config_calibr.reference_channel.port);
+}
+
+void TDataHandlingF::change_main_device_type(const String& a_config_name,
+  const String& a_type)
+{
+  String device_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+  m_device.change_type(device_file_name, a_type);
+}
+
+void TDataHandlingF::change_ref_device_type(const String& a_config_name,
+  const String& a_type)
+{
+  String device_file_name =
+    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
+  m_ref_device.change_type(device_file_name, a_type);
+}
+
+void TDataHandlingF::load_device_config_file(const String& a_config_name)
+{
+  String device_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+  irs::ini_file_t ini_file;
+  ini_file.set_ini_name(device_file_name);
+  ini_file.set_section(m_file_name_service.get_device_options_section());
+  device_options_t device_options;
+  device_options.type = irst("mxnet");
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+  ini_file.load();
+  if (!FileExists(device_file_name)) {
+    ini_file.save();
+  }
+}
+
+void TDataHandlingF::delete_device_config(const String& a_config_name)
+{
+  if (ConfigCB->ItemIndex >= 0) {
+    const String cur_config_name =
+      ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+    if (a_config_name == cur_config_name) {
+      //unset_main_device();
+      m_device.reset();
+    }
+  }
+  const String cfg_file_name =
+    m_file_name_service.make_config_full_file_name(a_config_name);
+  const String device_cfg_file_name =
+    m_file_name_service.make_device_config_full_file_name(a_config_name);
+  const String grid_opt_file_name =
+    m_file_name_service.make_device_grid_config_full_name(a_config_name);
+
+  const String ref_device_cfg_file_name =
+    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
+  const String ref_grid_opt_file_name =
+    m_file_name_service.make_ref_device_grid_config_full_name(a_config_name);
+
+  DeleteFile(cfg_file_name);
+  DeleteFile(device_cfg_file_name);
+  DeleteFile(grid_opt_file_name);
+  DeleteFile(ref_device_cfg_file_name);
+  DeleteFile(ref_grid_opt_file_name);
+
+  load_config_calibr_to_display();
+  set_connect_if_enabled();
+}
+
+void TDataHandlingF::unset_ref_device()
+{
+  m_ref_device.reset();
+}
+
+String TDataHandlingF::get_device_type() const
+{
+  return m_device.get_type();
 }
 
 
@@ -3030,24 +3426,27 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
     ap_table_data->get_points_func_p_of_x_cur_row(
       p_points, x_points, z, cur_row);
     double row_value = cur_row_cell.value;
-    irs::string name_graph, row_value_str, z_value_str;
-    ostrstream ostr_row, ostr_z;
-    ostr_row << setprecision(precision_name_graph) << row_value << ends;
+    string_type name_graph;
+    string_type row_value_str;
+    string_type z_value_str;
+    ostringstream_type ostr_row;
+    ostringstream_type ostr_z;
+    ostr_row << setprecision(precision_name_graph) << row_value;
     row_value_str = ostr_row.str();
-    ostr_row.freeze(false);
     double norm_koef = 1;
     if(a_inf_in_param.type_anchor == PARAMETR2){
       norm_koef = row_value;
     }else if(a_inf_in_param.type_anchor == PARAMETR3){
       if(z.init){
         if (z.value != 0) norm_koef = z.value;
-        ostr_z << setprecision(precision_name_graph) << z.value << ends;
+        ostr_z << setprecision(precision_name_graph) << z.value;
         z_value_str = ostr_z.str();
-        ostr_z.freeze(false);
-        name_graph = z_value_str+" "+a_inf_in_param.type_variable_param3+ ", ";
+        name_graph = z_value_str + irst(" ") +
+          a_inf_in_param.type_variable_param3 + irst(", ");
       }
     }
-    name_graph += row_value_str+" "+a_inf_in_param.type_variable_param2;
+    name_graph += row_value_str + irst(" ") +
+      a_inf_in_param.type_variable_param2;
     if (!a_on_update) {
       add_chart_z_of_x(
         name_graph, p_points, x_points, a_inf_in_param, norm_koef);
@@ -3086,26 +3485,26 @@ void TDataHandlingF::chart_t::add_chart_z_of_y(
       p_points, y_points, z, cur_col, cur_row);
 
     double col_value = cur_col_cell.value;
-    irs::string name_graph, col_value_str, z_value_str;
-    ostrstream ostr_col, ostr_z;
+    string_type name_graph, col_value_str, z_value_str;
+    ostringstream_type ostr_col;
+    ostringstream_type ostr_z;
 
-    ostr_col << setprecision(precision_name_graph) << col_value << ends;
+    ostr_col << setprecision(precision_name_graph) << col_value;
     col_value_str = ostr_col.str();
-    ostr_col.freeze(false);
     double norm_koef = 1;
     if(a_inf_in_param.type_anchor == PARAMETR1) {
       norm_koef = col_value;
     }else if(a_inf_in_param.type_anchor == PARAMETR3){
       if(z.init){
         if (z.value != 0) norm_koef = z.value;
-        ostr_z << setprecision(precision_name_graph) << z.value << ends;
+        ostr_z << setprecision(precision_name_graph) << z.value;
         z_value_str = ostr_z.str();
-        ostr_z.freeze(false);
-        name_graph =
-          z_value_str+" "+a_inf_in_param.type_variable_param3+ ", ";
+        name_graph = z_value_str + irst(" ") +
+          a_inf_in_param.type_variable_param3 + irst(", ");
       }
     }
-    name_graph += col_value_str+" "+a_inf_in_param.type_variable_param1;
+    name_graph += col_value_str + irst(" ") +
+      a_inf_in_param.type_variable_param1;
     if (!a_on_update) {
       add_chart_z_of_y(
         name_graph, p_points, y_points, a_inf_in_param, norm_koef);
@@ -3124,7 +3523,7 @@ void TDataHandlingF::chart_t::add_chart_z_of_y(
 }
 
 void TDataHandlingF::chart_t::save_name_chart_z_of_x(
-  const irs::string& a_name_chart)
+  const string_type& a_name_chart)
 {
   bool on_present = false;
   int size = z_of_x_charts.size();
@@ -3139,7 +3538,7 @@ void TDataHandlingF::chart_t::save_name_chart_z_of_x(
   }
 }
 void TDataHandlingF::chart_t::save_name_chart_z_of_y(
-  const irs::string& a_name_chart)
+  const string_type& a_name_chart)
 {
   bool on_present = false;
   int size = z_of_y_charts.size();
@@ -3175,7 +3574,7 @@ bool TDataHandlingF::chart_t::get_auto_update_stat()
 }
 
 void TDataHandlingF::chart_t::add_chart_z_of_x(
-  const irs::string& a_name_graph,
+  const string_type& a_name_graph,
   const std::vector<cell_t>& a_p_points,
   const std::vector<cell_t>& a_x_points,
   const inf_in_param_t& a_inf_in_param,
@@ -3198,13 +3597,13 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
           p_cell_value = p_cell_value/a_norm_koef;
         }
         p_chart_window_z_of_x->add(
-          a_name_graph.c_str(), x_cell_value, p_cell_value);
+          a_name_graph, x_cell_value, p_cell_value);
       }
     }
   }
 }
 void TDataHandlingF::chart_t::add_chart_z_of_y(
-  const irs::string& a_name_graph,
+  const string_type& a_name_graph,
   const std::vector<cell_t>& a_p_points,
   const std::vector<cell_t>& a_y_points,
   const inf_in_param_t& a_inf_in_param,
@@ -3271,12 +3670,12 @@ void __fastcall TDataHandlingF::AutoUpdateChartActionExecute(
 void __fastcall TDataHandlingF::ExportTableToMExcelCsvFileActionExecute(
       TObject *Sender)
 {
-  SaveFileDialog->Filter = "Текстовые файлы Microsoft Excel (*.csv)"
-    "|*.csv|Все файлы (*.*)|*.*";
-  SaveFileDialog->DefaultExt = "csv";
-  SaveFileDialog->FileName = "Новый файл.csv";
+  SaveFileDialog->Filter = irst("Текстовые файлы Microsoft Excel (*.csv)")
+    irst("|*.csv|Все файлы (*.*)|*.*");
+  SaveFileDialog->DefaultExt = irst("csv");
+  SaveFileDialog->FileName = irst("Новый файл.csv");
   if (SaveFileDialog->Execute()) {
-    irs::string file_name = SaveFileDialog->FileName.c_str();
+    string_type file_name = SaveFileDialog->FileName.c_str();
     mp_active_table->save_table_to_microsoft_excel_csv_file(file_name);
   }
 }
@@ -3323,7 +3722,7 @@ void __fastcall TDataHandlingF::ModifiTableDataActionExecute(
 
 void __fastcall TDataHandlingF::AboutActionExecute(TObject *Sender)
 {
-  auto_ptr<TAboutForm> AboutForm(new TAboutForm(IRS_NULL));
+  irs::handle_t<TAboutForm> AboutForm(new TAboutForm(IRS_NULL));
   AboutForm->ShowModal();
 }
 //---------------------------------------------------------------------------
@@ -3337,7 +3736,7 @@ void __fastcall TDataHandlingF::AboutActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::RawDataStringGridExit(TObject *Sender)
 {
   if(m_cur_cell_table1.init){
-    irs::string latest_entry_previous_cell_str =
+    string_type latest_entry_previous_cell_str =
       RawDataStringGrid->Cells
       [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
     if (m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
@@ -3348,4 +3747,117 @@ void __fastcall TDataHandlingF::RawDataStringGridExit(TObject *Sender)
   }
 }
 //---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void __fastcall TDataHandlingF::ConnectionLogMenuItemClick(TObject *Sender)
+{
+  m_device.show_connection_log();
+}
+//---------------------------------------------------------------------------
+
+
+
+void __fastcall TDataHandlingF::ConnectActionExecute(TObject *Sender)
+{
+  //m_device.mxdata_assembly->enabled(!ConnectAction->Checked);
+  if (!ConnectAction->Checked) {
+    set_connect_calibr_device();
+  } else {
+    reset_connect_calibr_device();
+  }
+  ConnectAction->Checked = !ConnectAction->Checked;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::TSTLANActionExecute(TObject *Sender)
+{
+  /*if (!m_device.tstlan4lib.is_empty()) {
+    m_device.tstlan4lib->show();
+  } */
+  if (m_device.created()) {
+    m_device.show_tstlan();
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::ConnectionLogActionExecute(TObject *Sender)
+{
+  //m_device.connection_log->Show();
+  m_device.show_connection_log();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::DeleteConfigButtonClick(TObject *Sender)
+{
+  const String config_name = get_selected_config();
+  if (!config_name.IsEmpty()) {
+    if (Application->MessageBox(
+      irst("Вы действительно хотите удалить конфигурацию?"),
+      irst("Вопрос"),  MB_OKCANCEL + MB_DEFBUTTON2 + MB_ICONQUESTION) ==
+        IDOK) {
+      delete_device_config(config_name);
+    }
+  }
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TDataHandlingF::ShowMultimeterOptionsButtonClick(TObject *Sender)
+
+{
+  if (!mp_mxmultimeter_assembly.is_empty()) {
+    mp_mxmultimeter_assembly->show_options();
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::PatternOfMeasuringInstrumentCBChange(TObject *Sender)
+
+{
+  reset_mxmultimeter_assembly();
+}
+//---------------------------------------------------------------------------
+
+void TDataHandlingF::reset_mxmultimeter_assembly()
+{
+  mp_mxmultimeter_assembly.reset();
+
+  String name = get_selected_multimeter();
+  String file_name =
+    m_file_name_service.make_multimeter_config_full_file_name(name);
+  if (FileExists(file_name)) {
+    const String device_option_section =
+      m_file_name_service.get_device_options_section();
+    irs::ini_file_t ini_file;
+    ini_file.set_ini_name(file_name);
+    ini_file.set_section(device_option_section);
+    string_type type;
+
+    ini_file.add(irst("type"), &type);
+    ini_file.load();
+    mp_mxmultimeter_assembly = make_mxmultimeter_assembly(
+      irs::str_conv<string_type>(file_name), irs::str_conv<string_type>(type));
+  }
+}
+
+irs::handle_t<irs::mxmultimeter_assembly_t>
+TDataHandlingF::make_mxmultimeter_assembly(
+  const irs::string_t& a_device_name,
+  const irs::string_t& a_device_type)
+{
+  return irs::mxmultimeter_assembly_types()->
+    make_assembly(a_device_type, a_device_name);
+}
 

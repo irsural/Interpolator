@@ -17,14 +17,17 @@
 
 #include <vector>
 #include <cbsysutils.h>
+#include <irsdevices.h>
 #include "measutils.h"
 #include "servisfunction.h"
+#include "datahandling.h"
 #include "mxini.h"
 #define newconfig_new_version_12_09_2008
 
 
 enum edit_mode_t{NEW_CONFIG, EXISTENT_CONFIG};
 void fill_combo_box_lang_type(TComboBox* ap_combo_box);
+
 //---------------------------------------------------------------------------
 class TNewConfigF : public TForm
 {
@@ -37,10 +40,7 @@ __published:	// IDE-managed Components
   TLabel *IndexEEPROMLabel;
   TEdit *ValueIndexEEPROMEdit;
   TPanel *Panel3;
-  TSaveDialog *SaveDialogConfig;
   TPanel *Panel4;
-  TLabeledEdit *IPAdressLE;
-  TLabeledEdit *PortLE;
   TLabel *Label3;
   TEdit *IndexWorkTimeEdit;
   TComboBox *MeasTypeCB;
@@ -48,8 +48,6 @@ __published:	// IDE-managed Components
   TLabel *Label1;
   TLabeledEdit *CountResetOverBitLE;
   TCheckBox *ReferenceChannelCheckB;
-  TLabeledEdit *IPAdressRefChannelLE;
-  TLabeledEdit *PortRefChannelLE;
   TGroupBox *GroupBox1;
   TCSpinEdit *CSpinEdit1;
   TStringGrid *SubDiapasonSG;
@@ -84,6 +82,13 @@ __published:	// IDE-managed Components
   TGroupBox *GroupBox4;
   TEdit *FilterPointCountEdit;
   TLabel *Label8;
+  TComboBox *DeviceComboBox;
+  TLabel *DeviceLabel;
+  TButton *ChangeDeviceConfigButton;
+  TLabel *RefDeviceLabel;
+  TComboBox *RefDeviceComboBox;
+  TButton *ChangeRefDeviceConfigButton;
+  TButton *ChangeNameButton;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);
@@ -102,33 +107,31 @@ __published:	// IDE-managed Components
   void __fastcall ConsiderOutParameterForMeasurementCheckBoxClick(
           TObject *Sender);
   void __fastcall OutParameterFilterCheckBoxClick(TObject *Sender);
+  void __fastcall ChangeNameButtonClick(TObject *Sender);
+  void __fastcall ChangeDeviceConfigButtonClick(TObject *Sender);
+  void __fastcall DeviceComboBoxChange(TObject *Sender);
+  void __fastcall ExitButtonClick(TObject *Sender);
+  void __fastcall ChangeRefDeviceConfigButtonClick(TObject *Sender);
 private:	// User declarations
+  typedef std::size_t size_type;
+  typedef irs::string_t string_type;
   static const int m_basic_parameter_count = 4;
   static const int m_basic_bit_count = 6;
-  
-  AnsiString m_prog_name;
-  //рабочий каталог программы
-  AnsiString m_path_prog;
-  //расширение файла конфигурации процесса калибровки
-  const AnsiString m_default_ext;
-  //имя файла по умолчанию конфигурации процесса калибровки
-  const AnsiString m_default_filename;
-  //идентификатор файла конфигурации процесса калибровки
-  const AnsiString m_fileid_conf;
-  //имя каталога программы для хранения конфгураций
-  const AnsiString m_foldername_conf;
+
+  TDataHandlingF* mp_data_handing;
+
+  String m_prog_name;
+  file_name_service_t m_file_name_service;
+
+  const String m_device_options_section;
 
   config_calibr_t m_config_calibr;
-  AnsiString m_name_config;
-  //класс работы с ini-файлом конфигураций устройства
-  //irs::ini_file_t* mp_conf_device_ini_file;
+  String m_name_config;
 
-  //TIniFile* mp_config_ini_file;
-
-  //std::vector<AnsiString> mv_list_combo_box;
   edit_mode_t m_edit_mode;
   bool m_on_close;
-  AnsiString m_name_new_conf;
+  String m_name_new_conf;
+  vector<string_type> m_device_list;
   // Закрашиваем запрещенную ячейку определенным цветом
   void draw_cell_illegal(
     TObject *Sender, int ACol, int ARow, TRect &Rect);
@@ -136,28 +139,33 @@ private:	// User declarations
   bool cell_illegal_ListParameterSG_stat(const int a_col, const int a_row);
   void out_parameter_options_components_update();
   void temperature_control_components_update();
-  
+  String get_config_full_file_name();
+  String make_config_full_file_name(String a_config_name);
+  String generate_new_unique_name(const String& a_device_name);
+  String make_device_config_full_file_name(String a_config_name);
+  void save_configuration(String a_config_name);
+  void update_ref_device_options_enabled();
+  //void create_configurations_dir();
 public:		// User declarations
-  __fastcall TNewConfigF(TComponent* Owner);
-  inline void set_path_program(const AnsiString& a_path);
-  void edit_config(const AnsiString& a_filename);
+  __fastcall TNewConfigF(TComponent* Owner, TDataHandlingF* ap_data_handing);
+  //inline void set_path_program(const String& a_path);
+  void edit_config(const String& a_filename);
   void set_config_def();
-  //int lang_type_to_combo_box(const AnsiString& a_lang_type);
+  //int lang_type_to_combo_box(const String& a_lang_type);
   inline void set_config_device(config_calibr_t* ap_config_calibr);
   inline void set_ini_file(irs::ini_file_t* ap_conf_device_ini_file);
   inline void set_edit_mode(const edit_mode_t a_edit_mode);
   void config_calibr_out_displ(const config_calibr_t& a_config_calibr);
-  inline AnsiString get_name_new_conf();
-
+  inline String get_name_new_conf();
 };
 
 //---------------------------------------------------------------------------
 extern PACKAGE TNewConfigF *NewConfigF;
 //---------------------------------------------------------------------------
-inline void TNewConfigF::set_path_program(const AnsiString& a_path)
+/*inline void TNewConfigF::set_path_program(const String& a_path)
 {
   m_path_prog = a_path;
-}
+} */
 /*inline void TNewConfigF::set_config_device(config_calibr_t* ap_config_calibr)
 {
   //mp_config_calibr = ap_config_calibr;
@@ -170,7 +178,7 @@ inline void TNewConfigF::set_edit_mode(const edit_mode_t a_edit_mode)
 {
   m_edit_mode = a_edit_mode;
 }
-inline AnsiString TNewConfigF::get_name_new_conf()
+inline String TNewConfigF::get_name_new_conf()
 {
   return m_name_new_conf;
 }

@@ -19,47 +19,70 @@ void fill_combo_box_lang_type(TComboBox* ap_combo_box)
   const int end_for = static_cast<int>(type);
   type = type_none;
   const int begin_for = static_cast<int>(type) + 1;
-  std::string type_str = "";
+  irs::string_t type_str;
   type_str = lang_type_to_str(type);
   for(int i = begin_for; i < end_for; i++){
     type = static_cast<lang_type_t>(i);
     type_str = lang_type_to_str(type);
     ap_combo_box->Items->Add(type_str.c_str());
-    //mv_list_combo_box.push_back(type_str.c_str());
+    //mv_list_combo_box.push_back(type_str.rec_str());
   }
   ap_combo_box->ItemIndex = 0;
 }
 //---------------------------------------------------------------------------
-__fastcall TNewConfigF::TNewConfigF(TComponent* Owner)
+__fastcall TNewConfigF::TNewConfigF(TComponent* Owner,
+  TDataHandlingF* ap_data_handing)
   : TForm(Owner),
-  m_prog_name("Digital interpolator"),
-  m_path_prog(""),
-  m_default_ext("cpc"),
-  m_default_filename("config1.cpc"),
-  m_foldername_conf("configuration"),
+  mp_data_handing(ap_data_handing),
+  m_prog_name(irst("Digital interpolator")),
+  m_file_name_service(),
+  //m_path_prog(),
+  //m_default_ext(irst("cpc")),
+  //m_default_filename(irst("config1.cpc")),
+  //m_foldername_conf(irst("configuration")),
+  //m_device_default_ext(irst("ini")),
+  //m_device_suffix(irst("_device")),
+  //m_ref_device_default_ext(irst("ini")),
+  //m_ref_device_suffix("_reference_device"),
+
+  m_device_options_section(irst("device")),
+
   m_config_calibr(),
-  m_fileid_conf("Конфигурация настроек калибровки."),
-  m_name_config(""),
+  //m_fileid_conf(irst("Конфигурация настроек калибровки.")),
+  m_name_config(),
   //mp_conf_device_ini_file(0),
   //mp_config_ini_file(0),
   //mv_list_combo_box(),
   m_edit_mode(NEW_CONFIG),
   m_on_close(true),
-  m_name_new_conf("")
+  m_name_new_conf(),
+  m_device_list()
 {
-  SaveDialogConfig->DefaultExt = m_default_ext;
+  /*SaveDialogConfig->DefaultExt = m_default_ext;
   SaveDialogConfig->Filter =
-    "Файлы конфигурации (*."+m_default_ext+")|*."+m_default_ext+
-    "|Все файлы (*.*)|*.*";
-  SaveDialogConfig->FileName = m_default_filename;
+    irst("Файлы конфигурации (*.") + m_default_ext + irst(")|*.") +
+      m_default_ext +
+      irst("|Все файлы (*.*)|*.*");
+  SaveDialogConfig->FileName = m_default_filename;*/
 
+  m_device_list.push_back(irst("mxnet"));
+  m_device_list.push_back(irst("modbus udp"));
+  m_device_list.push_back(irst("modbus tcp"));
+  m_device_list.push_back(irst("modbus usb hid"));
+
+  for (size_type i = 0; i < m_device_list.size(); i++) {
+    DeviceComboBox->Items->Add(irs::str_conv<String>(m_device_list[i]));
+    RefDeviceComboBox->Items->Add(irs::str_conv<String>(m_device_list[i]));
+  }
+  DeviceComboBox->ItemIndex = 0;
+  RefDeviceComboBox->ItemIndex = 0;
 
   MeasTypeCB->Items->Clear();
   type_meas_t type_meas = tm_first;
   int index = static_cast<int>(type_meas);
   while(true){
     type_meas = static_cast<type_meas_t>(index);
-    irs::string type_meas_str = type_meas_to_str(type_meas);
+    string_type type_meas_str = type_meas_to_str(type_meas);
     MeasTypeCB->Items->Add(type_meas_str.c_str());
     if(type_meas == tm_last)
       break;
@@ -189,34 +212,35 @@ void TNewConfigF::temperature_control_components_update()
 // Выгрузка списка параметров с экрана в структуру
 void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 { 
-  std::vector<irs::string> messages;
+  std::vector<string_type> messages;
   m_name_config = NameConfigLE->Text;
-  m_config_calibr.ip_adress = IPAdressLE->Text;
-  if (!irs::cbuilder::str_to_number(PortLE->Text,  m_config_calibr.port)) {
-    messages.push_back("Неверно указан порт.");
-  }
+  //m_config_calibr.ip_adress = IPAdressLE->Text;
+  /*if (!irs::cbuilder::str_to_number(PortLE->Text,  m_config_calibr.port)) {
+    messages.push_back(irst("Неверно указан порт."));
+  }*/
 
   m_config_calibr.type_meas = MeasTypeCB->Text.c_str();
   if (!irs::cbuilder::str_to_number(
     MeasRangeKoefLabeledEdit->Text,
     m_config_calibr.meas_range_koef)) {
-    messages.push_back("Неверно указан коэффициент диапазона измерения.");
+    messages.push_back(irst("Неверно указан коэффициент диапазона измерения."));
   }
   if (!irs::cbuilder::str_to_number(
     Delay_MeasLE->Text, m_config_calibr.delay_meas)) {
-    messages.push_back("Неверно указана задержка измерения.");
+    messages.push_back(irst("Неверно указана задержка измерения."));
   }
   if (!irs::cbuilder::str_to_number(
     CountResetOverBitLE->Text, m_config_calibr.count_reset_over_bit)) {
-    messages.push_back("Неверно указано количество перезапусков измерения.");
+    messages.push_back(
+      irst("Неверно указано количество перезапусков измерения."));
   }
   if (!irs::cbuilder::str_to_number(
     IndexWorkTimeEdit->Text, m_config_calibr.index_work_time)) {
-    messages.push_back("Неверно указан индекс \"work time\".");
+    messages.push_back(irst("Неверно указан индекс \"work time\"."));
   }
   if (!irs::cbuilder::str_to_number(
     ValueIndexEEPROMEdit->Text, m_config_calibr.index_pos_eeprom)) {
-    messages.push_back("Неверно указан индекс \"eeprom\".");
+    messages.push_back(irst("Неверно указан индекс \"eeprom\"."));
   }
 
   m_config_calibr.out_param_config_for_measurement.consider_out_param =
@@ -227,14 +251,14 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(
     FilterSamplingTimeEdit->Text,
     m_config_calibr.out_param_config_for_measurement.filter_sampling_time)) {
-    messages.push_back("Неверно указано время дискретизации для фильтра "
-      "выходного значения");
+    messages.push_back(irst("Неверно указано время дискретизации для фильтра ")
+      irst("выходного значения"));
   }
   if (!irs::cbuilder::str_to_number(
     FilterPointCountEdit->Text,
     m_config_calibr.out_param_config_for_measurement.filter_point_count)) {
-    messages.push_back("Неверно указано время дискретизации для фильтра "
-      "выходного значения");
+    messages.push_back(irst("Неверно указано время дискретизации для фильтра ")
+      irst("выходного значения"));
   }
 
   m_config_calibr.out_param_control_config.enabled =
@@ -242,13 +266,14 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(
     MaxRelativeDifferenceOutParameterLabeledEdit->Text,
     m_config_calibr.out_param_control_config.max_relative_difference)) {
-    messages.push_back("Неверно указано допустимое относительное отклонение "
-      "выходного параметра");
+    messages.push_back(
+      irst("Неверно указано допустимое относительное отклонение ")
+      irst("выходного параметра"));
   }
   if (!irs::cbuilder::str_to_number(
     TimeCalcDifferenceLabeledEdit->Text,
     m_config_calibr.out_param_control_config.time)) {
-    messages.push_back("Неверно указано временное окно");
+    messages.push_back(irst("Неверно указано временное окно"));
   }
 
   m_config_calibr.temperature_control.enabled =
@@ -256,17 +281,18 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(
     TemperatureVariableIndexByteLabeledEdit->Text,
     m_config_calibr.temperature_control.index)) {
-    messages.push_back("Неверно указан индекс \"температура\".");
+    messages.push_back(irst("Неверно указан индекс \"температура\"."));
   }
   if (!irs::cbuilder::str_to_number(
     ReferenceTemperetureLabeledEdit->Text,
     m_config_calibr.temperature_control.reference)) {
-    messages.push_back("Неверно указана уставка температуры");
+    messages.push_back(irst("Неверно указана уставка температуры"));
   }
   if (!irs::cbuilder::str_to_number(
     DifferenceTemperatureLabeledEdit->Text,
     m_config_calibr.temperature_control.difference)) {
-    messages.push_back("Неверно указано допустимое отклонение температуры");
+    messages.push_back(
+      irst("Неверно указано допустимое отклонение температуры"));
   }
 
   // Выгрузка списка параметров
@@ -276,60 +302,62 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   m_config_calibr.in_parametr1.type_variable = ListParameterSG->Cells[1][1];
   if (!str_to_lang_type(
     ListParameterSG->Cells[2][1].c_str(), m_config_calibr.in_parametr1.unit)) {
-    messages.push_back("Неверно указан тип параметра 1.");
+    messages.push_back(irst("Неверно указан тип параметра 1."));
   }
 
 
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[3][1], m_config_calibr.in_parametr1.anchor)) {
-    messages.push_back("Неверно указан тип привязки параметра 1.");
+    messages.push_back(irst("Неверно указан тип привязки параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[4][1], m_config_calibr.in_parametr1.index)) {
-    messages.push_back("Неверно указан индекс параметра 1.");
+    messages.push_back(irst("Неверно указан индекс параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[5][1], m_config_calibr.in_parametr1.koef)) {
-    messages.push_back("Неверно указан коэффициент параметра 1.");
+    messages.push_back(irst("Неверно указан коэффициент параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[7][1], m_config_calibr.in_parametr1.default_val)) {
-    messages.push_back("Неверно указано значение по умолчанию параметра 1.");
+    messages.push_back(
+      irst("Неверно указано значение по умолчанию параметра 1."));
   }
   // Параметр 2
   m_config_calibr.in_parametr2.name = ListParameterSG->Cells[0][2];
   m_config_calibr.in_parametr2.type_variable = ListParameterSG->Cells[1][2];
   if (!str_to_lang_type(
     ListParameterSG->Cells[2][2].c_str(), m_config_calibr.in_parametr2.unit)) {
-    messages.push_back("Неверно указан тип параметра 2.");
+    messages.push_back(irst("Неверно указан тип параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[3][2], m_config_calibr.in_parametr2.anchor)) {
-    messages.push_back("Неверно указан тип привязки параметра 2.");
+    messages.push_back(irst("Неверно указан тип привязки параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[4][2], m_config_calibr.in_parametr2.index)) {
-    messages.push_back("Неверно указан индекс параметра 2.");
+    messages.push_back(irst("Неверно указан индекс параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[5][2], m_config_calibr.in_parametr2.koef)) {
-    messages.push_back("Неверно указан коэффициент параметра 2.");
+    messages.push_back(irst("Неверно указан коэффициент параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[7][2], m_config_calibr.in_parametr2.default_val)) {
-    messages.push_back("Неверно указано значение по умолчанию параметра 2.");
+    messages.push_back(
+      irst("Неверно указано значение по умолчанию параметра 2."));
   }
   // Параметр 3
   m_config_calibr.in_parametr3.name = ListParameterSG->Cells[0][3];
   m_config_calibr.in_parametr3.type_variable = ListParameterSG->Cells[1][3];
   if (!str_to_lang_type(
     ListParameterSG->Cells[2][3].c_str(), m_config_calibr.in_parametr3.unit)) {
-    messages.push_back("Неверно указан тип параметра 3.");
+    messages.push_back(irst("Неверно указан тип параметра 3."));
   }
 
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[4][3], m_config_calibr.in_parametr3.index)) {
-    messages.push_back("Неверно указан индекс параметра 3.");
+    messages.push_back(irst("Неверно указан индекс параметра 3."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[5][3], m_config_calibr.in_parametr3.koef)) {
@@ -337,7 +365,8 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[7][3], m_config_calibr.in_parametr3.default_val)) {
-    messages.push_back("Неверно указано значение по умолчанию параметра 3.");
+    messages.push_back(
+      irst("Неверно указано значение по умолчанию параметра 3."));
   }
 
   // Параметр 4
@@ -345,15 +374,15 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   m_config_calibr.out_parametr.type_variable = ListParameterSG->Cells[1][4];
   if (!str_to_lang_type(
     ListParameterSG->Cells[2][4].c_str(), m_config_calibr.out_parametr.unit)) {
-    messages.push_back("Неверно указан тип параметра 3.");
+    messages.push_back(irst("Неверно указан тип параметра 3."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[4][4], m_config_calibr.out_parametr.index)) {
-    messages.push_back("Неверно указан индекс параметра 4.");
+    messages.push_back(irst("Неверно указан индекс параметра 4."));
   }
   if (!irs::cbuilder::str_to_number(
     ListParameterSG->Cells[5][4], m_config_calibr.out_parametr.koef_shunt)) {
-    messages.push_back("Неверно указан коэффициент параметра 4.");
+    messages.push_back(irst("Неверно указан коэффициент параметра 4."));
   }
 
   // обработка доп.параметров
@@ -362,22 +391,22 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 
   for (int i = 0; i < parameter_ex_count; i++) {
     int row = i+m_basic_parameter_count+1;
-    irs::string param_ex_number_str = i;
+    string_type param_ex_number_str = i;
 
     parametr_ex_t parametr_ex;
     // название
     parametr_ex.name = ListParameterSG->Cells[0][row];
     // единицы измерения
     parametr_ex.type_variable = ListParameterSG->Cells[1][row];
-    if (parametr_ex.name != "") {
+    if (!parametr_ex.name.IsEmpty()) {
       bool all_str_to_number_success = true;
       // тип переменной
       //if (ListParameterSG->Cells[2][row] != "") {
         if (!str_to_lang_type(
           ListParameterSG->Cells[2][row].c_str(), parametr_ex.unit)) {
           all_str_to_number_success = false;
-          irs::string message = "Неверно указан тип доп. параметра №"+
-            param_ex_number_str + ".";
+          string_type message = irst("Неверно указан тип доп. параметра №") +
+            param_ex_number_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -389,8 +418,8 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListParameterSG->Cells[4][row], parametr_ex.index))
         {
           all_str_to_number_success = false;
-          irs::string message = "Неверно указан индекс доп. параметра №"+
-            param_ex_number_str + ".";
+          string_type message = irst("Неверно указан индекс доп. параметра №") +
+            param_ex_number_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -402,9 +431,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListParameterSG->Cells[6][row], parametr_ex.value_working))
         {
           all_str_to_number_success = false;
-          irs::string message =
-            "Неверно указано рабочее значение доп. параметра №"+
-            param_ex_number_str + ".";
+          string_type message =
+            irst("Неверно указано рабочее значение доп. параметра №") +
+            param_ex_number_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -416,9 +445,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListParameterSG->Cells[7][row], parametr_ex.value_default))
         {
           all_str_to_number_success = false;
-          irs::string message =
-            "Неверно указано значение по умолчанию доп. параметра №"+
-            param_ex_number_str + ".";
+          string_type message =
+            irst("Неверно указано значение по умолчанию доп. параметра №") +
+            param_ex_number_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -434,75 +463,76 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][1],
     m_config_calibr.bit_pos_operating_duty.index_byte))
   {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит готовноти регулятора.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит готовноти регулятора."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][1],
     m_config_calibr.bit_pos_operating_duty.index_bit))
   {
-    messages.push_back("Неверно указан индекс бита готовноти регулятора.");
+    messages.push_back(
+      irst("Неверно указан индекс бита готовноти регулятора."));
   }
 
   // Бит режима расстройки
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][2],
     m_config_calibr.bit_pos_mismatch_state.index_byte))
   {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит режима расстройки.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит режима расстройки."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][2],
     m_config_calibr.bit_pos_mismatch_state.index_bit))
   {
-    messages.push_back("Неверно указан индекс бита режима расстройки.");
+    messages.push_back(irst("Неверно указан индекс бита режима расстройки."));
   }
 
   // Бит режима коррекции
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][3],
     m_config_calibr.bit_pos_correct_mode.index_byte)) {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит режима коррекции.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит режима коррекции."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][3],
     m_config_calibr.bit_pos_correct_mode.index_bit)) {
-    messages.push_back("Неверно указан индекс бита режима коррекции.");
+    messages.push_back(irst("Неверно указан индекс бита режима коррекции."));
   }
 
   // Бит ошибки
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][4],
     m_config_calibr.bit_pos_error_bit.index_byte)) {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит ошибки.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит ошибки."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][4],
     m_config_calibr.bit_pos_error_bit.index_bit))
   {
-    messages.push_back("Неверно указан индекс бита ошибки.");
+    messages.push_back(irst("Неверно указан индекс бита ошибки."));
   }
 
   // Бит сброса ошибки
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][5],
     m_config_calibr.bit_pos_reset_over_bit.index_byte))
   {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит сброса ошибки.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит сброса ошибки."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][5],
     m_config_calibr.bit_pos_reset_over_bit.index_bit))
   {
-    messages.push_back("Неверно указан индекс бита сброса ошибки.");
+    messages.push_back(irst("Неверно указан индекс бита сброса ошибки."));
   }
 
   // Бит предустановки фазы
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[1][6],
     m_config_calibr.bit_pos_phase_preset_bit.index_byte))
   {
-    messages.push_back("Неверно указан индекс байта, "
-      "в котором находится бит предустановки фазы.");
+    messages.push_back(irst("Неверно указан индекс байта, ")
+      irst("в котором находится бит предустановки фазы."));
   }
   if (!irs::cbuilder::str_to_number(ListByteSG->Cells[2][6],
     m_config_calibr.bit_pos_phase_preset_bit.index_bit))
   {
-    messages.push_back("Неверно указан индекс бита предустановки фазы.");
+    messages.push_back(irst("Неверно указан индекс бита предустановки фазы."));
   }
 
   // Обработка доп.битов
@@ -511,19 +541,20 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 
   for (int i = 0; i < bit_type2_count; i++) {
     int row = i+m_basic_bit_count+1;
-    irs::string bit_ex_index_str = i;
-    irs::string bitname_str = ListByteSG->Cells[0][row].c_str();
+    string_type bit_ex_index_str = i;
+    string_type bitname_str = ListByteSG->Cells[0][row].c_str();
     bit_type2_pos_t bit_type2_pos;
     bit_type2_pos.bitname = bitname_str;
-    if (bitname_str != "") {
+    if (!bitname_str.empty()) {
       bool all_str_to_number_success = true;
       //if (ListByteSG->Cells[1][row] != "") {
         if (!irs::cbuilder::str_to_number(
           ListByteSG->Cells[1][row], bit_type2_pos.index_byte))
         {
           all_str_to_number_success = false;
-          irs::string message = "Неверно указан индекс байта, "
-            "в котором находится доп. бит №" + bit_ex_index_str + ".";
+          string_type message = irst("Неверно указан индекс байта, ")
+            irst("в котором находится доп. бит №") + bit_ex_index_str +
+            irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -534,8 +565,8 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListByteSG->Cells[2][row], bit_type2_pos.index_bit))
         {
           all_str_to_number_success = false;
-          irs::string message = "Неверно указан индекс доп. бита №" +
-            bit_ex_index_str + ".";
+          string_type message = irst("Неверно указан индекс доп. бита №") +
+            bit_ex_index_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -546,8 +577,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListByteSG->Cells[3][row], bit_type2_pos.value_working))
         {
           all_str_to_number_success = false;
-          irs::string message = "Неверно указано рабочее значение доп. бита №" +
-            bit_ex_index_str + ".";
+          string_type message =
+            irst("Неверно указано рабочее значение доп. бита №") +
+            bit_ex_index_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -558,9 +590,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
           ListByteSG->Cells[4][row], bit_type2_pos.value_def))
         {
           all_str_to_number_success = false;
-          irs::string message =
-            "Неверно указано значение по умолчанию доп. бита №" +
-            bit_ex_index_str + ".";
+          string_type message =
+            irst("Неверно указано значение по умолчанию доп. бита №") +
+            bit_ex_index_str + irst(".");
           messages.push_back(message);
         }
       /*} else {
@@ -583,10 +615,10 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   for (int i = 0; i < sub_diapason; i++) {
     int row = i+1;
     sub_diapason_calibr_t sub_diapason_calibr;
-    irs::string index_start_str = SubDiapasonSG->Cells[1][row].c_str();
-    irs::string size_str = SubDiapasonSG->Cells[2][row].c_str();
-    irs::string value_begin_str = SubDiapasonSG->Cells[3][row].c_str();
-    irs::string value_end_str = SubDiapasonSG->Cells[4][row].c_str();
+    string_type index_start_str = SubDiapasonSG->Cells[1][row].c_str();
+    string_type size_str = SubDiapasonSG->Cells[2][row].c_str();
+    string_type value_begin_str = SubDiapasonSG->Cells[3][row].c_str();
+    string_type value_end_str = SubDiapasonSG->Cells[4][row].c_str();
 
     if (index_start_str.to_number(sub_diapason_calibr.index_start)) {
       if (size_str.to_number(sub_diapason_calibr.size)) {
@@ -601,12 +633,12 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   }
 
   m_config_calibr.reference_channel.enabled = ReferenceChannelCheckB->Checked;
-  m_config_calibr.reference_channel.ip_adress = IPAdressRefChannelLE->Text;
-  irs::cbuilder::str_to_number(
-    PortRefChannelLE->Text, m_config_calibr.reference_channel.port);
+  //m_config_calibr.reference_channel.ip_adress = IPAdressRefChannelLE->Text;
+  /*irs::cbuilder::str_to_number(
+    PortRefChannelLE->Text, m_config_calibr.reference_channel.port);*/
 
   if (messages.size() > 0) {
-    auto_ptr<TMessagesForm> display_message(new TMessagesForm(NULL));
+    irs::handle_t<TMessagesForm> display_message(new TMessagesForm(NULL));
     display_message->show_messages(messages);
     if (!display_message->Visible) {
       display_message->ShowModal();
@@ -614,61 +646,81 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     }
   } else {
 
-    AnsiString filename = m_path_prog+"\\"+m_foldername_conf+"\\"+
-    m_name_config+"."+m_default_ext;
-    bool on_create_file = true;
-    bool dir_config_exists = false;
+    //String filename = m_path_prog + irst("\\") + m_foldername_conf +
+      //irst("\\") + m_name_config + irst(".") + m_default_ext;
+    const String filename =
+      m_file_name_service.make_config_full_file_name(m_name_config);
+    m_name_new_conf = m_name_config;
+    m_config_calibr.save(filename.c_str());
+    m_on_close = true;
+    /*bool on_create_file = true;
     m_on_close = false;
-    m_name_new_conf = "";
-    //определяет, существует ли каталог
-    AnsiString dir_config = m_path_prog+"\\"+m_foldername_conf;
-    if(!DirectoryExists(dir_config)){
-      if(CreateDir(dir_config))
-        dir_config_exists = true;
-    }else
-      dir_config_exists = true;
-
-    if(dir_config_exists){
-      //если файл существует
-      if(m_edit_mode == NEW_CONFIG){
-        if(FileExists(filename)){
-          AnsiString message_text = "Файл \""+ filename +"\" уже существует.\n"
-            "Хотите его перезаписать?";
-          int button_return =
-            MessageDlg(
-              message_text,
-              mtConfirmation,
-              TMsgDlgButtons() << mbYes << mbNo << mbCancel,
-              0);
-          if(button_return != mrYes){
-            on_create_file = false;
-            m_on_close = false;
-          }
+    m_name_new_conf = String();
+    //create_configurations_dir();
+    m_file_name_service.create_config_dir();
+    //если файл существует
+    if(m_edit_mode == NEW_CONFIG){
+      if(FileExists(filename)){
+        String message_text = irst("Файл \"") + filename +
+          irst("\" уже существует.\n")
+          irst("Хотите его перезаписать?");
+        int button_return =
+          MessageDlg(
+            message_text,
+            mtConfirmation,
+            TMsgDlgButtons() << mbYes << mbNo << mbCancel,
+            0);
+        if(button_return != mrYes){
+          on_create_file = false;
+          m_on_close = false;
         }
-      }
-      if(on_create_file){
-        //открыть для записи, удалить старое содержимое файла
-        ofstream ofile(filename.c_str(),ios::out|ios::trunc);
-        if (ofile) {
-          ofile.close();
-          //mp_conf_device_ini_file->set_ini_name(filename);
-          //mp_conf_device_ini_file->save();
-          m_config_calibr.save(filename.c_str());
-        }
-        m_name_new_conf = m_name_config;
-        m_on_close = true;
       }
     }
+    if(on_create_file){
+      //открыть для записи, удалить старое содержимое файла
+      ofstream ofile(filename.c_str(),ios::out|ios::trunc);
+      if (ofile) {
+        ofile.close();
+        //mp_conf_device_ini_file->set_ini_name(filename);
+        //mp_conf_device_ini_file->save();
+        m_config_calibr.save(filename.c_str());
+      }
+      m_name_new_conf = m_name_config;
+      m_on_close = true;
+    }*/
   }
 }
+
+String TNewConfigF::get_config_full_file_name()
+{
+  return make_config_full_file_name(NameConfigLE->Text);
+}
+
+String TNewConfigF::make_config_full_file_name(String a_config_name)
+{
+  return m_file_name_service.make_config_full_file_name(a_config_name);
+  /*return m_path_prog + irst("\\") + m_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_default_ext;*/
+}
+
+String TNewConfigF::make_device_config_full_file_name(String a_config_name)
+{
+  return m_file_name_service.make_device_config_full_file_name(a_config_name);
+  /*return m_path_prog + irst("\\") + m_foldername_conf +
+    irst("\\") + a_config_name + m_device_suffix  + irst(".") +
+    m_device_default_ext;*/
+}
 //---------------------------------------------------------------------------
-void TNewConfigF::edit_config(const AnsiString& a_filename)
+void TNewConfigF::edit_config(const String& a_filename)
 {
   m_edit_mode = EXISTENT_CONFIG;
-  if(FileExists(a_filename)){
+  if (FileExists(a_filename)){
     m_config_calibr.load(a_filename.c_str());
-    m_name_config = extract_short_filename(ExtractFileName(a_filename));
+    //m_name_config = extract_short_filename(ExtractFileName(a_filename));
+    m_name_config = m_file_name_service.get_config_name(a_filename);
     NameConfigLE->Text = m_name_config;
+    String type = mp_data_handing->get_device_type();
+    DeviceComboBox->ItemIndex = DeviceComboBox->Items->IndexOf(type);
     config_calibr_out_displ(m_config_calibr);
   }
 }
@@ -676,30 +728,30 @@ void TNewConfigF::set_config_def()
 {
   m_edit_mode = NEW_CONFIG;
   config_calibr_t config_calibr_def;
-  config_calibr_def.ip_adress = "192.168.0.200";
+  config_calibr_def.ip_adress = irst("192.168.0.200");
   config_calibr_def.port = 5005;
-  config_calibr_def.in_parametr1.name = "Частота";
-  config_calibr_def.in_parametr1.type_variable = "Гц";
+  config_calibr_def.in_parametr1.name = irst("Частота");
+  config_calibr_def.in_parametr1.type_variable = irst("Гц");
   config_calibr_def.in_parametr1.unit = type_irs_u32;
   config_calibr_def.in_parametr1.anchor = false;
   config_calibr_def.in_parametr1.index = 0;
   config_calibr_def.in_parametr1.koef = 1;
 
-  config_calibr_def.in_parametr2.name = "Напряжение";
-  config_calibr_def.in_parametr2.type_variable = "В";
+  config_calibr_def.in_parametr2.name = irst("Напряжение");
+  config_calibr_def.in_parametr2.type_variable = irst("В");
   config_calibr_def.in_parametr2.unit = type_irs_u32;
   config_calibr_def.in_parametr2.anchor = true;
   config_calibr_def.in_parametr2.index = 0;
   config_calibr_def.in_parametr2.koef = 1;
 
-  config_calibr_def.in_parametr3.name = "Фаза";
-  config_calibr_def.in_parametr3.type_variable = "градус";
+  config_calibr_def.in_parametr3.name = irst("Фаза");
+  config_calibr_def.in_parametr3.type_variable = irst("градус");
   config_calibr_def.in_parametr3.unit = type_irs_u32;
   config_calibr_def.in_parametr3.index = 0;
   config_calibr_def.in_parametr3.koef = 1;
 
-  config_calibr_def.out_parametr.name = "Напряжение";
-  config_calibr_def.out_parametr.type_variable = "В";
+  config_calibr_def.out_parametr.name = irst("Напряжение");
+  config_calibr_def.out_parametr.type_variable = irst("В");
   config_calibr_def.out_parametr.unit = type_irs_u32;
   config_calibr_def.out_parametr.index = 0;
   config_calibr_def.out_parametr.koef_shunt = 1;
@@ -732,47 +784,94 @@ void TNewConfigF::set_config_def()
   TypeSubDiapasonParam2RB->Checked = true;
   CSpinEdit1->Value = 1;
   SubDiapasonSG->RowCount = CSpinEdit1->Value+1;
-  SubDiapasonSG->Cells[0][1] = "0";
-  SubDiapasonSG->Cells[1][1] = "";
-  SubDiapasonSG->Cells[2][1] = "";
-  SubDiapasonSG->Cells[3][1] = "";
-  SubDiapasonSG->Cells[4][1] = "";
+  SubDiapasonSG->Cells[0][1] = irst("0");
+  SubDiapasonSG->Cells[1][1] = String();
+  SubDiapasonSG->Cells[2][1] = String();
+  SubDiapasonSG->Cells[3][1] = String();
+  SubDiapasonSG->Cells[4][1] = String();
 
   //config_calibr_def.mismatch_mode = true;
   config_calibr_def.meas_range_koef = 1.;
   config_calibr_def.delay_meas = 10;
-  config_calibr_def.type_meas = "Постоянное напряжение";
+  config_calibr_def.type_meas = irst("Постоянное напряжение");
   config_calibr_def.count_reset_over_bit = 3;
-  config_calibr_def.active_filename = "";
+  config_calibr_def.active_filename = irst("");
 
-  AnsiString name_config = "NewConfig";
+  //String name_config = irst("NewConfig");
+  String name_config = generate_new_unique_name(irst("Новая конфигурация"));
+  m_name_config = name_config;
   NameConfigLE->Text = name_config;
-  config_calibr_out_displ(config_calibr_def);
+  String file_name = make_config_full_file_name(name_config);
+  //create_configurations_dir();
+  m_file_name_service.create_config_dir();
+  m_config_calibr.save(file_name.c_str());
 
+  mp_data_handing->load_main_device(name_config);
+
+  /*String device_cfg_file_name = make_device_config_full_file_name(name_config);
+  irs::ini_file_t ini_file;
+  ini_file.set_ini_name(device_cfg_file_name);
+  ini_file.set_section(m_device_options_section);
+  device_options_t device_options;
+  device_options.type = m_device_list.front();
+
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+  ini_file.load();
+  if (!FileExists(device_cfg_file_name.c_str())) {
+    ini_file.save();
+  }
+  mp_data_handing->reset_device(device_cfg_file_name.c_str(), device_options);
+  */
+
+  config_calibr_out_displ(config_calibr_def);
 }
+
+void TNewConfigF::save_configuration(String a_config_name)
+{
+  /*irs::ini_file_t ini_file;
+  ini_file.set_ini_name(a_config_name);
+  ini_file.set_section(m_device_options_section);
+  device_options_t device_options;
+
+  ini_file.add(irst("enabled"), &device_options.enabled);
+  ini_file.add(irst("type"), &device_options.type);
+  ini_file.load();
+  if (!FileExists(a_file_name.c_str())) {
+    ini_file.save();
+  } */
+}
+
+/*void TNewConfigF::create_configurations_dir()
+{
+  //String dir = m_path_prog + irst("\\") + m_foldername_conf;
+  String dir m_file_name_service.get_config_dir();
+  if (!DirectoryExists(dir)) {
+    if (!ForceDirectories(dir)) {
+      throw Exception(irst("Не удалось создать директорию ") + dir);
+    }
+  }
+} */
 
 // Выгрузка значений параметров на экран
 void TNewConfigF::config_calibr_out_displ(
   const config_calibr_t& a_config_calibr)
 {
-  IPAdressLE->Text = a_config_calibr.ip_adress;
-  PortLE->Text = irs::cbuilder::number_to_str(a_config_calibr.port);
+  //IPAdressLE->Text = a_config_calibr.ip_adress;
+  //PortLE->Text = num_to_cbstr(a_config_calibr.port);
 
-  AnsiString type_meas_str = a_config_calibr.type_meas;
+  String type_meas_str = a_config_calibr.type_meas;
   MeasTypeCB->ItemIndex =
     get_index_row_combo_box_str(MeasTypeCB,type_meas_str);
 
   MeasRangeKoefLabeledEdit->Text =
-    irs::cbuilder::number_to_str(a_config_calibr.meas_range_koef);
-  Delay_MeasLE->Text =
-    irs::cbuilder::number_to_str(a_config_calibr.delay_meas);
+    num_to_cbstr(a_config_calibr.meas_range_koef);
+  Delay_MeasLE->Text = num_to_cbstr(a_config_calibr.delay_meas);
 
-  CountResetOverBitLE->Text = irs::cbuilder::number_to_str(
+  CountResetOverBitLE->Text = num_to_cbstr(
     a_config_calibr.count_reset_over_bit);
-  IndexWorkTimeEdit->Text = irs::cbuilder::number_to_str(
-    a_config_calibr.index_work_time);
-  ValueIndexEEPROMEdit->Text = irs::cbuilder::number_to_str(
-    a_config_calibr.index_pos_eeprom);
+  IndexWorkTimeEdit->Text = num_to_cbstr(a_config_calibr.index_work_time);
+  ValueIndexEEPROMEdit->Text = num_to_cbstr(a_config_calibr.index_pos_eeprom);
 
   ConsiderOutParameterForMeasurementCheckBox->Checked =
     m_config_calibr.out_param_config_for_measurement.
@@ -780,26 +879,26 @@ void TNewConfigF::config_calibr_out_displ(
   OutParameterFilterCheckBox->Checked =
     m_config_calibr.out_param_config_for_measurement.
     out_param_filter_enabled;
-  FilterSamplingTimeEdit->Text = irs::cbuilder::number_to_str(
+  FilterSamplingTimeEdit->Text = num_to_cbstr(
     m_config_calibr.out_param_config_for_measurement.filter_sampling_time);
-  FilterPointCountEdit->Text = irs::cbuilder::number_to_str(
+  FilterPointCountEdit->Text = num_to_cbstr(
     m_config_calibr.out_param_config_for_measurement.filter_point_count);
 
   OutParameterControlCheckBox->Checked =
     m_config_calibr.out_param_control_config.enabled;
   MaxRelativeDifferenceOutParameterLabeledEdit->Text =
-    irs::cbuilder::number_to_str(
+    num_to_cbstr(
     a_config_calibr.out_param_control_config.max_relative_difference);
-  TimeCalcDifferenceLabeledEdit->Text = irs::cbuilder::number_to_str(
+  TimeCalcDifferenceLabeledEdit->Text = num_to_cbstr(
     a_config_calibr.out_param_control_config.time);
 
   TemperatureControlCheckBox->Checked =
     a_config_calibr.temperature_control.enabled;
-  TemperatureVariableIndexByteLabeledEdit->Text = irs::cbuilder::number_to_str(
+  TemperatureVariableIndexByteLabeledEdit->Text = num_to_cbstr(
     a_config_calibr.temperature_control.index);
-  ReferenceTemperetureLabeledEdit->Text = irs::cbuilder::number_to_str(
+  ReferenceTemperetureLabeledEdit->Text = num_to_cbstr(
     a_config_calibr.temperature_control.reference);
-  DifferenceTemperatureLabeledEdit->Text = irs::cbuilder::number_to_str(
+  DifferenceTemperatureLabeledEdit->Text = num_to_cbstr(
     a_config_calibr.temperature_control.difference);  
   temperature_control_components_update();
   // Загрузка списка параметров
@@ -809,38 +908,38 @@ void TNewConfigF::config_calibr_out_displ(
   ListParameterSG->Cells[2][1] =
     lang_type_to_str(m_config_calibr.in_parametr1.unit).c_str();
   ListParameterSG->Cells[3][1] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr1.anchor);
+    num_to_cbstr(m_config_calibr.in_parametr1.anchor);
 
   ListParameterSG->Cells[4][1] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr1.index);
+    num_to_cbstr(m_config_calibr.in_parametr1.index);
   ListParameterSG->Cells[5][1] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr1.koef);
+    num_to_cbstr(m_config_calibr.in_parametr1.koef);
   ListParameterSG->Cells[7][1] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr1.default_val);
+    num_to_cbstr(m_config_calibr.in_parametr1.default_val);
   // Параметр 2
   ListParameterSG->Cells[0][2] = m_config_calibr.in_parametr2.name;
   ListParameterSG->Cells[1][2] = m_config_calibr.in_parametr2.type_variable;
   ListParameterSG->Cells[2][2] =
     lang_type_to_str(m_config_calibr.in_parametr2.unit).c_str();
   ListParameterSG->Cells[3][2] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr2.anchor);
+    num_to_cbstr(m_config_calibr.in_parametr2.anchor);
   ListParameterSG->Cells[4][2] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr2.index);
+    num_to_cbstr(m_config_calibr.in_parametr2.index);
   ListParameterSG->Cells[5][2] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr2.koef);
+    num_to_cbstr(m_config_calibr.in_parametr2.koef);
   ListParameterSG->Cells[7][2] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr2.default_val);
+    num_to_cbstr(m_config_calibr.in_parametr2.default_val);
   // Параметр 3
   ListParameterSG->Cells[0][3] = m_config_calibr.in_parametr3.name;
   ListParameterSG->Cells[1][3] = m_config_calibr.in_parametr3.type_variable;
   ListParameterSG->Cells[2][3] =
     lang_type_to_str(m_config_calibr.in_parametr3.unit).c_str();
   ListParameterSG->Cells[4][3] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr3.index);
+    num_to_cbstr(m_config_calibr.in_parametr3.index);
   ListParameterSG->Cells[5][3] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr3.koef);
+    num_to_cbstr(m_config_calibr.in_parametr3.koef);
   ListParameterSG->Cells[7][3] =
-    irs::cbuilder::number_to_str(m_config_calibr.in_parametr3.default_val);
+    num_to_cbstr(m_config_calibr.in_parametr3.default_val);
 
   // Параметр 4
   ListParameterSG->Cells[0][4] = m_config_calibr.out_parametr.name;
@@ -848,9 +947,9 @@ void TNewConfigF::config_calibr_out_displ(
   ListParameterSG->Cells[2][4] =
     lang_type_to_str(m_config_calibr.out_parametr.unit).c_str();
   ListParameterSG->Cells[4][4] =
-    irs::cbuilder::number_to_str(m_config_calibr.out_parametr.index);
+    num_to_cbstr(m_config_calibr.out_parametr.index);
   ListParameterSG->Cells[5][4] =
-    irs::cbuilder::number_to_str(m_config_calibr.out_parametr.koef_shunt);
+    num_to_cbstr(m_config_calibr.out_parametr.koef_shunt);
 
   // Обработка доп.параметров
   int parameter_ex_count = m_config_calibr.v_parametr_ex.size();
@@ -870,12 +969,12 @@ void TNewConfigF::config_calibr_out_displ(
         lang_type_to_str(m_config_calibr.v_parametr_ex[i].unit).c_str();
       // индекс, байт
       ListParameterSG->Cells[4][row] =
-        irs::cbuilder::number_to_str(m_config_calibr.v_parametr_ex[i].index);
+        num_to_cbstr(m_config_calibr.v_parametr_ex[i].index);
       // рабочее значение
-      ListParameterSG->Cells[6][row] = irs::cbuilder::number_to_str(
+      ListParameterSG->Cells[6][row] = num_to_cbstr(
         m_config_calibr.v_parametr_ex[i].value_working);
       // значение по умолчанию
-      ListParameterSG->Cells[7][row] = irs::cbuilder::number_to_str(
+      ListParameterSG->Cells[7][row] = num_to_cbstr(
         m_config_calibr.v_parametr_ex[i].value_default);
     }
   } else {
@@ -884,50 +983,50 @@ void TNewConfigF::config_calibr_out_displ(
       m_basic_parameter_count+ParamsExCSpinEdit->Value+1;
     int row = m_basic_parameter_count+1;
       // название
-      ListParameterSG->Cells[0][row] = "";
+      ListParameterSG->Cells[0][row] = String();
       // единицы измерения
-      ListParameterSG->Cells[1][row] = "";
+      ListParameterSG->Cells[1][row] = String();
       // тип переменной
-      ListParameterSG->Cells[2][row] = "";
+      ListParameterSG->Cells[2][row] = String();
       // индекс, байт
-      ListParameterSG->Cells[4][row] = "";
+      ListParameterSG->Cells[4][row] = String();
       // коэффициент
-      ListParameterSG->Cells[5][row] = "";
+      ListParameterSG->Cells[5][row] = String();
       // рабочее значение
-      ListParameterSG->Cells[6][row] = "" ;
+      ListParameterSG->Cells[6][row] = String() ;
       // значение по умолчанию
-      ListParameterSG->Cells[7][row] = "";
+      ListParameterSG->Cells[7][row] = String();
   }
 
   // Бит готовности регулятора
-  ListByteSG->Cells[1][1] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][1] = num_to_cbstr(
     a_config_calibr.bit_pos_operating_duty.index_byte);
-  ListByteSG->Cells[2][1] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][1] = num_to_cbstr(
     a_config_calibr.bit_pos_operating_duty.index_bit);
   // Бит режима расстройки
-  ListByteSG->Cells[1][2] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][2] = num_to_cbstr(
     a_config_calibr.bit_pos_mismatch_state.index_byte);
-  ListByteSG->Cells[2][2] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][2] = num_to_cbstr(
     a_config_calibr.bit_pos_mismatch_state.index_bit);
   // Бит режима коррекции
-  ListByteSG->Cells[1][3] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][3] = num_to_cbstr(
     a_config_calibr.bit_pos_correct_mode.index_byte);
-  ListByteSG->Cells[2][3] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][3] = num_to_cbstr(
     a_config_calibr.bit_pos_correct_mode.index_bit);
   // Бит ошибки
-  ListByteSG->Cells[1][4] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][4] = num_to_cbstr(
     a_config_calibr.bit_pos_error_bit.index_byte);
-  ListByteSG->Cells[2][4] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][4] = num_to_cbstr(
     a_config_calibr.bit_pos_error_bit.index_bit);
   // Бит сброса ошибки
-  ListByteSG->Cells[1][5] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][5] = num_to_cbstr(
     a_config_calibr.bit_pos_reset_over_bit.index_byte);
-  ListByteSG->Cells[2][5] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][5] = num_to_cbstr(
     a_config_calibr.bit_pos_reset_over_bit.index_bit);
   // Бит предустановки фазы
-  ListByteSG->Cells[1][6] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[1][6] = num_to_cbstr(
     a_config_calibr.bit_pos_phase_preset_bit.index_byte);
-  ListByteSG->Cells[2][6] = irs::cbuilder::number_to_str(
+  ListByteSG->Cells[2][6] = num_to_cbstr(
     a_config_calibr.bit_pos_phase_preset_bit.index_bit);
 
   // обработка доп.битов
@@ -940,24 +1039,24 @@ void TNewConfigF::config_calibr_out_displ(
       int row = i+m_basic_bit_count+1;
       ListByteSG->Cells[0][row] =
         m_config_calibr.bit_type2_array[i].bitname.c_str();
-      ListByteSG->Cells[1][row] = irs::cbuilder::number_to_str(
+      ListByteSG->Cells[1][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].index_byte);
-      ListByteSG->Cells[2][row] = irs::cbuilder::number_to_str(
+      ListByteSG->Cells[2][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].index_bit);
-      ListByteSG->Cells[3][row] = irs::cbuilder::number_to_str(
+      ListByteSG->Cells[3][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].value_working);
-      ListByteSG->Cells[4][row] = irs::cbuilder::number_to_str(
+      ListByteSG->Cells[4][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].value_def);
     }
   } else {
     BitsExCSpinEdit->Value = 1;
     ListByteSG->RowCount = m_basic_bit_count+BitsExCSpinEdit->Value+1;
     const int row = m_basic_bit_count+1;
-    ListByteSG->Cells[0][row] = "";
-    ListByteSG->Cells[1][row] = "";
-    ListByteSG->Cells[2][row] = "";
-    ListByteSG->Cells[3][row] = "";
-    ListByteSG->Cells[4][row] = "";
+    ListByteSG->Cells[0][row] = String();
+    ListByteSG->Cells[1][row] = String();
+    ListByteSG->Cells[2][row] = String();
+    ListByteSG->Cells[3][row] = String();
+    ListByteSG->Cells[4][row] = String();
   }
 
   if (m_config_calibr.type_sub_diapason == tsd_parameter1) {
@@ -971,32 +1070,33 @@ void TNewConfigF::config_calibr_out_displ(
     SubDiapasonSG->RowCount = CSpinEdit1->Value+1;
     for (int i = 0; i < sub_diapason; i++) {
       int row = i+1;
-      SubDiapasonSG->Cells[0][row] = irs::cbuilder::number_to_str(i+1);
-      SubDiapasonSG->Cells[1][row] = irs::cbuilder::number_to_str(
+      SubDiapasonSG->Cells[0][row] = num_to_cbstr(i+1);
+      SubDiapasonSG->Cells[1][row] = num_to_cbstr(
         m_config_calibr.v_sub_diapason_calibr[i].index_start);
-      SubDiapasonSG->Cells[2][row] = irs::cbuilder::number_to_str(
+      SubDiapasonSG->Cells[2][row] = num_to_cbstr(
         m_config_calibr.v_sub_diapason_calibr[i].size);
-      SubDiapasonSG->Cells[3][row] = irs::cbuilder::number_to_str(
+      SubDiapasonSG->Cells[3][row] = num_to_cbstr(
         m_config_calibr.v_sub_diapason_calibr[i].value_begin);
-      SubDiapasonSG->Cells[4][row] = irs::cbuilder::number_to_str(
+      SubDiapasonSG->Cells[4][row] = num_to_cbstr(
         m_config_calibr.v_sub_diapason_calibr[i].value_end);
     }
   } else {
     CSpinEdit1->Value = 1;
     SubDiapasonSG->RowCount = CSpinEdit1->Value+1;
     const int row = 1;
-    SubDiapasonSG->Cells[0][row] = "1";
-    SubDiapasonSG->Cells[1][row] = "";
-    SubDiapasonSG->Cells[2][row] = "";
-    SubDiapasonSG->Cells[3][row] = "";
-    SubDiapasonSG->Cells[4][row] = "";
+    SubDiapasonSG->Cells[0][row] = irst("1");
+    SubDiapasonSG->Cells[1][row] = String();
+    SubDiapasonSG->Cells[2][row] = String();
+    SubDiapasonSG->Cells[3][row] = String();
+    SubDiapasonSG->Cells[4][row] = String();
   }
 
 
   ReferenceChannelCheckB->Checked = a_config_calibr.reference_channel.enabled;
-  IPAdressRefChannelLE->Text = a_config_calibr.reference_channel.ip_adress;
-  PortRefChannelLE->Text = irs::cbuilder::number_to_str(
-    a_config_calibr.reference_channel.port);
+  update_ref_device_options_enabled();
+  //IPAdressRefChannelLE->Text = a_config_calibr.reference_channel.ip_adress;
+  /*PortRefChannelLE->Text = num_to_cbstr(
+    a_config_calibr.reference_channel.port);*/
 }
 
 
@@ -1014,11 +1114,19 @@ void __fastcall TNewConfigF::FormClose(TObject *Sender,
 void __fastcall TNewConfigF::ReferenceChannelCheckBClick(TObject *Sender)
 {
   if (ReferenceChannelCheckB->Checked == true){
-    IPAdressRefChannelLE->Enabled = true;
-    PortRefChannelLE->Enabled = true;
+    mp_data_handing->load_ref_device(m_name_config);
+  }
+  update_ref_device_options_enabled();
+}
+
+void TNewConfigF::update_ref_device_options_enabled()
+{
+  if (ReferenceChannelCheckB->Checked == true){
+    RefDeviceComboBox->Enabled = true;
+    ChangeRefDeviceConfigButton->Enabled = true;
   } else {
-    IPAdressRefChannelLE->Enabled = false;
-    PortRefChannelLE->Enabled = false;
+    RefDeviceComboBox->Enabled = false;
+    ChangeRefDeviceConfigButton->Enabled = false;
   }
 }
 //---------------------------------------------------------------------------
@@ -1123,4 +1231,103 @@ void __fastcall TNewConfigF::OutParameterFilterCheckBoxClick(
 }
 //---------------------------------------------------------------------------
 
+
+
+void __fastcall TNewConfigF::ChangeNameButtonClick(TObject *Sender)
+{
+  m_name_config = NameConfigLE->Text;
+  const String cur_file_name =
+    m_file_name_service.make_config_full_file_name(m_name_config);
+  const String cur_device_cfg_file_name =
+    m_file_name_service.make_device_config_full_file_name(m_name_config);
+  const String cur_grid_opt_file_name =
+    m_file_name_service.make_device_grid_config_full_name(m_name_config);
+
+  String new_config_name = m_name_config;
+  while (InputQuery(irst("Введите имя"), irst("Имя конфигурации"),
+      new_config_name)) {
+    const String new_cfg_file_name =
+      m_file_name_service.make_config_full_file_name(new_config_name);
+    const String new_device_cfg_file_name =
+      m_file_name_service.make_device_config_full_file_name(new_config_name);
+    const String new_grid_opt_file_name =
+      m_file_name_service.make_device_grid_config_full_name(new_config_name);
+
+    if(FileExists(new_cfg_file_name) || FileExists(new_device_cfg_file_name)
+        || FileExists(new_grid_opt_file_name)){
+      Application->MessageBox(
+        irst("Конфигурация с указанным именем уже существует, ")
+        irst("введите другое имя"),
+        irst("Имя конфигурации"),
+        MB_OK + MB_ICONINFORMATION);
+    } else {
+      if (!RenameFile(cur_file_name, new_cfg_file_name)) {
+        Application->MessageBox(irst("Переименовать файл не удалось"),
+          irst("Ошибка"), MB_OK + MB_ICONERROR);
+        break;
+      }
+      if (!RenameFile(cur_device_cfg_file_name, new_device_cfg_file_name)) {
+        Application->MessageBox(irst("Переименовать файл не удалось"),
+          irst("Ошибка"), MB_OK + MB_ICONERROR);
+        break;
+      }
+      RenameFile(cur_grid_opt_file_name, new_grid_opt_file_name);
+
+      m_name_config = new_config_name;
+      NameConfigLE->Text = new_config_name;
+      mp_data_handing->load_main_device(m_name_config);
+
+      // tstlan при уничтожении восстанавливает файл. Удаляем его еще раз
+      DeleteFile(cur_device_cfg_file_name);
+      DeleteFile(cur_grid_opt_file_name);
+
+      break;
+    }
+  }
+}
+
+String TNewConfigF::generate_new_unique_name(const String& a_device_name)
+{
+  int i = 1;
+  while (true) {
+    const String new_config_name = a_device_name + irst("_") + IntToStr(i);
+    const String new_full_file_name =
+      make_config_full_file_name(new_config_name);
+    if (!FileExists(new_full_file_name)){
+      return new_config_name;
+    }
+    i++;
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::ChangeDeviceConfigButtonClick(TObject *Sender)
+{
+  mp_data_handing->show_main_device_options();
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TNewConfigF::DeviceComboBoxChange(TObject *Sender)
+{
+  String name_config = NameConfigLE->Text;
+  String type = DeviceComboBox->Text;
+  mp_data_handing->change_main_device_type(name_config, type);
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TNewConfigF::ExitButtonClick(TObject *Sender)
+{
+  if (m_edit_mode == NEW_CONFIG) {
+    mp_data_handing->delete_device_config(m_name_config);
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::ChangeRefDeviceConfigButtonClick(TObject *Sender)
+{
+  mp_data_handing->show_ref_device_options();
+}
+//---------------------------------------------------------------------------
 

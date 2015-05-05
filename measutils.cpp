@@ -6,13 +6,13 @@
 //#define debug_avto_volt_meas
 
 
-const irs::string str_im_gpib = "gpib";
-const irs::string str_im_usb = "usb";
-const irs::string str_im_com = "com";
+const irs::string_t str_im_gpib = irst("gpib");
+const irs::string_t str_im_usb = irst("usb");
+const irs::string_t str_im_com = irst("com");
 
-irs::string interface_multim_to_str(const interface_multim_t a_interface_mul)
+irs::string_t interface_multim_to_str(const interface_multim_t a_interface_mul)
 {
-  irs::string str_interface_multim;
+  irs::string_t str_interface_multim;
   switch(a_interface_mul){
     case im_gpib: { str_interface_multim = str_im_gpib; } break;
     case im_usb:  { str_interface_multim = str_im_usb;  } break;
@@ -21,7 +21,7 @@ irs::string interface_multim_to_str(const interface_multim_t a_interface_mul)
   return str_interface_multim;
 }
 interface_multim_t str_to_interface_multim(
-  const irs::string& a_str_interface_multim)
+  const irs::string_t& a_str_interface_multim)
 {
   interface_multim_t interface_multim = im_gpib;
   if (a_str_interface_multim == str_im_gpib) {
@@ -34,16 +34,16 @@ interface_multim_t str_to_interface_multim(
   return interface_multim;
 }
 
-const irs::string str_tmul_none_multimeter = "Не выбран";
-const irs::string str_tmul_agilent_3458a = "Agilent 3458A";
-const irs::string str_tmul_v7_78_1 = "В7-78\\1";
-const irs::string str_tmul_ch3_85_3r = "Ч3-85\\3R";
-const irs::string str_tmul_dummy = "Случайные числа";
+const irs::string_t str_tmul_none_multimeter = irst("Не выбран");
+const irs::string_t str_tmul_agilent_3458a = irst("Agilent 3458A");
+const irs::string_t str_tmul_v7_78_1 = irst("В7-78\\1");
+const irs::string_t str_tmul_ch3_85_3r = irst("Ч3-85\\3R");
+const irs::string_t str_tmul_dummy = irst("Случайные числа");
 
 
-irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr)
+irs::string_t type_multimetr_to_str(const type_multimetr_t a_type_multimetr)
 {
-  irs::string str_type_multimetr = str_tmul_none_multimeter;
+  irs::string_t str_type_multimetr = str_tmul_none_multimeter;
   switch(a_type_multimetr){
     case tmul_agilent_3458a: {
       str_type_multimetr = str_tmul_agilent_3458a;
@@ -64,7 +64,8 @@ irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr)
   return str_type_multimetr;
 }
 
-type_multimetr_t str_to_type_multimeter(const irs::string& a_str_type_multimetr)
+type_multimetr_t str_to_type_multimeter(
+  const irs::string_t& a_str_type_multimetr)
 {
   type_multimetr_t type_multimetr = tmul_none_multimeter;
   if (a_str_type_multimetr == str_tmul_agilent_3458a) {
@@ -92,15 +93,16 @@ value_meas_t::value_meas_t():
   m_num(0),
   m_denom(1),
   m_test_to(0),
-  m_multimeter(NULL),
   m_hardflow(NULL),
+  m_multimeter(NULL),
   mp_value(NULL)
 {
   init_to_cnt();
 }
 value_meas_t::~value_meas_t()
 {
-  m_multimeter.reset(NULL);
+  //m_multimeter.reset(NULL);
+  m_multimeter = NULL;
   deinit_to_cnt();
 }
 void value_meas_t::set_time_wait_meas(int a_time)

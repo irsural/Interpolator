@@ -1,9 +1,9 @@
 object DataHandlingF: TDataHandlingF
-  Left = 365
-  Top = 165
-  Width = 980
-  Height = 531
+  Left = 676
+  Top = 291
   Caption = 'DataHandlingF'
+  ClientHeight = 485
+  ClientWidth = 928
   Color = clWindow
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,7 +20,7 @@ object DataHandlingF: TDataHandlingF
   object TableValuePanel: TPanel
     Left = 249
     Top = 30
-    Width = 723
+    Width = 679
     Height = 406
     Align = alClient
     BevelOuter = bvLowered
@@ -29,7 +29,7 @@ object DataHandlingF: TDataHandlingF
     object LogMemo: TMemo
       Left = 1
       Top = 255
-      Width = 721
+      Width = 677
       Height = 150
       Align = alBottom
       Constraints.MaxHeight = 150
@@ -47,7 +47,7 @@ object DataHandlingF: TDataHandlingF
     object RawDataStringGrid: TStringGrid
       Left = 1
       Top = 105
-      Width = 721
+      Width = 677
       Height = 150
       Align = alClient
       Constraints.MinHeight = 150
@@ -78,7 +78,7 @@ object DataHandlingF: TDataHandlingF
     object Panel1: TPanel
       Left = 1
       Top = 1
-      Width = 721
+      Width = 677
       Height = 104
       Align = alTop
       TabOrder = 2
@@ -102,14 +102,13 @@ object DataHandlingF: TDataHandlingF
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akRight]
-          ItemHeight = 13
           TabOrder = 0
           OnChange = ConfigCBChange
         end
         object EditConfigButton: TButton
-          Left = 269
+          Left = 272
           Top = 72
-          Width = 75
+          Width = 74
           Height = 25
           Anchors = [akRight]
           Caption = #1048#1079#1084#1077#1085#1080#1090#1100
@@ -127,7 +126,7 @@ object DataHandlingF: TDataHandlingF
           TabOrder = 2
         end
         object CreateConfigButton: TButton
-          Left = 189
+          Left = 191
           Top = 72
           Width = 75
           Height = 25
@@ -136,11 +135,20 @@ object DataHandlingF: TDataHandlingF
           TabOrder = 3
           OnClick = CreateConfigButtonClick
         end
+        object DeleteConfigButton: TButton
+          Left = 8
+          Top = 72
+          Width = 75
+          Height = 25
+          Caption = #1059#1076#1072#1083#1080#1090#1100
+          TabOrder = 4
+          OnClick = DeleteConfigButtonClick
+        end
       end
       object RightPanel: TPanel
         Left = 359
         Top = 1
-        Width = 361
+        Width = 317
         Height = 102
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
@@ -148,28 +156,37 @@ object DataHandlingF: TDataHandlingF
         BevelOuter = bvLowered
         TabOrder = 1
         DesignSize = (
-          361
+          317
           102)
         object PatternOfMeasuringInstrumentCB: TComboBox
           Left = 8
           Top = 36
-          Width = 338
+          Width = 302
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akRight]
-          ItemHeight = 13
           TabOrder = 0
           OnChange = PatternOfMeasuringInstrumentCBChange
         end
         object Panel5: TPanel
           Left = 8
           Top = 11
-          Width = 336
+          Width = 300
           Height = 17
           Anchors = [akLeft, akRight]
           BevelOuter = bvLowered
           Caption = #1048#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1077' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1086
           TabOrder = 1
+        end
+        object ShowMultimeterOptionsButton: TButton
+          Left = 232
+          Top = 72
+          Width = 76
+          Height = 25
+          Anchors = [akTop, akRight]
+          Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+          TabOrder = 2
+          OnClick = ShowMultimeterOptionsButtonClick
         end
       end
     end
@@ -194,8 +211,6 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Width = 108
       EditLabel.Height = 13
       EditLabel.Caption = #1057#1074#1103#1079#1100' '#1089' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1086#1084
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       ReadOnly = True
       TabOrder = 0
     end
@@ -217,8 +232,6 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Width = 129
       EditLabel.Height = 13
       EditLabel.Caption = #1054#1073#1097#1077#1077' '#1074#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 2
     end
     object IntervalTimeMeasLE: TLabeledEdit
@@ -230,8 +243,6 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Width = 157
       EditLabel.Height = 13
       EditLabel.Caption = #1054#1089#1090#1072#1074#1096#1077#1077#1089#1103' '#1074#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 3
     end
     object WorkTimeDeviceLE: TLabeledEdit
@@ -243,8 +254,6 @@ object DataHandlingF: TDataHandlingF
       EditLabel.Width = 150
       EditLabel.Height = 13
       EditLabel.Caption = #1042#1088#1077#1084#1103' '#1088#1072#1073#1086#1090#1099' '#1089' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1086#1084
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 4
     end
     object TemperatureControlGroupBox: TGroupBox
@@ -263,8 +272,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 43
         EditLabel.Height = 13
         EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 0
       end
@@ -277,8 +284,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 45
         EditLabel.Height = 13
         EditLabel.Caption = #1058#1077#1082#1091#1097#1072#1103
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 1
       end
@@ -291,15 +296,13 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 38
         EditLabel.Height = 13
         EditLabel.Caption = #1044#1086#1087#1091#1089#1082
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 2
       end
     end
     object OutParamControlGroupBox: TGroupBox
-      Left = 8
-      Top = 288
+      Left = 10
+      Top = 287
       Width = 233
       Height = 105
       Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
@@ -313,8 +316,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 45
         EditLabel.Height = 13
         EditLabel.Caption = #1058#1077#1082#1091#1097#1077#1077
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 0
       end
@@ -327,8 +328,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 43
         EditLabel.Height = 13
         EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 1
       end
@@ -341,8 +340,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 60
         EditLabel.Height = 13
         EditLabel.Caption = #1040#1073#1089'. '#1076#1086#1087#1091#1089#1082
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 2
       end
@@ -355,8 +352,6 @@ object DataHandlingF: TDataHandlingF
         EditLabel.Width = 208
         EditLabel.Height = 13
         EditLabel.Caption = #1054#1089#1090#1072#1083#1086#1089#1100' '#1076#1086' '#1087#1086#1076#1090#1074'. '#1089#1090#1072#1073'. '#1089#1086#1089#1090#1086#1103#1085#1080#1103', '#1089#1077#1082
-        LabelPosition = lpAbove
-        LabelSpacing = 3
         ReadOnly = True
         TabOrder = 3
       end
@@ -365,12 +360,12 @@ object DataHandlingF: TDataHandlingF
   object ButtomPanel: TPanel
     Left = 0
     Top = 436
-    Width = 972
+    Width = 928
     Height = 49
     Align = alBottom
     TabOrder = 2
     DesignSize = (
-      972
+      928
       49)
     object CommentProgressL: TLabel
       Left = 8
@@ -381,15 +376,16 @@ object DataHandlingF: TDataHandlingF
       Caption = 'CommentProgress'
     end
     object PercentProgressL: TLabel
-      Left = 821
+      Left = 785
       Top = 24
       Width = 37
       Height = 13
       Anchors = [akRight, akBottom]
       Caption = 'Percent'
+      ExplicitLeft = 821
     end
     object CloseFormButton: TButton
-      Left = 885
+      Left = 849
       Top = 15
       Width = 75
       Height = 25
@@ -401,18 +397,16 @@ object DataHandlingF: TDataHandlingF
     object ProgressBar1: TProgressBar
       Left = 8
       Top = 24
-      Width = 806
+      Width = 770
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
-      Min = 0
-      Max = 100
       TabOrder = 1
     end
   end
   object CoolBar1: TCoolBar
     Left = 0
     Top = 0
-    Width = 972
+    Width = 928
     Height = 30
     AutoSize = True
     Bands = <
@@ -420,27 +414,28 @@ object DataHandlingF: TDataHandlingF
         Control = ActionToolBar1
         ImageIndex = -1
         MinHeight = 26
-        Width = 143
+        Width = 149
       end
       item
         Break = False
         Control = ActionToolBar3
         ImageIndex = -1
         MinHeight = 26
-        Width = 103
+        Width = 94
       end
       item
         Break = False
         Control = ActionToolBar2
         ImageIndex = -1
         MinHeight = 26
-        Width = 249
+        Width = 199
       end
       item
         Break = False
         Control = ActionToolBar4
         ImageIndex = -1
-        Width = 467
+        MinHeight = 26
+        Width = 468
       end>
     Color = clBtnFace
     Images = ImageList1
@@ -448,63 +443,95 @@ object DataHandlingF: TDataHandlingF
     ParentShowHint = False
     ShowHint = True
     object ActionToolBar3: TActionToolBar
-      Left = 154
+      Left = 164
       Top = 0
-      Width = 90
+      Width = 80
       Height = 26
       ActionManager = ActionManager1
       Align = alClient
-      AllowHiding = True
       Caption = 'ActionToolBar3'
-      HorzSeparator = True
-      Orientation = boLeftToRight
-      PersistentHotKeys = False
+      Color = clMenuBar
+      ColorMap.DisabledFontColor = 7171437
+      ColorMap.HighlightColor = clWhite
+      ColorMap.BtnSelectedFont = clBlack
+      ColorMap.UnusedColor = clWhite
+      Constraints.MaxWidth = 80
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
       Spacing = 0
     end
     object ActionToolBar1: TActionToolBar
-      Left = 9
+      Left = 11
       Top = 0
-      Width = 130
+      Width = 135
       Height = 26
       ActionManager = ActionManager1
-      AllowHiding = True
       Caption = 'ActionToolBar1'
-      HorzSeparator = True
-      Orientation = boLeftToRight
-      PersistentHotKeys = False
+      Color = clMenuBar
+      ColorMap.DisabledFontColor = 7171437
+      ColorMap.HighlightColor = clWhite
+      ColorMap.BtnSelectedFont = clBlack
+      ColorMap.UnusedColor = clWhite
+      Constraints.MaxWidth = 135
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
       Spacing = 0
     end
     object ActionToolBar2: TActionToolBar
-      Left = 259
+      Left = 262
       Top = 0
-      Width = 236
+      Width = 185
       Height = 26
       ActionManager = ActionManager1
-      AllowHiding = True
       Caption = 'ActionToolBar2'
-      HorzSeparator = True
-      Orientation = boLeftToRight
-      PersistentHotKeys = False
+      Color = clMenuBar
+      ColorMap.DisabledFontColor = 7171437
+      ColorMap.HighlightColor = clWhite
+      ColorMap.BtnSelectedFont = clBlack
+      ColorMap.UnusedColor = clWhite
+      Constraints.MaxWidth = 185
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
       Spacing = 0
     end
     object ActionToolBar4: TActionToolBar
-      Left = 510
+      Left = 465
       Top = 0
-      Width = 454
-      Height = 25
+      Width = 60
+      Height = 26
       ActionManager = ActionManager1
-      AllowHiding = True
       Caption = 'ActionToolBar4'
-      HorzSeparator = True
-      Orientation = boLeftToRight
-      PersistentHotKeys = False
+      Color = clMenuBar
+      ColorMap.DisabledFontColor = 7171437
+      ColorMap.HighlightColor = clWhite
+      ColorMap.BtnSelectedFont = clBlack
+      ColorMap.UnusedColor = clWhite
+      Constraints.MaxWidth = 60
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = []
+      ParentFont = False
       Spacing = 0
     end
   end
   object FormDataHandingTimer1: TTimer
     Interval = 10
     OnTimer = FormDataHandingTimer1Timer
-    Left = 272
+    Left = 304
     Top = 312
   end
   object ActionManager1: TActionManager
@@ -671,8 +698,9 @@ object DataHandlingF: TDataHandlingF
         ActionBar = ActionToolBar4
       end>
     Images = ImageList2
-    Left = 304
+    Left = 336
     Top = 312
+    StyleName = 'Platform Default'
     object FileOpen: TFileOpen
       Category = #1060#1072#1081#1083
       Caption = '&'#1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1060#1072#1081#1083'...'
@@ -968,14 +996,29 @@ object DataHandlingF: TDataHandlingF
       Caption = #1054' '#1087#1088#1086#1075#1088#1072#1084#1084#1077
       OnExecute = AboutActionExecute
     end
+    object ConnectAction: TAction
+      Category = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
+      Caption = #1057#1086#1077#1076#1080#1085#1077#1085#1080#1077
+      OnExecute = ConnectActionExecute
+    end
+    object TSTLANAction: TAction
+      Category = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
+      Caption = 'TSTLAN'
+      OnExecute = TSTLANActionExecute
+    end
+    object ConnectionLogAction: TAction
+      Category = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
+      Caption = #1051#1086#1075' '#1089#1086#1077#1076#1080#1085#1077#1085#1080#1103
+      OnExecute = ConnectionLogActionExecute
+    end
   end
   object ImageList2: TImageList
     ImageType = itMask
     ShareImages = True
-    Left = 368
+    Left = 400
     Top = 312
     Bitmap = {
-      494C010117001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800680010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1776,7 +1819,7 @@ object DataHandlingF: TDataHandlingF
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
-    Left = 400
+    Left = 432
     Top = 312
     object FileOpenM: TMenuItem
       Caption = #1060#1072#1081#1083
@@ -2007,6 +2050,18 @@ object DataHandlingF: TDataHandlingF
         Action = AutoUpdateChartAction
       end
     end
+    object N18: TMenuItem
+      Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
+      object ConnectMenuItem: TMenuItem
+        Action = ConnectAction
+      end
+      object TSTLANMenuItem: TMenuItem
+        Action = TSTLANAction
+      end
+      object ConnectionLogMenuItem: TMenuItem
+        Action = ConnectionLogAction
+      end
+    end
     object N17: TMenuItem
       Caption = #1057#1087#1088#1072#1074#1082#1072
       object AboutM: TMenuItem
@@ -2016,10 +2071,10 @@ object DataHandlingF: TDataHandlingF
   end
   object ImageList1: TImageList
     ShareImages = True
-    Left = 336
+    Left = 368
     Top = 312
     Bitmap = {
-      494C010117001800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800680010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2820,14 +2875,14 @@ object DataHandlingF: TDataHandlingF
   end
   object FileOpenDialog1: TOpenDialog
     Filter = 'Digital interpolator (*.dgi)|*.dgi|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.*'
-    Left = 432
+    Left = 464
     Top = 312
   end
   object SaveFileDialog: TSaveDialog
     Filter = 
       #1058#1077#1082#1089#1090#1086#1074#1099#1077' '#1092#1072#1081#1083#1099' Microsoft Excel (*.csv)|*.csv|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.' +
       '*'
-    Left = 464
+    Left = 496
     Top = 312
   end
 end

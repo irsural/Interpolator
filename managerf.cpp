@@ -20,19 +20,19 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   m_interval_read_out_param(irs::make_cnt_s(m_value_interval_read_out_param)),
   m_between_reg_ready_and_filter_preset_sec(irs::make_cnt_s(5)),
   m_timer_delay_filter_preset(m_between_reg_ready_and_filter_preset_sec),
-  m_filename_options_channel1("options1.ini"),
-  m_filename_options_channel2("options2.ini"),
-  m_filename_options_channel3("options3.ini"),
-  m_filename_options_channel4("options4.ini"),
-  m_filename_options_channel5("options5.ini"),
-  m_filename_options_channel6("options6.ini"),
+  m_filename_options_channel1(irst("options1.ini")),
+  m_filename_options_channel2(irst("options2.ini")),
+  m_filename_options_channel3(irst("options3.ini")),
+  m_filename_options_channel4(irst("options4.ini")),
+  m_filename_options_channel5(irst("options5.ini")),
+  m_filename_options_channel6(irst("options6.ini")),
   mp_channel_1(NULL),
   mp_channel_2(NULL),
   mp_channel_3(NULL),
   mp_channel_4(NULL),
   mp_channel_5(NULL),
   mp_channel_6(NULL),
-  m_log(LogMemo, "Log_manager.txt"),
+  m_log(LogMemo, irst("Log_manager.txt")),
   m_log_message(&m_log),
   m_on_change_mode_prog(false),
   m_on_close_subordinate_form(false),
@@ -44,6 +44,8 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   m_filter_phase_norm_begin(0),
   m_filter_phase_norm_end(+360)
 {
+  m_log << String(irst("Старт"));
+
   irs::fade_data_t fade_data;
   fade_data.x1 = 0;
   fade_data.y1 = 0;
@@ -72,8 +74,8 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   mv_value_out_filter_edit.push_back(ValueOutFilterEdit5);
   mv_value_out_filter_edit.push_back(ValueOutFilterEdit6);
 
-  m_main_opt_ini_file.set_ini_name("options_manager_channel.ini");
-  m_main_opt_ini_file.set_section("options");
+  m_main_opt_ini_file.set_ini_name(irst("options_manager_channel.ini"));
+  m_main_opt_ini_file.set_section(irst("options"));
   m_main_opt_ini_file.add(SingleModeProgramCB->Name, SingleModeProgramCB);
   m_main_opt_ini_file.add(OnChannel1CB->Name, OnChannel1CB);
   m_main_opt_ini_file.add(OnChannel2CB->Name, OnChannel2CB);
@@ -154,9 +156,13 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
 
   // Настройка компонентов формы
-  ConstTimerFilterLE->Text =
-    irs::cbuilder::number_to_str(m_time_constant_filter);
+  ConstTimerFilterLE->Text = irs::str_conv<String>(
+    irs::num_to_str(m_time_constant_filter));
 }
+__fastcall TManagerDGIF::~TManagerDGIF()
+{
+}
+
 //---------------------------------------------------------------------------
 void __fastcall TManagerDGIF::OnVisibleChannel1BClick(TObject *Sender)
 {
@@ -212,7 +218,7 @@ void __fastcall TManagerDGIF::OnChannel1CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 1",
+          irst("Channel 1"),
           m_filename_options_channel1,
           MXIFA_MXNETC));
         RefChannel1RB->Enabled = true;
@@ -556,9 +562,9 @@ void TManagerDGIF::meas_tick()
               mv_value_out_filter[channel] = fade(&fade_data, in_x_norm);
               mv_fade_data[channel] = fade_data;
               mv_value_out_edit[channel]->Text =
-                irs::cbuilder::number_to_str(in_x_norm);
+                num_to_cbstr(in_x_norm);
               mv_value_out_filter_edit[channel]->Text =
-                irs::cbuilder::number_to_str(mv_value_out_filter[channel]);
+                num_to_cbstr(mv_value_out_filter[channel]);
             }
           }
         }
@@ -803,7 +809,7 @@ void TManagerDGIF::processing_data_phase_volt_type_1()
   for (int index_chnl = 0; index_chnl < m_channel_count; index_chnl++) {
     if (((*mv_channels[index_chnl]).get() != NULL) &&
       ((*mv_channels[index_chnl]).get() != m_cur_ref_channel)) {
-      processing_data_phase_cur_channel(mv_channels[index_chnl], coord_cell);
+      processing_data_phase_cur_channel(mv_channels[index_chnl]->get(), coord_cell);
     }
   }
 }
@@ -877,7 +883,7 @@ void TManagerDGIF::processing_data_phase_current()
   coord_cell_t coord_cell = m_cur_ref_channel->get_coord_cur_cell_meas();
   for (int index_chnl = 0; index_chnl < m_channel_count; index_chnl++) {
     if ((*mv_channels[index_chnl]).get() != NULL) {
-      processing_data_phase_cur_channel(mv_channels[index_chnl], coord_cell);
+      processing_data_phase_cur_channel(mv_channels[index_chnl]->get(), coord_cell);
     }
   }
 }
@@ -906,22 +912,22 @@ void TManagerDGIF::processing_data_current_cur_channel(
   }
 }
 void TManagerDGIF::processing_data_phase_cur_channel(
-    auto_ptr<TDataHandlingF>* a_channel, const coord_cell_t& a_coord_cur_cell)
+    TDataHandlingF* a_channel, const coord_cell_t& a_coord_cur_cell)
 {
-  int col_count = (*a_channel)->table_displ_col_count();
-  int row_count = (*a_channel)->table_displ_row_count();
+  int col_count = a_channel->table_displ_col_count();
+  int row_count = a_channel->table_displ_row_count();
   if (
     (a_coord_cur_cell.col < col_count) && (a_coord_cur_cell.row < row_count)) {
     double out_param = 0.;
     if (FilterOnCB->Checked) {
       for (int channel_ind = 0; channel_ind < m_channel_count; channel_ind++) {
-        if (a_channel == mv_channels[channel_ind]) {
+        if (a_channel == mv_channels[channel_ind]->get()) {
           out_param = mv_value_out_filter[channel_ind];
           break;
         }
       }
     } else {
-      out_param = (*a_channel)->get_out_param();
+      out_param = a_channel->get_out_param();
     }
     //double phase_normal = phase_normalize(out_param);
     const double a_phase_begin = -180;
@@ -932,10 +938,10 @@ void TManagerDGIF::processing_data_phase_cur_channel(
     cell_t cell;
     cell.init = true;
     cell.value = phase_normal;
-    (*a_channel)->set_col_displ(a_coord_cur_cell.col);
-    (*a_channel)->set_row_displ(a_coord_cur_cell.row);
-    (*a_channel)->set_cell(cell, a_coord_cur_cell.col, a_coord_cur_cell.row);
-    (*a_channel)->cell_out_display_variable_precision(
+    a_channel->set_col_displ(a_coord_cur_cell.col);
+    a_channel->set_row_displ(a_coord_cur_cell.row);
+    a_channel->set_cell(cell, a_coord_cur_cell.col, a_coord_cur_cell.row);
+    a_channel->cell_out_display_variable_precision(
       a_coord_cur_cell.col, a_coord_cur_cell.row);
   }
 }
@@ -1094,12 +1100,12 @@ void __fastcall TManagerDGIF::ConstTimerFilterLEExit(TObject *Sender)
     ConstTimerFilterLE->Text, m_time_constant_filter))
   {
     ConstTimerFilterLE->Text =
-      irs::cbuilder::number_to_str(m_time_constant_filter);
+      num_to_cbstr(m_time_constant_filter);
   } else {
     m_time_constant_filter = buf_time_constant_filter;
     ShowMessage("Неверно указано значение постоянной времени.");
     ConstTimerFilterLE->Text =
-      irs::cbuilder::number_to_str(m_time_constant_filter);
+      num_to_cbstr(m_time_constant_filter);
   }
 }
 //---------------------------------------------------------------------------
@@ -1114,12 +1120,12 @@ void __fastcall TManagerDGIF::ConstTimerFilterLEKeyPress(TObject *Sender,
       ConstTimerFilterLE->Text, m_time_constant_filter))
     {
       ConstTimerFilterLE->Text =
-        irs::cbuilder::number_to_str(m_time_constant_filter);
+        num_to_cbstr(m_time_constant_filter);
     } else {
       ShowMessage("Неверно указано значение постоянной времени.");
       m_time_constant_filter = buf_time_constant_filter;
       ConstTimerFilterLE->Text =
-        irs::cbuilder::number_to_str(m_time_constant_filter);
+        num_to_cbstr(m_time_constant_filter);
     }
   }
 }
@@ -1137,4 +1143,7 @@ void __fastcall TManagerDGIF::CheckBoxPhasaNorm180Click(TObject *Sender)
   }  
 }
 //---------------------------------------------------------------------------
+
+
+
 

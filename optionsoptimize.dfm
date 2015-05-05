@@ -27,10 +27,11 @@ object OptionsF: TOptionsF
     Indent = 19
     TabOrder = 0
     OnChange = OptionsTreeViewChange
-    Items.Data = {
-      02000000280000000000000000000000FFFFFFFFFFFFFFFF0000000000000000
-      0FCEEFF2E8ECE8E7E0F6E8FF20CCCDCA220000000000000001000000FFFFFFFF
-      FFFFFFFF000000000000000009CAEEF0F0E5EAF6E8FF}
+    Items.NodeData = {
+      03020000003C0000000000000000000000FFFFFFFFFFFFFFFF00000000000000
+      0000000000010F1E043F04420438043C04380437043004460438044F0420001C
+      041D041A04300000000000000001000000FFFFFFFFFFFFFFFF00000000000000
+      000000000001091A043E044004400435043A04460438044F04}
   end
   object BottomPanel: TPanel
     Left = 0
@@ -122,8 +123,6 @@ object OptionsF: TOptionsF
           EditLabel.Width = 157
           EditLabel.Height = 13
           EditLabel.Caption = #1058#1077#1082#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1076#1083#1103' '#1089#1086#1093#1088#1072#1085#1077#1085#1080#1103
-          LabelPosition = lpAbove
-          LabelSpacing = 3
           TabOrder = 4
         end
         object OpenDirMNKButton: TButton
@@ -210,8 +209,6 @@ object OptionsF: TOptionsF
           EditLabel.Width = 157
           EditLabel.Height = 13
           EditLabel.Caption = #1058#1077#1082#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1076#1083#1103' '#1089#1086#1093#1088#1072#1085#1077#1085#1080#1103
-          LabelPosition = lpAbove
-          LabelSpacing = 3
           TabOrder = 4
         end
         object OpenDirCorButton: TButton
@@ -239,8 +236,6 @@ object OptionsF: TOptionsF
           EditLabel.Width = 65
           EditLabel.Height = 13
           EditLabel.Caption = #1050#1086#1088#1088#1077#1082#1094#1080#1103' X'
-          LabelPosition = lpAbove
-          LabelSpacing = 3
           TabOrder = 0
         end
         object CorrectYLabeledEdit: TLabeledEdit
@@ -251,8 +246,6 @@ object OptionsF: TOptionsF
           EditLabel.Width = 65
           EditLabel.Height = 13
           EditLabel.Caption = #1050#1086#1088#1088#1077#1082#1094#1080#1103' Y'
-          LabelPosition = lpAbove
-          LabelSpacing = 3
           TabOrder = 1
         end
         object CorrectZLabeledEdit: TLabeledEdit
@@ -263,8 +256,6 @@ object OptionsF: TOptionsF
           EditLabel.Width = 65
           EditLabel.Height = 13
           EditLabel.Caption = #1050#1086#1088#1088#1077#1082#1094#1080#1103' Z'
-          LabelPosition = lpAbove
-          LabelSpacing = 3
           TabOrder = 2
         end
         object EnabledCorrectXCheckBox: TCheckBox

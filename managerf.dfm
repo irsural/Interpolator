@@ -391,8 +391,6 @@ object ManagerDGIF: TManagerDGIF
     EditLabel.Width = 132
     EditLabel.Height = 13
     EditLabel.Caption = #1055#1086#1089#1090#1086#1103#1085#1085#1072#1103' '#1074#1088#1077#1084#1077#1085#1080', c'#1077#1082
-    LabelPosition = lpAbove
-    LabelSpacing = 3
     TabOrder = 18
     OnExit = ConstTimerFilterLEExit
     OnKeyPress = ConstTimerFilterLEKeyPress

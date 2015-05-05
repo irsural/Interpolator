@@ -8,7 +8,7 @@
 #include <StdCtrls.hpp>
 #include <Forms.hpp>
 #include <ExtCtrls.hpp>
-#include <math>
+#include <math.h>
 //---------------------------------------------------------------------------
 enum type_step_t{INCREMENT_STEP, DECREMENT_STEP, MULTIPLIER_STEP};
 class TAddCorRowF : public TForm

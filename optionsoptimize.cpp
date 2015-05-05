@@ -19,26 +19,26 @@ __fastcall TOptionsF::TOptionsF(TComponent* Owner)
   m_options_mnk.table_optimal_data=true;
   m_options_mnk.table_correct_data=false;
   m_options_mnk.result_save_file=false;
-  m_options_mnk.name_dir="";
-  m_options_mnk.file_name="optdata.txt";
+  m_options_mnk.name_dir = irst("");
+  m_options_mnk.file_name = irst("optdata.txt");
 
   m_options_correct.index=1;
   m_options_correct.correct_x=false;
-  m_options_correct.function_correct_x_str="";
+  m_options_correct.function_correct_x_str = irst("");
   m_options_correct.correct_y=false;
-  m_options_correct.function_correct_y_str="";
+  m_options_correct.function_correct_y_str = irst("");
   m_options_correct.correct_z=false;
   m_options_correct.table_raw_data=false;
   m_options_correct.table_optimal_data=false;
   m_options_correct.table_correct_data=true;
   m_options_correct.result_save_file=false;
-  m_options_correct.name_dir="";
-  m_options_correct.file_name="";
+  m_options_correct.name_dir = irst("");
+  m_options_correct.file_name = irst("");
 }
 //---------------------------------------------------------------------------
 void __fastcall TOptionsF::CloseFormButtonClick(TObject *Sender)
 {
-  OptionsF->Close();
+  Close();
 }
 //---------------------------------------------------------------------------
 void TOptionsF::select_options_mnk()

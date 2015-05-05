@@ -10,7 +10,7 @@
 TModifiDataTableF *ModifiDataTableF;
 //---------------------------------------------------------------------------
 __fastcall TModifiDataTableF::TModifiDataTableF(
-  TComponent* Owner, irs::string* ap_str)
+  TComponent* Owner, string_type* ap_str)
   : TForm(Owner),
   mp_str(ap_str)
 {
@@ -18,7 +18,7 @@ __fastcall TModifiDataTableF::TModifiDataTableF(
 //---------------------------------------------------------------------------
 void __fastcall TModifiDataTableF::OKButtonClick(TObject *Sender)
 {
-  irs::string str = Edit->Text.c_str();
+  string_type str = Edit->Text.c_str();
   *mp_str = str;
 }
 //---------------------------------------------------------------------------

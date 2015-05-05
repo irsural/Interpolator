@@ -3,19 +3,23 @@
 
 const double cell_t::m_epsilon = 1.e-15;
 
-const irs::string str_horizontal_down = "по горизонтали, вниз";
-const irs::string str_horizontal_down_smooth = "по горизонтали, вниз, плавно";
-const irs::string str_horizontal_up = "по горизонтали, вверх";
-const irs::string str_horizontal_up_smooth = "по горизонтали, вверх, плавно";
-const irs::string str_vertical_forward = "по вертикали, вперед";
-const irs::string str_vertical_forward_smooth = "по вертикали, вперед, плавно";
-const irs::string str_vertical_back = "по вертикали, назад";
-const irs::string str_vertical_back_smooth = "по вертикали, назад, плавно";
+const irs::string_t str_horizontal_down = irst("по горизонтали, вниз");
+const irs::string_t str_horizontal_down_smooth =
+  irst("по горизонтали, вниз, плавно");
+const irs::string_t str_horizontal_up = irst("по горизонтали, вверх");
+const irs::string_t str_horizontal_up_smooth =
+  irst("по горизонтали, вверх, плавно");
+const irs::string_t str_vertical_forward = irst("по вертикали, вперед");
+const irs::string_t str_vertical_forward_smooth =
+  irst("по вертикали, вперед, плавно");
+const irs::string_t str_vertical_back = irst("по вертикали, назад");
+const irs::string_t str_vertical_back_smooth =
+  irst("по вертикали, назад, плавно");
 
-irs::string type_jump_next_elem_to_str(
+irs::string_t type_jump_next_elem_to_str(
   const type_jump_next_elem_t a_type_jump_next_elem)
 {
-  irs::string type_jump_next_elem_str = "";
+  irs::string_t type_jump_next_elem_str;
   switch(a_type_jump_next_elem){
     case HORIZONTAL_DOWN:{
       type_jump_next_elem_str = str_horizontal_down;
@@ -45,7 +49,7 @@ irs::string type_jump_next_elem_to_str(
   return type_jump_next_elem_str;
 }
 type_jump_next_elem_t str_to_type_jump_next_elem(
-  const irs::string a_type_jump_next_elem_str)
+  const irs::string_t& a_type_jump_next_elem_str)
 {
   type_jump_next_elem_t type_jump_next_elem = HORIZONTAL_DOWN;
   if(a_type_jump_next_elem_str == str_horizontal_down){

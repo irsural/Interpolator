@@ -8,7 +8,7 @@
 #include <StdCtrls.hpp>
 #include <Forms.hpp>
 #include <ExtCtrls.hpp>
-#include <vector.h>
+#include <vector>
 #include "servisfunction.h"
 //---------------------------------------------------------------------------  
 class TCopyTableForm : public TForm

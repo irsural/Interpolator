@@ -18,9 +18,9 @@ enum interface_multim_t {
   im_com = 3,
   im_last = im_com};
 
-irs::string interface_multim_to_str(const interface_multim_t a_interface_mul);
+irs::string_t interface_multim_to_str(const interface_multim_t a_interface_mul);
 interface_multim_t str_to_interface_multim(
-  const irs::string& a_str_interface_multim);
+  const irs::string_t& a_str_interface_multim);
 
 
 enum type_multimetr_t{
@@ -32,8 +32,9 @@ enum type_multimetr_t{
   tmul_dummy = tmul_ch3_85_3r + 1,
   tmul_last = tmul_dummy};
 
-irs::string type_multimetr_to_str(const type_multimetr_t a_type_multimetr);
-type_multimetr_t str_to_type_multimeter(const irs::string& a_str_type_multimetr);
+irs::string_t type_multimetr_to_str(const type_multimetr_t a_type_multimetr);
+type_multimetr_t str_to_type_multimeter(
+  const irs::string_t& a_str_type_multimetr);
 
 class value_meas_t
 {
@@ -50,8 +51,9 @@ private:
   counter_t m_test_to;
   //дл€ работы с мультиметром
   //экземпл€р класса дл€ мультиметра
-  irs::handle_t<mxmultimeter_t> m_multimeter;
   irs::handle_t<irs::hardflow_t> m_hardflow;
+  //irs::handle_t<mxmultimeter_t> m_multimeter;
+  mxmultimeter_t* m_multimeter;
   //адресс мультиметра
   static const mul_addr = 22;
   //meas_status_t cur_status;
@@ -62,8 +64,9 @@ public:
   value_meas_t();
   //деструктор
   ~value_meas_t();
-  inline int set_connect_multimetr(type_multimetr_t a_type_multimetr,
-    multimeter_mode_type_t a_multimeter_mode_type);
+  //inline int set_connect_multimetr(type_multimetr_t a_type_multimetr,
+    //multimeter_mode_type_t a_multimeter_mode_type);
+  inline void set_connect_multimetr(mxmultimeter_t* ap_mxmultimeter);
   inline void disconnect_multimetr();
   inline void execute_meas(const type_meas_t a_type_meas, double* ap_value);
   inline void abort_meas();
@@ -76,22 +79,24 @@ public:
   void process_meas();
   void tick();
 };
-inline int value_meas_t::set_connect_multimetr(
+/*inline int value_meas_t::set_connect_multimetr(
   type_multimetr_t a_type_multimetr,
   multimeter_mode_type_t a_multimeter_mode_type)
 {
   const multimeter_mode_type_t mode = a_multimeter_mode_type;
+  m_multimeter.reset();
+  m_hardflow.reset(NULL);
 
   switch(a_type_multimetr)
   {
     case tmul_agilent_3458a:{
-      m_hardflow.reset(NULL);
+      //m_hardflow.reset(NULL);
       m_multimeter.reset(new mx_agilent_3458a_t(MXIFA_MULTIMETER, mul_addr,
         mode));
       m_on_connect_multimetr = true;
     } break;
     case tmul_v7_78_1:{
-      m_hardflow.reset(NULL);
+      //m_hardflow.reset(NULL);
       m_multimeter.reset(new irs::v7_78_1_t(MXIFA_MULTIMETER, mul_addr, mode));
       m_multimeter->set_aperture(100);
       m_on_connect_multimetr = true;
@@ -103,7 +108,7 @@ inline int value_meas_t::set_connect_multimetr(
       m_on_connect_multimetr = true;
     } break;
     case tmul_dummy: {
-      m_hardflow.reset(IRS_NULL);
+      //m_hardflow.reset(IRS_NULL);
       m_multimeter.reset(new irs::dummy_multimeter_t());
       m_on_connect_multimetr = true;
     } break;
@@ -112,14 +117,28 @@ inline int value_meas_t::set_connect_multimetr(
     }
   }
   return 0;
+}*/
+inline void value_meas_t::set_connect_multimetr(mxmultimeter_t* ap_mxmultimeter)
+{
+  m_multimeter = ap_mxmultimeter;
+
+  if (m_multimeter) {
+    if (dynamic_cast<irs::akip_v7_78_1_t*>(m_multimeter)) {
+      m_multimeter->set_aperture(100);
+    }
+    m_on_connect_multimetr = true;
+  } else {
+    m_on_connect_multimetr = false;
+  }
 }
 inline void value_meas_t::disconnect_multimetr()
 {
-  if (!m_multimeter.is_empty()) {
+  /*if (!m_multimeter.is_empty()) {
     m_multimeter->abort();
   }
   m_multimeter.reset(NULL);
-  m_hardflow.reset(NULL);
+  m_hardflow.reset(NULL);*/
+  m_multimeter = NULL;
   m_status_process = OFF_PROCESS;
   m_on_connect_multimetr = false;
   m_meas_status = meas_status_success;

@@ -23,8 +23,8 @@ enum lang_type_t {
   type_long_double = type_double+1,
   type_last = type_long_double};
   
-irs::string lang_type_to_str(lang_type_t a_type);
-bool str_to_lang_type(const irs::string& a_str, lang_type_t& a_type_irs);
+irs::string_t lang_type_to_str(lang_type_t a_type);
+bool str_to_lang_type(const irs::string_t& a_str, lang_type_t& a_type_irs);
 
 int size_type(lang_type_t a_type); //размер переменной
 
