@@ -67,11 +67,10 @@
         <BCC_wpar>false</BCC_wpar>
         <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;$(Defines)</Defines>
         <Manifest_File>None</Manifest_File>
-        <Icon_MainIcon>Digitalinterpolator_Icon.ico</Icon_MainIcon>
         <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
-        <VerInfo_Build>28</VerInfo_Build>
+        <VerInfo_Build>29</VerInfo_Build>
         <VerInfo_MinorVer>2</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
         <IncludePath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\winapi\hid\;$(IncludePath)</IncludePath>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1049</VerInfo_Locale>
@@ -99,11 +98,10 @@
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <VerInfo_Build>27</VerInfo_Build>
         <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve</BCC_UserSuppliedOptions>
         <IncludePath>$(BDSINCLUDE)\windows\vcl;$(IncludePath)</IncludePath>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.27;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <TASM_Defines>_DEBUG;$(TASM_Defines)</TASM_Defines>
@@ -128,7 +126,7 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve -k</BCC_UserSuppliedOptions>
         <BCC_Defines>_DEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
@@ -147,7 +145,7 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.28;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve -r</BCC_UserSuppliedOptions>
         <BCC_Defines>NDEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>

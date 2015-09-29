@@ -83,21 +83,21 @@ void table_string_grid_t::set_row(const int a_row)
 void table_string_grid_t::out_display_cell(
   const int a_col_displ, const int a_row_displ, const cell_t a_cell)
 {
-  string_type cell_str;
+  String cell_str;
   if(a_cell.init == true){
-    cell_str =  a_cell.value;     
+    cell_str =  FloatToStr(a_cell.value);
   }
-  mp_table->Cells[a_col_displ][a_row_displ] = irs::str_conv<String>(cell_str);
+  mp_table->Cells[a_col_displ][a_row_displ] = cell_str;
 }
 void table_string_grid_t::out_display_cur_cell(const cell_t a_cell)
 {
   int col = mp_table->Col;
   int row = mp_table->Row;
-  string_type cell_str;
+  String cell_str;
   if(a_cell.init == true){
-    cell_str = a_cell.value;
+    cell_str = FloatToStr(a_cell.value);
   }
-  mp_table->Cells[col][row] = irs::str_conv<String>(cell_str);
+  mp_table->Cells[col][row] = cell_str;
 }
 void table_string_grid_t::out_display_cell_variable_precision(
   const int a_col_displ,

@@ -2244,7 +2244,7 @@ void __fastcall TDataHandlingF::ClearTableButtonClick(TObject *Sender)
 void __fastcall TDataHandlingF::RawDataStringGridDrawCell(TObject *Sender,
       int ACol, int ARow, TRect &Rect, TGridDrawState State)
 {
-  special_style_cells(RawDataStringGrid, ACol, ARow, Rect);     
+  special_style_cells(RawDataStringGrid, ACol, ARow, Rect);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::AddGroupCellsButtonClick(TObject *Sender)
@@ -3860,4 +3860,5 @@ TDataHandlingF::make_mxmultimeter_assembly(
   return irs::mxmultimeter_assembly_types()->
     make_assembly(a_device_type, a_device_name);
 }
+
 

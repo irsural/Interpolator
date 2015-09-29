@@ -13,7 +13,6 @@ class TAboutForm : public TForm
 __published:	// IDE-managed Components
   TButton *OKButton;
   TLabel *Label1;
-  TLabel *AuthorLabel;
   TLabel *BuildDataTimeLabel;
 private:	// User declarations
 public:		// User declarations

@@ -439,6 +439,7 @@ __published:	// IDE-managed Components
   void __fastcall ShowMultimeterOptionsButtonClick(TObject *Sender);
   void __fastcall PatternOfMeasuringInstrumentCBChange(TObject *Sender);
 
+
 private:	// User declarations
   typedef irs::string_t string_type;
   typedef irs::ostringstream_t ostringstream_type;
