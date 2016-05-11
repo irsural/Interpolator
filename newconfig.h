@@ -89,6 +89,7 @@ __published:	// IDE-managed Components
   TComboBox *RefDeviceComboBox;
   TButton *ChangeRefDeviceConfigButton;
   TButton *ChangeNameButton;
+  TLabeledEdit *MeasIntervalLabeledEdit;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);

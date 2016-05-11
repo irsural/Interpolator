@@ -26,7 +26,7 @@ enum lang_type_t {
 irs::string_t lang_type_to_str(lang_type_t a_type);
 bool str_to_lang_type(const irs::string_t& a_str, lang_type_t& a_type_irs);
 
-int size_type(lang_type_t a_type); //размер переменной
+int size_of_type(lang_type_t a_type); //размер переменной
 
 class dynamic_conn_data_t //сервис переменной
 {

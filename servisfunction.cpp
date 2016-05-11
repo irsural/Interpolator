@@ -5,9 +5,12 @@
 #include <irsalg.h>
 #include <measmul.h>
 #include <irssysutils.h>
-#include "servisfunction.h"
 #include <irscalc.h>
 #include <tstlan5lib.h>
+
+#include "servisfunction.h"
+
+#include <irsfinal.h>
 
 //---------------------------------------------------------------------------
 //table_string_grid_t
@@ -506,7 +509,147 @@ void table_data_t::delete_subtable()
 
 //---------------------------------------------------------------------------
 
-void table_data_t::save_table_to_file(const string_type a_file_name)
+void table_data_t::save_table_to_json_file(const string_type& a_file_name)
+{
+  Json::Value data;
+
+  unsigned int param_count = 0;
+  if (m_inf_in_param.number_in_param == TWO_PARAM) {
+    param_count = 2;
+  } else {
+    param_count = 3;
+  }
+  data["parameter_count"] = param_count;
+
+  const unsigned int size_x = mv_table[0].col_count();
+  const unsigned int size_y = mv_table[0].row_count();
+  const unsigned int size_z = mv_table.size();
+
+
+  switch (m_inf_in_param.number_in_param) {
+    case TWO_PARAM: {
+      Json::Value col_parameters(Json::arrayValue);
+      save_table_to_json(0, &col_parameters);
+      data["parameters"] = col_parameters;
+    } break;
+    case THREE_PARAM: {
+      Json::Value top_parameters(Json::arrayValue);
+      for (unsigned int z = 0; z < size_z; z++) {
+        Json::Value param;
+        const cell_t cell = mv_table[z][0][0];
+        if (cell.init) {
+          param["param"] =
+            irs::encode_utf_8(irs::num_to_str_classic(cell.value));
+        }
+        Json::Value col_parameters(Json::arrayValue);
+        save_table_to_json(z, &col_parameters);
+        param["parameters"] = col_parameters;
+        top_parameters.append(param);
+      }
+      data["parameters"] = top_parameters;
+    } break;
+  }
+
+  ofstream ofile;
+  ofile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()),
+    ios::in|ios::out|ios::trunc);
+  //ofile.open(IRS_SIMPLE_FROM_TYPE_STR(irst("D:\\333.json")),
+    //ios::in|ios::out|ios::trunc);
+  if (!ofile.good()) {
+    throw runtime_error("Не удалось сохранить файл");
+  }
+  ofile << data << std::endl;
+
+  #ifdef debug_version_digital_interpolator
+  mv_fixed_table = mv_table;
+  #endif
+}
+
+void table_data_t::save_table_to_json(size_type a_index,
+  Json::Value* ap_parameters)
+{
+  ap_parameters->clear();
+  const unsigned int col_count = mv_table[a_index].col_count();
+  const unsigned int row_count = mv_table[a_index].row_count();
+  const unsigned int size_z = mv_table.size();
+
+  for(unsigned int col = 1; col < col_count; col++) {
+    Json::Value col_param;
+    const cell_t col_cell = mv_table[a_index][col][0];
+    if (col_cell.init) {
+      col_param["param"] =
+        irs::encode_utf_8(irs::num_to_str_classic(col_cell.value));
+    }
+    Json::Value row_parameters(Json::arrayValue);
+    for(unsigned int row = 1; row < row_count; row++) {
+      Json::Value param;
+      const cell_t row_cell = mv_table[a_index][0][row];
+      if (row_cell.init) {
+        param["param"] =
+          irs::encode_utf_8(irs::num_to_str_classic(row_cell.value));
+      }
+      const cell_t cell = mv_table[a_index][col][row];
+      if (cell.init == true) {
+        Json::Value result;
+        result["value"] =
+          irs::encode_utf_8(irs::num_to_str_classic(cell.value));
+        result["sko"] =
+          irs::encode_utf_8(irs::num_to_str_classic(cell.sko));
+        result["min"] =
+          irs::encode_utf_8(irs::num_to_str_classic(cell.min));
+        result["max"] =
+          irs::encode_utf_8(irs::num_to_str_classic(cell.max));
+
+        Json::Value points_x_y_value(Json::arrayValue);
+        save_points(cell.points, &points_x_y_value);
+
+
+        /*const cell_t::points_type& points = cell.points;
+        for (size_type i = 0; i < points.size(); i++) {
+          const cell_t::point_type& point = points[i];
+          Json::Value point_value;
+          string_type x_str;
+          num_to_str_classic(point.x, &x_str);
+          point_value["x"] = encode_utf_8(x_str);
+          string_type y_str;
+          num_to_str_classic(point.y, &y_str);
+          point_value["y"] = encode_utf_8(y_str);
+          points_x_y_value.append(point_value);
+        } */
+        result["points"] = points_x_y_value;
+
+        param["result"] = result;
+      }
+      row_parameters.append(param);
+    }
+    col_param["parameters"] = row_parameters;
+    ap_parameters->append(col_param);
+  }
+}
+
+void table_data_t::save_points(const cell_t::points_type&
+  a_points, Json::Value* ap_points_value) const
+{
+  ap_points_value->clear();
+  for (size_type i = 0; i < a_points.size(); i++) {
+    const cell_t::point_type& point = a_points[i];
+    Json::Value point_value;
+    string_type x_str;
+    num_to_str_classic(point.x, &x_str);
+    point_value["x"] = encode_utf_8(x_str);
+    string_type y_str;
+    num_to_str_classic(point.y, &y_str);
+    point_value["y"] = encode_utf_8(y_str);
+    ap_points_value->append(point_value);
+  }
+}
+
+void table_data_t::save_table_to_file(const string_type& a_file_name)
+{
+  save_table_to_json_file(a_file_name);
+}
+
+void table_data_t::save_table_to_ini_file(const string_type a_file_name)
 {
   //запись в ini файл размеров кватерниона
   irs::handle_t<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
@@ -530,7 +673,7 @@ void table_data_t::save_table_to_file(const string_type a_file_name)
       string_type(irst("table")) + irs::num_to_str(z));
     for(unsigned int y = 0; y < size_y; y++) {
       std::stringstream row_str;
-      row_str.imbue(locale::classic()); 
+      row_str.imbue(locale::classic());
       for(unsigned int x = 0; x < size_x; x++){
         double value_cell;
          cell_t cell = mv_table[z][x][y];
@@ -552,6 +695,7 @@ void table_data_t::save_table_to_file(const string_type a_file_name)
   mv_fixed_table = mv_table;
   #endif
 }
+
 void table_data_t::save_table_to_microsoft_excel_csv_file(
   const string_type a_file_name)
 {
@@ -691,7 +835,180 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
   outfile.close();
   #endif //NOP
 }
-void table_data_t::load_table_from_file(const string_type a_file_name)
+
+void table_data_t::load_table_from_file(const string_type& a_file_name)
+{
+  try {
+    load_table_from_json_file(a_file_name);
+  } catch (...) {
+    load_table_from_ini_file(a_file_name);
+  }
+}
+
+void table_data_t::load_table_from_json_file(const string_type a_file_name)
+{
+  std::ifstream ifile;
+  ifile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()), ios::in);
+  if (!ifile.good()) {
+    throw runtime_error("Не удалось загрузить файл");
+  }
+  Json::Reader reader;
+  Json::Value data;
+  const bool collect_comments = false;
+  const bool parsed_success = reader.parse(ifile, data, collect_comments);
+  if(!parsed_success) {
+    std::cout << "Failed to parse JSON" <<
+      std::endl << reader.getFormatedErrorMessages() <<
+      std::endl;
+    throw std::runtime_error("Неудалось разобрать файл");
+  }
+
+  const unsigned int param_count = data["parameter_count"].asUInt();
+
+  number_in_param_t param_count_from_file = TWO_PARAM;
+  if (param_count == 2)  {
+    param_count_from_file = TWO_PARAM;
+  } else if(param_count == 3) {
+    param_count_from_file = THREE_PARAM;
+  }
+
+  if (m_inf_in_param.number_in_param != param_count_from_file) {
+    return;
+    // сообщение о несоответствии загруженного файла выбранной конфигурации
+  }
+
+  std::vector<irs::matrix_t<cell_t> > table;
+  switch (param_count_from_file) {
+    case TWO_PARAM: {
+      Json::Value col_parameters = data["parameters"];
+      irs::matrix_t<cell_t> matrix;
+      load_table_from_json(col_parameters, &matrix);
+      table.push_back(matrix);
+    } break;
+    case THREE_PARAM: {
+      Json::Value top_parameters = data["parameters"];
+      const size_type table_count = top_parameters.size();
+      table.reserve(table_count);
+      for (unsigned int z = 0; z < table_count; z++) {
+        Json::Value parameter = top_parameters[z];
+        std::string param_str = parameter["param"].asString();
+        cell_t cell;
+        double param = 0;
+        if (irs::str_to_num_classic(param_str, &param)) {
+          cell.init = true;
+          cell.value = param;
+        }
+
+        Json::Value col_parameters = parameter["parameters"];
+
+        irs::matrix_t<cell_t> matrix;
+        load_table_from_json(col_parameters, &matrix);
+        matrix[0][0] = cell;
+        table.push_back(matrix);
+      }
+    } break;
+  }
+
+  mv_table.clear();
+  #ifdef debug_version_digital_interpolator
+  mv_fixed_table.clear();
+  mv_fixed_table = table;
+  #endif
+  mv_table = table;
+  mp_display_table->out_display(mv_table, m_inf_in_param);
+}
+
+void table_data_t::load_table_from_json(
+  const Json::Value& a_parameters, irs::matrix_t<cell_t>* ap_matrix)
+{
+  irs::matrix_t<cell_t> matrix;
+  const size_type col_count = a_parameters.size();
+  for (size_type col = 0; col < col_count; col++) {
+    Json::Value col_param = a_parameters[col];
+    cell_t cell;
+    if (!col_param["param"].empty()) {
+      std::string param_str = col_param["param"].asString();
+      double param = 0;
+      if (irs::str_to_num_classic(param_str, &param)) {
+        cell.init = true;
+        cell.value = param;
+      }
+    }
+
+
+    Json::Value row_parameters = col_param["parameters"];
+    const size_type row_count = row_parameters.size();
+
+    matrix.resize(col_count + 1, row_count + 1);
+    matrix[col + 1][0] = cell;
+
+    if (col == 0) {
+      // Заполняем вертикальну шапку (для строк) таблицы один раз
+      for(unsigned int row = 0; row < row_count; row++) {
+        Json::Value row_param = row_parameters[row];
+        cell_t cell;
+        if (!row_param["param"].empty()) {
+          std::string param_str = row_param["param"].asString();
+          double param = 0;
+          if (irs::str_to_num_classic(param_str, &param)) {
+            cell.init = true;
+            cell.value = param;
+          }
+        }
+        matrix[0][row + 1] = cell;
+      }
+    }
+
+    for(unsigned int row = 0; row < row_count; row++) {
+      Json::Value row_param = row_parameters[row];
+      cell_t cell;
+      Json::Value result = row_param["result"];
+      if (!result.empty()) {
+        std::string value_str = result["value"].asString();
+        if (irs::str_to_num_classic(value_str, &cell.value)) {
+          cell.init = true;
+          std::string sko_str = result["sko"].asString();
+          std::string min_str = result["min"].asString();
+          std::string max_str = result["max"].asString();
+
+          irs::str_to_num_classic(sko_str, &cell.sko);
+          irs::str_to_num_classic(min_str, &cell.min);
+          irs::str_to_num_classic(max_str, &cell.max);
+        }
+        Json::Value points = result["points"];
+        if (!points.empty()) {
+          load_points(points, &cell.points);
+        }
+      }
+      matrix[col + 1][row + 1] = cell;
+    }
+  }
+  *ap_matrix = matrix;
+}
+
+void table_data_t::load_points(const Json::Value& a_points_value,
+  cell_t::points_type* ap_points)
+{
+  ap_points->clear();
+
+  if (!a_points_value.isArray()) {
+    return;
+  }
+
+  for (size_type i = 0; i < a_points_value.size(); i++) {
+    Json::Value point_value = a_points_value[i];
+
+    std::string x_str = point_value["x"].asString();
+    std::string y_str = point_value["y"].asString();
+    cell_t::point_type point;
+    if (irs::str_to_num_classic(x_str, &point.x) &&
+        irs::str_to_num_classic(y_str, &point.y)) {
+      ap_points->push_back(point);
+    }
+  }
+}
+
+void table_data_t::load_table_from_ini_file(const string_type& a_file_name)
 {
   std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
@@ -708,6 +1025,7 @@ void table_data_t::load_table_from_file(const string_type a_file_name)
     // сообщение о несоответствии загруженного файла выбранной конфигурации
   }
 }
+
 //---------------------------------------------------------------------------
 void table_data_t::load_subtable_from_file(const string_type& a_file_name)
 {
@@ -1509,6 +1827,7 @@ config_calibr_t::config_calibr_t():
   v_sub_diapason_calibr(),
   meas_range_koef(1.),
   delay_meas(0),
+  meas_interval(0),
   count_reset_over_bit(0),
   active_filename(),
   reference_channel()
@@ -1826,6 +2145,7 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   ap_ini_file->add(irst("Вид измерения"), &type_meas);
   ap_ini_file->add(irst("Коэффициент диапазона измерения"), &meas_range_koef);
   ap_ini_file->add(irst("Задержка измерения"), &delay_meas);
+  ap_ini_file->add(irst("Время измерений"), &meas_interval);
   ap_ini_file->add(irst("Количество допустимых сбросов ошибок"),
     &count_reset_over_bit);
   /*ap_ini_file->add("Режим расстройки",

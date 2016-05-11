@@ -90,7 +90,7 @@ bool str_to_lang_type(const irs::string_t& a_str, lang_type_t& a_type_irs)
 }
 
 
-int size_type(lang_type_t a_type) //размер переменной
+int size_of_type(lang_type_t a_type) //размер переменной
 {
 	switch (a_type) {
     case type_irs_bool:
@@ -137,62 +137,62 @@ dynamic_conn_data_t::operator long double()
   switch (m_type) {
     case type_irs_bool: {
       irs_u8 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_i8: {
       irs_i8 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_u8: {
       irs_u8 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_i16: {
       irs_i16 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_u16: {
       irs_u16 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_i32: {
       irs_i32 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_u32: {
       irs_u32 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_i64: {
       irs_i64 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_irs_u64: {
       irs_u64 var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_float: {
       float var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_double: {
       double var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     case type_long_double: {
       long double var = 0;
-      m_data->read((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->read((irs_u8 *)&var, m_index, size_of_type(m_type));
       return var;
     }
     default: {
@@ -206,51 +206,51 @@ long double dynamic_conn_data_t::operator=(long double a_val)
   switch (m_type) {
     case type_irs_bool: {
       irs_u8 var = (a_val == 0) ? 0 : 1;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_i8: {
       irs_i8 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_u8: {
       irs_u8 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_i16: {
       irs_i16 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_u16: {
       irs_u16 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_i32: {
       irs_i32 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_u32: {
       irs_u32 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_i64: {
       irs_i64 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_irs_u64: {
       irs_u64 var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_float: {
       float var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_double: {
       double var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     case type_long_double: {
       long double var = a_val;
-      m_data->write((irs_u8 *)&var, m_index, size_type(m_type));
+      m_data->write((irs_u8 *)&var, m_index, size_of_type(m_type));
     } break;
     default: {
       IRS_LIB_ASSERT_MSG("Неучтенный тип");
@@ -282,7 +282,7 @@ irs_uarc dynamic_array_data_t::connect(
   irs_uarc a_data_index,
   irs_uarc a_array_size)
 {
-  m_elem_size = size_type(a_type);
+  m_elem_size = size_of_type(a_type);
   m_type = a_type;
   m_data = a_data;
   m_data_index = a_data_index;

@@ -326,8 +326,8 @@ object ManagerDGIF: TManagerDGIF
     end
   end
   object Panel3: TPanel
-    Left = 304
-    Top = 0
+    Left = 840
+    Top = 127
     Width = 105
     Height = 177
     BevelInner = bvRaised

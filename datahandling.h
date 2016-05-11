@@ -71,6 +71,7 @@ enum mode_program_t {
 enum status_process_meas_t {
   spm_off_process,
   spb_wait_connect,
+  spb_wait_apply_extra_params_and_bits,
   spm_jump_next_elem,
   spm_wait_ext_trig_set_range,
   spm_set_range,
@@ -80,10 +81,12 @@ enum status_process_meas_t {
   spm_wait_ext_trig_control_wait_mode_setting,
   spm_control_wait_mode_setting,
   spm_wait_external_trig_meas,
+  sps_start_meas,
   spm_execute_meas,
   spm_wait_execute_meas,
   spm_wait_external_trig_processing_data,
   spm_processing_data,
+  spm_processing_filter_data,
   spm_wait_ext_trig_process_data_to_next_elem,
   spm_reset,
   spm_wait_set_extra_vars
@@ -101,6 +104,7 @@ public:
   double get_stable_state_time() const;
   bool stable_state() const;
   void set_stability_min_time(double a_min_time);
+  void reset();
 private:
   stability_control_t();
   T difference(T a_first, T a_second) const;
@@ -159,6 +163,12 @@ template <class T>
 void stability_control_t<T>::set_stability_min_time(double a_min_time)
 {
   m_stability_min_time = a_min_time;
+}
+
+template <class T>
+void stability_control_t<T>::reset()
+{
+  m_time.start();
 }
 
 template <class T>
@@ -352,6 +362,9 @@ __published:	// IDE-managed Components
   TAction *ConnectionLogAction;
   TButton *DeleteConfigButton;
   TButton *ShowMultimeterOptionsButton;
+  TAction *ShowMeasPointChartAction;
+  TMenuItem *N19;
+  TMenuItem *N20;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -438,9 +451,11 @@ __published:	// IDE-managed Components
   void __fastcall DeleteConfigButtonClick(TObject *Sender);
   void __fastcall ShowMultimeterOptionsButtonClick(TObject *Sender);
   void __fastcall PatternOfMeasuringInstrumentCBChange(TObject *Sender);
+  void __fastcall ShowMeasPointChartActionExecute(TObject *Sender);
 
 
 private:	// User declarations
+  typedef size_t size_type;
   typedef irs::string_t string_type;
   typedef irs::ostringstream_t ostringstream_type;
   //имя программы
@@ -492,7 +507,11 @@ private:	// User declarations
     sce_reset};
 
   const String m_name_file_options_ini;// = "options.ini";
-  static const m_index_funnel = 40;
+  //static const m_index_funnel = 40;
+  enum {
+    progress_percent_precision = 6,
+    progress_percent_digits = 3
+  };
   correct_map_t correct_map, m_correct_map_local;
   struct device_t
   {
@@ -636,7 +655,12 @@ private:	// User declarations
 
     void save_name_chart_z_of_x(const string_type& a_name_chart);
     void save_name_chart_z_of_y(const string_type& a_name_chart);
-  } m_chart;
+  }
+  m_chart;
+
+  irs::handle_t<irs::chart::builder_chart_window_t> mp_meas_point_chart;
+
+
   irs::loop_timer_t m_timer_chart_auto_update;
 
   bool m_successfully_mode_setting;
@@ -772,6 +796,12 @@ private:	// User declarations
   irs_u32 m_cur_count_reset_over_bit;
   double m_y_out;
   param_filter_t m_y_out_filter;
+  irs::fast_average_t<double, double> m_meas_value_filter;
+  typedef irs::chart_data::point_t<double> point_type;
+  typedef vector<point_type> points_type;
+  vector<point_type> m_points;
+  irs::timer_t m_meas_value_filter_timer;
+  irs::measure_time_t m_meas_value_filter_elapsed_time;
   // Переменная используется только для многоканального режима
   // Статус, произошло ли событые onClose
   bool m_on_close_form_stat;
@@ -917,7 +947,7 @@ public:
   inline void mismatch_mode_change_stat(const bool a_mismatch_mode);
 
   //void set_device_mode(const param_cur_cell_t& a_param_cur_cell);
-  device_mode_status_t status_device_mode();
+  //device_mode_status_t status_device_mode();
 
   void meas_execute();
   meas_status_t meas_status();
@@ -939,6 +969,12 @@ public:
     const TShiftState Shift);
 
   void process_volt_meas();
+  void update_point_measurement_progress();
+  void update_measurement_progress();
+  void set_progress_bar_mode_calibration();
+  void set_progress_bar_mode_program();
+  void set_progress_bar_mode_verification();
+  void set_progress_bar_value(double a_percent);
   void config_button_start_avto_volt_meas();
   void config_button_stop_avto_volt_meas();
   void tick2();
@@ -949,6 +985,10 @@ public:
     const double a_value_meas,
     const double out_param_value,
     const param_cur_cell_t& a_param_cell);
+  void update_result();
+  cell_t process_measured_points();
+  void reset_chart(const int a_col_displ, const int a_row_displ);
+  void update_chart(const int a_col_displ, const int a_row_displ);
   // Предустановка диапазона измерений
   double set_range(const param_cur_cell_t& a_param_cur_cell);
   // Получить значение входного связанного параметра

@@ -230,6 +230,11 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     messages.push_back(irst("Неверно указана задержка измерения."));
   }
   if (!irs::cbuilder::str_to_number(
+    MeasIntervalLabeledEdit->Text, m_config_calibr.meas_interval)) {
+    messages.push_back(
+      irst("Неверно указано время измерений."));
+  }
+  if (!irs::cbuilder::str_to_number(
     CountResetOverBitLE->Text, m_config_calibr.count_reset_over_bit)) {
     messages.push_back(
       irst("Неверно указано количество перезапусков измерения."));
@@ -790,10 +795,11 @@ void TNewConfigF::set_config_def()
   SubDiapasonSG->Cells[3][1] = String();
   SubDiapasonSG->Cells[4][1] = String();
 
+  config_calibr_def.type_meas = irst("Постоянное напряжение");
   //config_calibr_def.mismatch_mode = true;
   config_calibr_def.meas_range_koef = 1.;
   config_calibr_def.delay_meas = 10;
-  config_calibr_def.type_meas = irst("Постоянное напряжение");
+  config_calibr_def.meas_interval = 0;
   config_calibr_def.count_reset_over_bit = 3;
   config_calibr_def.active_filename = irst("");
 
@@ -867,6 +873,7 @@ void TNewConfigF::config_calibr_out_displ(
   MeasRangeKoefLabeledEdit->Text =
     num_to_cbstr(a_config_calibr.meas_range_koef);
   Delay_MeasLE->Text = num_to_cbstr(a_config_calibr.delay_meas);
+  MeasIntervalLabeledEdit->Text = num_to_cbstr(a_config_calibr.meas_interval);
 
   CountResetOverBitLE->Text = num_to_cbstr(
     a_config_calibr.count_reset_over_bit);

@@ -16,10 +16,11 @@
 #include <irssysutils.h>
 #include <mxini.h>
 #include <irsalg.h>
-#include "addcolrow.h"
 #include <irstable.h>
 #include <tstlan5lib.h>
+#include <json/json.h>
 //#include <irsdevices.h>
+#include "addcolrow.h"
 #include "table.h"
 #include "dinamictypes.h"
 #include "debugdigitalinterpolator.h"
@@ -259,12 +260,18 @@ public:
 
   void create_subtable();
   void delete_subtable();
-  void save_table_to_file(const string_type a_file_name);
+
+  void save_table_to_json_file(const string_type& a_file_name);
+
+  void save_table_to_file(const string_type& a_file_name);
   // Сохраняет таблицу в Microsoft Excel (*.csv) файл
   void save_table_to_microsoft_excel_csv_file(const string_type a_file_name);
   // для сохранения в М-файл Matlab
   void save_table_to_m_file(const string_type a_file_name) const;
-  void load_table_from_file(const string_type a_file_name);
+
+  void load_table_from_file(const string_type& a_file_name);
+  void load_table_from_json_file(const string_type a_file_name);
+  void load_table_from_ini_file(const string_type& a_file_name);
   // загрузить подтаблицу из файла
   void load_subtable_from_file(const string_type& a_file_name);
   const table_data_t&
@@ -363,6 +370,16 @@ public:
   // данные вида Z = Z + 2+X*Y;
   void modifi_content_table(const string_type& a_str);
 private:
+  void save_table_to_ini_file(const string_type a_file_name);
+  void save_table_to_json(size_type a_index, Json::Value* ap_parameters);
+  void save_points(const cell_t::points_type& a_points,
+    Json::Value* ap_points_value) const;
+
+  void load_table_from_json(const Json::Value& a_parameters,
+    irs::matrix_t<cell_t>* ap_matrix);
+  void load_points(const Json::Value& a_points_value,
+    cell_t::points_type* ap_points);
+
   void load_table_from_file(
     number_in_param_t& a_number_in_param,
     const string_type& a_file_name,
@@ -961,6 +978,7 @@ struct config_calibr_t
   std::vector<sub_diapason_calibr_t> v_sub_diapason_calibr;
   double meas_range_koef;
   irs_u32 delay_meas;
+  double meas_interval;
   irs_u32 count_reset_over_bit;
   String active_filename;
   reference_channel_t reference_channel;

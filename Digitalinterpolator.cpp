@@ -6,16 +6,16 @@
 //#include "irsdigint.h"
 #include <timer.h>
 //#include <irsstd.h>
-USEFORM("newconfig.cpp", NewConfigF);
-USEFORM("optionsoptimize.cpp", OptionsF);
 USEFORM("modifidatatable.cpp", ModifiDataTableF);
+USEFORM("newconfig.cpp", NewConfigF);
+USEFORM("managerf.cpp", ManagerDGIF);
+USEFORM("optionsoptimize.cpp", OptionsF);
 USEFORM("showmessages.cpp", MessagesForm);
 USEFORM("connectionlog.cpp", ConnectionLogForm);
 USEFORM("copytable.cpp", CopyTableForm);
 USEFORM("About.cpp", AboutForm);
 USEFORM("addcolrow.cpp", AddCorRowF);
 USEFORM("datahandling.cpp", DataHandlingF);
-USEFORM("managerf.cpp", ManagerDGIF);
 //---------------------------------------------------------------------------
 WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {

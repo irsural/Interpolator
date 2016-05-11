@@ -3,7 +3,7 @@
 #include "measutils.h"
 #include <irserror.h>
 #include "debugdigitalinterpolator.h"
-//#define debug_avto_volt_meas
+//#define debug_auto_volt_meas
 
 
 const irs::string_t str_im_gpib = irst("gpib");
@@ -126,7 +126,7 @@ void value_meas_t::process_meas()
     } break;
     case WAIT_MEAS:{
       if(test_to_cnt(m_test_to)){
-        #ifdef debug_avto_volt_meas
+        #ifdef debug_auto_volt_meas
         #else
         if (m_type_meas == tm_value) {
           m_multimeter->get_value(mp_value);
@@ -164,7 +164,7 @@ void value_meas_t::process_meas()
       }
     } break;
     case MEAS:{
-      #ifdef debug_avto_volt_meas
+      #ifdef debug_auto_volt_meas
       m_meas_status = meas_status_success;
       static int i = 0;
       if (i == INT_MAX)

@@ -2,8 +2,8 @@ object DataHandlingF: TDataHandlingF
   Left = 676
   Top = 291
   Caption = 'DataHandlingF'
-  ClientHeight = 485
-  ClientWidth = 928
+  ClientHeight = 640
+  ClientWidth = 964
   Color = clWindow
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,16 +20,16 @@ object DataHandlingF: TDataHandlingF
   object TableValuePanel: TPanel
     Left = 249
     Top = 30
-    Width = 679
-    Height = 406
+    Width = 715
+    Height = 561
     Align = alClient
     BevelOuter = bvLowered
     Constraints.MinWidth = 550
     TabOrder = 0
     object LogMemo: TMemo
       Left = 1
-      Top = 255
-      Width = 677
+      Top = 410
+      Width = 713
       Height = 150
       Align = alBottom
       Constraints.MaxHeight = 150
@@ -47,8 +47,8 @@ object DataHandlingF: TDataHandlingF
     object RawDataStringGrid: TStringGrid
       Left = 1
       Top = 105
-      Width = 677
-      Height = 150
+      Width = 713
+      Height = 305
       Align = alClient
       Constraints.MinHeight = 150
       Constraints.MinWidth = 150
@@ -78,7 +78,7 @@ object DataHandlingF: TDataHandlingF
     object Panel1: TPanel
       Left = 1
       Top = 1
-      Width = 677
+      Width = 713
       Height = 104
       Align = alTop
       TabOrder = 2
@@ -148,7 +148,7 @@ object DataHandlingF: TDataHandlingF
       object RightPanel: TPanel
         Left = 359
         Top = 1
-        Width = 317
+        Width = 353
         Height = 102
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
@@ -156,12 +156,12 @@ object DataHandlingF: TDataHandlingF
         BevelOuter = bvLowered
         TabOrder = 1
         DesignSize = (
-          317
+          353
           102)
         object PatternOfMeasuringInstrumentCB: TComboBox
           Left = 8
           Top = 36
-          Width = 302
+          Width = 338
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akRight]
@@ -171,7 +171,7 @@ object DataHandlingF: TDataHandlingF
         object Panel5: TPanel
           Left = 8
           Top = 11
-          Width = 300
+          Width = 336
           Height = 17
           Anchors = [akLeft, akRight]
           BevelOuter = bvLowered
@@ -179,7 +179,7 @@ object DataHandlingF: TDataHandlingF
           TabOrder = 1
         end
         object ShowMultimeterOptionsButton: TButton
-          Left = 232
+          Left = 268
           Top = 72
           Width = 76
           Height = 25
@@ -195,14 +195,14 @@ object DataHandlingF: TDataHandlingF
     Left = 0
     Top = 30
     Width = 249
-    Height = 406
+    Height = 561
     Align = alLeft
     Caption = #1055#1072#1085#1077#1083#1100' '#1091#1087#1088#1072#1074#1083#1077#1085#1080#1103
     Color = clBtnFace
     ParentColor = False
     TabOrder = 1
     object CurrentStatusLabeledEdit: TLabeledEdit
-      Left = 6
+      Left = 10
       Top = 64
       Width = 235
       Height = 21
@@ -215,7 +215,7 @@ object DataHandlingF: TDataHandlingF
       TabOrder = 0
     end
     object ModeProgramCB: TCheckBox
-      Left = 8
+      Left = 10
       Top = 24
       Width = 153
       Height = 17
@@ -224,7 +224,7 @@ object DataHandlingF: TDataHandlingF
       OnClick = ModeProgramCBClick
     end
     object TimeMeasLE: TLabeledEdit
-      Left = 8
+      Left = 10
       Top = 144
       Width = 233
       Height = 21
@@ -235,7 +235,7 @@ object DataHandlingF: TDataHandlingF
       TabOrder = 2
     end
     object IntervalTimeMeasLE: TLabeledEdit
-      Left = 8
+      Left = 10
       Top = 184
       Width = 233
       Height = 21
@@ -246,7 +246,7 @@ object DataHandlingF: TDataHandlingF
       TabOrder = 3
     end
     object WorkTimeDeviceLE: TLabeledEdit
-      Left = 8
+      Left = 10
       Top = 104
       Width = 233
       Height = 21
@@ -257,7 +257,7 @@ object DataHandlingF: TDataHandlingF
       TabOrder = 4
     end
     object TemperatureControlGroupBox: TGroupBox
-      Left = 8
+      Left = 10
       Top = 216
       Width = 233
       Height = 65
@@ -302,7 +302,7 @@ object DataHandlingF: TDataHandlingF
     end
     object OutParamControlGroupBox: TGroupBox
       Left = 10
-      Top = 287
+      Top = 288
       Width = 233
       Height = 105
       Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
@@ -345,7 +345,7 @@ object DataHandlingF: TDataHandlingF
       end
       object RemainingTimeForStableState: TLabeledEdit
         Left = 8
-        Top = 72
+        Top = 73
         Width = 210
         Height = 21
         Color = clScrollBar
@@ -359,13 +359,13 @@ object DataHandlingF: TDataHandlingF
   end
   object ButtomPanel: TPanel
     Left = 0
-    Top = 436
-    Width = 928
+    Top = 591
+    Width = 964
     Height = 49
     Align = alBottom
     TabOrder = 2
     DesignSize = (
-      928
+      964
       49)
     object CommentProgressL: TLabel
       Left = 8
@@ -376,16 +376,15 @@ object DataHandlingF: TDataHandlingF
       Caption = 'CommentProgress'
     end
     object PercentProgressL: TLabel
-      Left = 785
+      Left = 821
       Top = 24
       Width = 37
       Height = 13
       Anchors = [akRight, akBottom]
       Caption = 'Percent'
-      ExplicitLeft = 821
     end
     object CloseFormButton: TButton
-      Left = 849
+      Left = 885
       Top = 15
       Width = 75
       Height = 25
@@ -397,16 +396,17 @@ object DataHandlingF: TDataHandlingF
     object ProgressBar1: TProgressBar
       Left = 8
       Top = 24
-      Width = 770
+      Width = 806
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
+      Max = 100000
       TabOrder = 1
     end
   end
   object CoolBar1: TCoolBar
     Left = 0
     Top = 0
-    Width = 928
+    Width = 964
     Height = 30
     AutoSize = True
     Bands = <
@@ -435,7 +435,7 @@ object DataHandlingF: TDataHandlingF
         Control = ActionToolBar4
         ImageIndex = -1
         MinHeight = 26
-        Width = 468
+        Width = 504
       end>
     Color = clBtnFace
     Images = ImageList1
@@ -698,7 +698,7 @@ object DataHandlingF: TDataHandlingF
         ActionBar = ActionToolBar4
       end>
     Images = ImageList2
-    Left = 336
+    Left = 360
     Top = 312
     StyleName = 'Platform Default'
     object FileOpen: TFileOpen
@@ -1011,14 +1011,19 @@ object DataHandlingF: TDataHandlingF
       Caption = #1051#1086#1075' '#1089#1086#1077#1076#1080#1085#1077#1085#1080#1103
       OnExecute = ConnectionLogActionExecute
     end
+    object ShowMeasPointChartAction: TAction
+      Category = #1043#1088#1072#1092#1080#1082
+      Caption = #1043#1088#1072#1092#1080#1082' '#1080#1079#1084#1077#1088#1077#1085#1080#1081' '#1090#1077#1082#1091#1097#1077#1081' '#1090#1086#1095#1082#1080
+      OnExecute = ShowMeasPointChartActionExecute
+    end
   end
   object ImageList2: TImageList
     ImageType = itMask
     ShareImages = True
-    Left = 400
+    Left = 456
     Top = 312
     Bitmap = {
-      494C0101170018006C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800AC0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1819,7 +1824,7 @@ object DataHandlingF: TDataHandlingF
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
-    Left = 432
+    Left = 512
     Top = 312
     object FileOpenM: TMenuItem
       Caption = #1060#1072#1081#1083
@@ -2049,6 +2054,12 @@ object DataHandlingF: TDataHandlingF
       object N12: TMenuItem
         Action = AutoUpdateChartAction
       end
+      object N20: TMenuItem
+        Caption = '-'
+      end
+      object N19: TMenuItem
+        Action = ShowMeasPointChartAction
+      end
     end
     object N18: TMenuItem
       Caption = #1048#1085#1089#1090#1088#1091#1084#1077#1085#1090#1099
@@ -2071,10 +2082,10 @@ object DataHandlingF: TDataHandlingF
   end
   object ImageList1: TImageList
     ShareImages = True
-    Left = 368
+    Left = 408
     Top = 312
     Bitmap = {
-      494C0101170018006C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800AC0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2875,14 +2886,14 @@ object DataHandlingF: TDataHandlingF
   end
   object FileOpenDialog1: TOpenDialog
     Filter = 'Digital interpolator (*.dgi)|*.dgi|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.*'
-    Left = 464
+    Left = 568
     Top = 312
   end
   object SaveFileDialog: TSaveDialog
     Filter = 
       #1058#1077#1082#1089#1090#1086#1074#1099#1077' '#1092#1072#1081#1083#1099' Microsoft Excel (*.csv)|*.csv|'#1042#1089#1077' '#1092#1072#1081#1083#1099' (*.*)|*.' +
       '*'
-    Left = 496
+    Left = 624
     Top = 312
   end
 end

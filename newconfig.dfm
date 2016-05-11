@@ -15,6 +15,7 @@ object NewConfigF: TNewConfigF
   Font.Style = []
   OldCreateOrder = False
   Position = poMainFormCenter
+  ShowHint = True
   OnClose = FormClose
   DesignSize = (
     1044
@@ -106,11 +107,15 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 441
-      ActivePage = PrimaryNetworkVariablesTabSheet
+      ActivePage = MeasAndCalibrationSettingsTabSheet
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object ListParameterSG: TStringGrid
           Left = 0
           Top = 0
@@ -139,6 +144,10 @@ object NewConfigF: TNewConfigF
       object SecondaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1042#1089#1087#1086#1084#1086#1075#1072#1090#1077#1083#1100#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object ListByteSG: TStringGrid
           Left = 0
           Top = 0
@@ -184,24 +193,24 @@ object NewConfigF: TNewConfigF
           Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1075#1086' '#1087#1088#1080#1073#1086#1088#1072
           TabOrder = 0
           object Label1: TLabel
-            Left = 8
+            Left = 13
             Top = 24
             Width = 78
             Height = 13
             Caption = #1058#1080#1087' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
           end
           object MeasTypeCB: TComboBox
-            Left = 8
+            Left = 13
             Top = 40
-            Width = 281
+            Width = 268
             Height = 21
             Style = csDropDownList
             TabOrder = 0
           end
           object Delay_MeasLE: TLabeledEdit
-            Left = 8
-            Top = 120
-            Width = 281
+            Left = 13
+            Top = 144
+            Width = 268
             Height = 21
             EditLabel.Width = 134
             EditLabel.Height = 13
@@ -210,9 +219,9 @@ object NewConfigF: TNewConfigF
             Text = '1'
           end
           object CountResetOverBitLE: TLabeledEdit
-            Left = 8
-            Top = 160
-            Width = 281
+            Left = 13
+            Top = 248
+            Width = 268
             Height = 21
             EditLabel.Width = 232
             EditLabel.Height = 13
@@ -220,14 +229,27 @@ object NewConfigF: TNewConfigF
             TabOrder = 2
           end
           object MeasRangeKoefLabeledEdit: TLabeledEdit
-            Left = 8
-            Top = 80
-            Width = 281
+            Left = 13
+            Top = 92
+            Width = 268
             Height = 21
             EditLabel.Width = 232
             EditLabel.Height = 13
             EditLabel.Caption = #1050#1086#1101#1092#1092#1080#1094#1080#1077#1085#1090' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1091#1089#1090#1072#1085#1086#1074#1082#1080' '#1076#1080#1072#1087#1072#1079#1086#1085#1072
             TabOrder = 3
+          end
+          object MeasIntervalLabeledEdit: TLabeledEdit
+            Left = 13
+            Top = 196
+            Width = 268
+            Height = 21
+            Hint = 
+              #1052#1091#1083#1100#1090#1080#1084#1077#1090#1088' '#1089#1076#1077#1083#1072#1077#1090' '#1089#1090#1086#1083#1100#1082#1086' '#1080#1079#1084#1077#1088#1077#1085#1080#1081', '#1089#1082#1086#1083#1100#1082#1086' '#1091#1089#1087#1077#1077#1090' '#1079#1072' '#1091#1082#1072#1079#1072#1085#1085#1086 +
+              #1077' '#1074' '#1101#1090#1086#1084' '#1087#1086#1083#1077' '#1074#1088#1077#1084#1103', '#1085#1086' '#1085#1077' '#1084#1077#1085#1100#1096#1077' '#1095#1077#1084' '#1086#1076#1085#1086' '#1080#1079#1084#1077#1088#1077#1085#1080#1077
+            EditLabel.Width = 253
+            EditLabel.Height = 13
+            EditLabel.Caption = #1042#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082' ('#1077#1089#1083#1080' "0", '#1090#1086' 1 '#1080#1079#1084#1077#1088#1077#1085#1080#1077')'
+            TabOrder = 4
           end
         end
         object GroupBox1: TGroupBox

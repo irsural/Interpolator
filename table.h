@@ -3,6 +3,11 @@
 #define tableH
 
 #include <irstable.h>
+
+#include <irs_chart_data.h>
+
+#include <irsfinal.h>
+
 struct coord_cell_t
 {
   int col;
@@ -51,33 +56,61 @@ public:
 
 struct cell_t
 {
+  typedef irs::chart_data::point_t<double> point_type;
+  typedef vector<point_type> points_type;
   static const double m_epsilon;
   double value;
   bool init;
-  cell_t():value(0.0), init(false)
+  vector<point_type> points;
+  double sko;
+  double min;
+  double max;
+
+  cell_t():
+    value(0.0),
+    init(false),
+    points(),
+    sko(0),
+    min(0),
+    max(0)
   {}
   cell_t(double a_value, bool a_init
   ):
     value(a_value),
-    init(a_init)
+    init(a_init),
+    points(),
+    sko(0),
+    min(0),
+    max(0)
   {}
   const cell_t& operator=(const cell_t& a_cell)
   {
     value = a_cell.value;
     init = a_cell.init;
+    points = a_cell.points;
+    sko = a_cell.sko;
+    min = a_cell.min;
+    max = a_cell.max;
     return *this;
   }
   bool operator==(const cell_t& a_cell) const
   {
-    if(init != a_cell.init)
+    if(init != a_cell.init) {
       return false;
-    else if((init == true) &&
-      (irs::compare_value(value, a_cell.value, m_epsilon) == irs::equals_value))
+    }
+    if ((init == false) && (a_cell.init == false)) {
       return true;
-    else if (init == false)
+    }
+
+    if ((irs::compare_value(value, a_cell.value, m_epsilon) ==
+        irs::equals_value) &&
+        (points == a_cell.points) &&
+        (sko == a_cell.sko) &&
+        (min == a_cell.min) &&
+        (max == a_cell.max)) {
       return true;
-    else
-      return false;
+    }
+    return false;
   }
   bool operator!=(const cell_t& a_cell) const
   {

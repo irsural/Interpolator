@@ -65,13 +65,13 @@
         <BCC_wpch>false</BCC_wpch>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <BCC_wpar>false</BCC_wpar>
-        <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;$(Defines)</Defines>
+        <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;IRS_USE_JSON_CPP=1;$(Defines)</Defines>
         <Manifest_File>None</Manifest_File>
         <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
-        <VerInfo_Build>29</VerInfo_Build>
-        <VerInfo_MinorVer>2</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
-        <IncludePath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\winapi\hid\;$(IncludePath)</IncludePath>
+        <VerInfo_Build>30</VerInfo_Build>
+        <VerInfo_MinorVer>3</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.3.0.30;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
+        <IncludePath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\winapi\hid\;..\extern_libs\jsoncpp\include;..\extern_libs\jsoncpp\src\lib_json\;$(IncludePath)</IncludePath>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <OutputExt>exe</OutputExt>
@@ -94,7 +94,7 @@
         <ILINK_AppType>Windows</ILINK_AppType>
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
         <BCC_PCHCache>true</BCC_PCHCache>
-        <ILINK_LibraryPath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\mxsrclib\arch\cbuilder;..\mxsrclib;$(BDS)\lib\obj;$(BDS)\lib;..\maxvlib;$(BDS)\lib\psdk;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <ILINK_LibraryPath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\jsoncpp\src\lib_json\;$(BDS)\lib\obj;$(BDS)\lib;..\maxvlib;$(BDS)\lib\psdk;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
@@ -154,6 +154,15 @@
         <BCC_Defines>NDEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
     </PropertyGroup>
     <ItemGroup>
+        <CppCompile Include="..\extern_libs\jsoncpp\src\lib_json\json_reader.cpp">
+            <BuildOrder>74</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\extern_libs\jsoncpp\src\lib_json\json_value.cpp">
+            <BuildOrder>75</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\extern_libs\jsoncpp\src\lib_json\json_writer.cpp">
+            <BuildOrder>76</BuildOrder>
+        </CppCompile>
         <CppCompile Include="About.cpp">
             <BuildOrder>44</BuildOrder>
             <Form>AboutForm</Form>
@@ -419,8 +428,8 @@
             <BuildOrder>131</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\mxsrclib\irs_chart_data.cpp">
-            <BuildOrder>22</BuildOrder>
-            <BuildOrder>206</BuildOrder>
+            <DependentOn>..\mxsrclib\irs_chart_data.h</DependentOn>
+            <BuildOrder>73</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\mxsrclib\measmul.cpp">
             <BuildOrder>2</BuildOrder>
@@ -462,16 +471,16 @@
             <BuildOrder>29</BuildOrder>
             <BuildOrder>161</BuildOrder>
         </CppCompile>
+        <FormResources Include="managerf.dfm"/>
         <FormResources Include="modifidatatable.dfm"/>
         <FormResources Include="newconfig.dfm"/>
-        <FormResources Include="managerf.dfm"/>
         <FormResources Include="optionsoptimize.dfm"/>
-        <FormResources Include="showmessages.dfm"/>
-        <FormResources Include="connectionlog.dfm"/>
-        <FormResources Include="copytable.dfm"/>
         <FormResources Include="About.dfm"/>
         <FormResources Include="addcolrow.dfm"/>
         <FormResources Include="datahandling.dfm"/>
+        <FormResources Include="connectionlog.dfm"/>
+        <FormResources Include="copytable.dfm"/>
+        <FormResources Include="showmessages.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

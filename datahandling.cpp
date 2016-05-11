@@ -6,8 +6,10 @@
 #include "datahandling.h"
 #include <irscpp.h>
 #include <tstlan5lib.h>
+#include <irsalg.h>
 #include "newconfig.h"
 //#include "mathv.h"
+#include <irsfinal.h>
 
 
 
@@ -101,6 +103,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   ///////////////////////////////////////////////////////////////////////
   //m_my_file_name("Data.txt"),
   m_chart(),
+  mp_meas_point_chart(NULL/*new irs::chart::builder_chart_window_t(10000, 1000,
+    irs::chart::builder_chart_window_t::stay_on_top_off)*/),
   m_timer_chart_auto_update(irs::make_cnt_ms(1000)),
   m_successfully_mode_setting(false),
 
@@ -180,6 +184,9 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_cur_count_reset_over_bit(0),
   m_y_out(0.),
   m_y_out_filter(),
+  m_meas_value_filter(1000000),
+  m_meas_value_filter_timer(irs::make_cnt_s(0)),
+  m_meas_value_filter_elapsed_time(),
   m_on_close_form_stat(false),
   m_on_external(false),
   m_exec_progress(CommentProgressL, PercentProgressL, ProgressBar1),
@@ -393,21 +400,34 @@ void TDataHandlingF::load_config_calibr()
       IRS_ASSERT(
         str_to_type_meas(m_config_calibr.type_meas.c_str(), type_meas));
       set_type_meas(type_meas);
+
       set_deley_volt_meas(m_config_calibr.delay_meas);
+
+      m_meas_value_filter_timer.set(
+        irs::make_cnt_s(m_config_calibr.meas_interval));
+
       m_default_param_cur_cell.col_value.value =
         m_config_calibr.in_parametr1.default_val;
+
       m_default_param_cur_cell.col_value.init = true;
+
       m_default_param_cur_cell.row_value.value =
         m_config_calibr.in_parametr2.default_val;
+
       m_default_param_cur_cell.row_value.init = true;
+
       m_default_param_cur_cell.top_value.value =
         m_config_calibr.in_parametr3.default_val;
+
       m_default_param_cur_cell.top_value.init = true;
+
       //m_on_mismatch_state = m_config_calibr.mismatch_mode;
       //mismatch_mode_change_stat(m_on_mismatch_state);
       m_cur_config_device = extract_short_filename(
         ExtractFileName(mv_list_config_calibr[index_file]));
+
       mp_active_table->set_inf_in_param(m_inf_in_param);
+
       // загрузка последнего активного файла
       String file_namedir = m_config_calibr.active_filename;
       if(FileExists(file_namedir)){
@@ -609,9 +629,9 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
   mv_coef_data.clear();
 
 
-  int x_elem_size = size_type(x_elem_type);
-  int y_elem_size = size_type(y_elem_type);
-  int z_elem_size = size_type(z_elem_type);
+  const int x_elem_size = size_of_type(x_elem_type);
+  const int y_elem_size = size_of_type(y_elem_type);
+  const int z_elem_size = size_of_type(z_elem_type);
 
 
   m_bad_cells = false;
@@ -750,12 +770,15 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
       }
     }
   }
-  if(!m_bad_cells) {
+  if (!m_bad_cells) {
+    const size_type col_count = mv_col_optimal_data.size();
+    const size_type row_count = mv_row_optimal_data.size();
+    const size_type coef_count = mv_coef_data.size();
     m_need_size_memory = size_of_ident + size_of_size_x + size_of_size_y +
-    x_elem_size*mv_col_optimal_data.size()+
-    y_elem_size*mv_row_optimal_data.size()+
-    z_elem_size*mv_coef_data.size();
-  }else{
+      x_elem_size*mv_col_optimal_data.size()+
+      y_elem_size*mv_row_optimal_data.size()+
+      z_elem_size*mv_coef_data.size();
+  } else {
     m_need_size_memory = 0;
   }
 }
@@ -1040,10 +1063,12 @@ void TDataHandlingF::eeprom_tick()
           status_connect_eeprom = sce_write_eeprom;
         } else if(m_on_verification_data_eeprom){
           mp_eeprom->reset_stat_read_complete();
-          m_exec_progress.show();
-          m_exec_progress.p_comment->Caption = "Процесс верификации данных.";
-          m_exec_progress.p_percent_progress->Caption = "0%";
-          m_exec_progress.p_progress_bar->Position = 0;
+          set_progress_bar_mode_verification();
+          //m_exec_progress.show();
+          //m_exec_progress.p_comment->Caption = "Процесс верификации данных.";
+          //m_exec_progress.p_percent_progress->Caption = "0%";
+          //m_exec_progress.p_progress_bar->Position = 0;
+          //set_progress_bar_value(0);
           status_connect_eeprom = sce_wait_read_eeprom;
         } else {
           status_connect_eeprom = sce_reset;
@@ -1088,7 +1113,8 @@ void TDataHandlingF::eeprom_tick()
           }
           m_exec_progress.p_percent_progress->Caption =
             IntToStr(percent)+"%";
-          m_exec_progress.p_progress_bar->Position = percent;
+          //m_exec_progress.p_progress_bar->Position = percent;
+          set_progress_bar_value(percent);
         }
       } break;
       case sce_verification_eeprom: {
@@ -1171,10 +1197,12 @@ void TDataHandlingF::eeprom_tick()
         for(int i = 0; i < vcoef_data_size; i++)
           correct_map.koef_array[i] = mv_coef_data[i];
 
-        m_exec_progress.show();
-        m_exec_progress.p_comment->Caption = "Процесс прошивки.";
-        m_exec_progress.p_percent_progress->Caption = "0%";
-        m_exec_progress.p_progress_bar->Position = 0;
+        set_progress_bar_mode_program();
+        //m_exec_progress.show();
+        //m_exec_progress.p_comment->Caption = "Процесс прошивки.";
+        //m_exec_progress.p_percent_progress->Caption = "0%";
+        //m_exec_progress.p_progress_bar->Position = 0;
+        //set_progress_bar_value(0);
         status_connect_eeprom = sce_wait_write_eeprom;
       } break;
       case sce_wait_write_eeprom: {
@@ -1185,7 +1213,8 @@ void TDataHandlingF::eeprom_tick()
             m_need_size_memory;
           m_exec_progress.p_percent_progress->Caption =
             IntToStr(percent)+"%";
-          m_exec_progress.p_progress_bar->Position = percent;
+          //m_exec_progress.p_progress_bar->Position = percent;
+          set_progress_bar_value(percent);
         } else {
           m_exec_progress.hide();
           m_exec_progress.clear();
@@ -1348,14 +1377,15 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
 
 void TDataHandlingF::process_volt_meas()
 {
-  if(m_on_process_auto_meas_active_cell == true){
-    if (m_on_auto_meas == true) {
-      if(m_status_process_meas != spm_jump_next_elem){
-        m_on_process_auto_meas_active_cell = false;
-      }
-    }else{
+  if(m_on_process_auto_meas_active_cell == true) {
+    if (m_on_auto_meas != true) {
       m_on_start_new_auto_meas = true;
-    }
+      /*if(m_status_process_meas != spm_jump_next_elem){
+        m_on_process_auto_meas_active_cell = false;
+      } */
+    }/* else {
+      m_on_start_new_auto_meas = true;
+    }  */
   }
   if(m_on_stop_process_avto_volt_meas == true){
     reset_stat_stop_process_avto_volt_meas();
@@ -1368,19 +1398,23 @@ void TDataHandlingF::process_volt_meas()
     config_button_start_avto_volt_meas();
     m_timer_delay_control_error_bit.check();
     if (m_device.connected()) {
-      if (m_device.get_data()->error_bit == 1 &&
+      if ((m_device.get_data()->error_bit == 1) &&
         m_timer_delay_control_error_bit.stopped()) {
         if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
           m_cur_count_reset_over_bit++;
           m_device.get_data()->reset_over_bit = 1;
+          m_on_start_new_auto_meas = true;
           m_on_process_auto_meas_active_cell = true;
-          if (m_mode_program == mode_prog_single_channel) {
+
+          m_status_process_meas = spm_off_process;
+
+          /*if (m_mode_program == mode_prog_single_channel) {
             m_status_process_meas = spm_set_range;
           } else {
             m_status_process_meas =
               spm_wait_ext_trig_set_range;
             m_log << "Ожидание внешнего запуска установки диапазона измерений.";
-          }
+          } */
           //m_status_process_meas = spm_jump_next_elem;
           m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
           m_timer_delay_next_cell.set(m_delay_next_cell);
@@ -1453,25 +1487,40 @@ void TDataHandlingF::process_volt_meas()
         m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
         m_cell_count_end++;
         //m_time_meas.start();
-        m_exec_progress.show();
-        m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
-        m_exec_progress.p_percent_progress->Caption = irst("0%");
-        m_exec_progress.p_progress_bar->Position = 0;
+        set_progress_bar_mode_calibration();
+        //m_exec_progress.show();
+        //m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
+        //m_exec_progress.p_percent_progress->Caption = irst("0%");
+        //m_exec_progress.p_progress_bar->Position = 0;
+        //set_progress_bar_value(0);
       }
     } break;
     case spb_wait_connect: {
       if(m_device.connected()) {
         set_value_working_extra_params();
         set_value_working_extra_bits();
+        /*if (m_mode_program == mode_prog_single_channel) {
+          m_status_process_meas = spm_set_range;
+        } else {
+          m_status_process_meas = spm_wait_ext_trig_set_range;
+          m_log <<
+            irst("Ожидание внешнего запуска установки диапазона измерений.");
+        } */
+        m_timer_waiting_set_extra_vars.start();
+        m_time_meas.start();
+        m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+      }
+    } break;
+    case spb_wait_apply_extra_params_and_bits: {
+      m_timer_waiting_set_extra_vars.check();
+      if (m_timer_waiting_set_extra_vars.stopped()) {
         if (m_mode_program == mode_prog_single_channel) {
           m_status_process_meas = spm_set_range;
         } else {
-          m_status_process_meas =
-            spm_wait_ext_trig_set_range;
+          m_status_process_meas = spm_wait_ext_trig_set_range;
           m_log <<
             irst("Ожидание внешнего запуска установки диапазона измерений.");
         }
-        m_time_meas.start();
       }
     } break;
     case spm_jump_next_elem:{
@@ -1534,10 +1583,15 @@ void TDataHandlingF::process_volt_meas()
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
       out_param(param_cur_cell);
-      m_log << (irst("Ждем ") + FloatToStr(
+      /*m_log << (irst("Ждем ") + FloatToStr(
         (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
         " секунд перед проверкой рабочего режима.");
-      m_timer_delay_control.set(m_delay_start_control_reg);
+      m_timer_delay_control.set(m_delay_start_control_reg);*/
+      if (m_config_calibr.temperature_control.enabled) {
+        m_log<<"Ждем установления рабочего режима и температуры.";
+      } else {
+        m_log<<"Ждем установления рабочего режима.";
+      }
       m_status_process_meas = spm_wait_mode_setting;
     } break;
     //установка режима
@@ -1545,13 +1599,14 @@ void TDataHandlingF::process_volt_meas()
       #ifdef debug_datahanding
         m_on_reg_ready = true;
       #endif
-      if (m_timer_delay_control.check()) {
-        if (m_config_calibr.temperature_control.enabled) {
+      /*if (m_timer_delay_control.check()) {
+        if (m_config_calibr.out_param_control_config.enabled) {
           m_log<<"Ждем установления рабочего режима и температуры.";
         } else {
           m_log<<"Ждем установления рабочего режима.";
         }
-      }
+      } */
+      m_timer_delay_control.check();
       if ((m_timer_delay_control.stopped() == true)) {
         if (m_on_out_data == false) {
           bool all_ready = true;
@@ -1602,12 +1657,22 @@ void TDataHandlingF::process_volt_meas()
       if (m_config_calibr.temperature_control.enabled) {
         if (m_temperature_stability_control.get_stable_state_time() <
           m_temperature_stable_min_time.get()) {
+          m_timer_delay_control.set(m_delay_start_control_reg);
           m_log<<"Температура вышла за допустимые значения.";
+          m_log << ("Ждем " + FloatToStr(
+            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+            " секунд перед проверкой рабочего режима.");
           m_status_process_meas = spm_wait_mode_setting;
         }
+      }
+      if (m_config_calibr.out_param_control_config.enabled) {
         if (m_out_param_stability_control.get_stable_state_time() <
           m_out_param_stable_min_time.get()) {
           m_log<<"Значение выходного параметра вышло за допустимые значения.";
+          m_log << ("Ждем " + FloatToStr(
+            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+            " секунд перед проверкой рабочего режима.");
+          m_timer_delay_control.set(m_delay_start_control_reg);
           m_status_process_meas = spm_wait_mode_setting;
         }
       }
@@ -1616,7 +1681,7 @@ void TDataHandlingF::process_volt_meas()
           if (m_timer_delay_operating_duty.stopped()) {
             m_log<<"Рабочий режим подтвержден.";
             if (m_mode_program == mode_prog_single_channel) {
-              m_status_process_meas = spm_execute_meas;
+              m_status_process_meas = sps_start_meas;
             } else {
               m_status_process_meas = spm_wait_external_trig_meas;
               m_log<<"Ожидание внешнего запуска измерения.";
@@ -1635,9 +1700,16 @@ void TDataHandlingF::process_volt_meas()
     // ожидание внешнего внешнего запуска измерения
     case spm_wait_external_trig_meas: {
       if (m_on_external) {
-        m_status_process_meas = spm_execute_meas;
+        m_status_process_meas = sps_start_meas;
         m_on_external = false;
       }
+    } break;
+    case sps_start_meas: {
+      m_points.clear();
+      m_meas_value_filter.clear();
+      m_meas_value_filter_timer.start();
+      m_meas_value_filter_elapsed_time.start();
+      m_status_process_meas = spm_execute_meas;
     } break;
     case spm_execute_meas: {
       meas_status_t meas_stat = m_value_meas.get_status_meas();
@@ -1648,24 +1720,22 @@ void TDataHandlingF::process_volt_meas()
     } break;
     case spm_wait_execute_meas: {
         meas_status_t meas_stat = meas_status();
-        if(meas_stat == meas_status_success){
+        if (meas_stat == meas_status_success) {
           if (m_mode_program == mode_prog_single_channel) {
             m_status_process_meas = spm_processing_data;
           } else {
             m_status_process_meas = spm_wait_external_trig_processing_data;
           }
-        }
-        else if(meas_stat == meas_status_error){
+        } else if (meas_stat == meas_status_error) {
           m_status_process_meas = spm_reset;
         }
     } break;
     case spm_wait_external_trig_processing_data: {
       if (m_on_external) {
         meas_status_t meas_stat = meas_status();
-        if(meas_stat == meas_status_success){
+        if (meas_stat == meas_status_success) {
           m_status_process_meas = spm_processing_data;
-        }
-        else if(meas_stat == meas_status_error){
+        } else if (meas_stat == meas_status_error) {
           m_status_process_meas = spm_reset;
           m_log << "Ошибка измерения.";
           m_log << "Автоматическое измерение завершилось с ошибкой.";
@@ -1674,8 +1744,7 @@ void TDataHandlingF::process_volt_meas()
       }
     } break;
     case spm_processing_data: {
-      String cur_multim = get_selected_multimeter();
-
+      //String cur_multim = get_selected_multimeter();
       if (!mp_mxmultimeter_assembly.is_empty()) {
         m_y_out_filter.stop();
         double y_out = 0;
@@ -1685,15 +1754,38 @@ void TDataHandlingF::process_volt_meas()
         } else {
           y_out = m_y_out;
         }
-        double calc_value = calc_meas_value(
+        const double calc_value = calc_meas_value(
           m_value_meas_multimetr, y_out, m_param_cur_cell);
-        cell_t cell(calc_value, true);
+        m_meas_value_filter.add(calc_value);
+        point_type point;
+        point.x = m_meas_value_filter_elapsed_time.get();
+        point.y = calc_value;
+        m_points.push_back(point);
+      }
+      update_point_measurement_progress();
+      //--------------------------------------
+      if (!mp_meas_point_chart.is_empty()) {
+        update_result();
+        int col = mp_active_table->get_col_displ();
+        int row = mp_active_table->get_row_displ();
         coord_cell_t coord_cur_cell =
           m_manager_traffic_cell.get_coord_cell();
-        mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
-        mp_active_table->cell_out_display(
-          coord_cur_cell.col, coord_cur_cell.row);
+        if ((col == coord_cur_cell.col) && (row == coord_cur_cell.row)) {
+          update_chart(col, row);
+        }
       }
+      //-------------------------------------
+
+      m_meas_value_filter_timer.check();
+      if (m_meas_value_filter_timer.stopped()) {
+        m_status_process_meas = spm_processing_filter_data;
+      } else {
+        m_status_process_meas = spm_execute_meas;
+      }
+    } break;
+    case spm_processing_filter_data: {
+      m_y_out_filter.stop();
+      update_result();
       m_count_point_meas++;
       if (m_mode_program == mode_prog_single_channel) {
         m_status_process_meas = spm_jump_next_elem;
@@ -1762,11 +1854,12 @@ void TDataHandlingF::process_volt_meas()
           m_cell_count_end = cur_cell_count_end;
           // Оставшееся время до конца измерений
           time_interval_end_meas_sec = m_cell_count_end/m_cell_per_sec;
+          update_measurement_progress();
           // Процент выполнения калибровки
-          int percent = 100*m_count_point_meas/
+          /*int percent = 100*m_count_point_meas/
             (m_cell_count_end+m_count_point_meas);
           m_exec_progress.p_percent_progress->Caption = IntToStr(percent) + "%";
-          m_exec_progress.p_progress_bar->Position = percent;
+          m_exec_progress.p_progress_bar->Position = percent;*/
         }
       } else {
         time_interval_end_meas_sec = m_cell_count_end/m_cell_per_sec -
@@ -1787,6 +1880,80 @@ void TDataHandlingF::process_volt_meas()
     }
   }
 }
+
+void TDataHandlingF::update_point_measurement_progress()
+{
+  const double one_point_progress = 1./(m_cell_count_end + m_count_point_meas);
+
+  // Процент выполнения калибровки
+  double progress = m_count_point_meas*one_point_progress;
+
+  // Прогресс измерения одной точки
+  double point_percent = 1;
+  const double period = CNT_TO_DBLTIME(m_meas_value_filter_timer.get());
+  if (period != 0) {
+    const double elapsed_time = m_meas_value_filter_elapsed_time.get();
+    const double point_percent = irs::bound(elapsed_time/period, 0., 1.);
+  }
+
+  progress += point_percent*one_point_progress;
+
+  const double percent = irs::bound(100*progress, 0., 100.);
+
+  m_exec_progress.p_percent_progress->Caption =
+    FloatToStrF(
+      percent, ffFixed,
+      progress_percent_precision,
+      progress_percent_digits) +
+    "%";
+  //m_exec_progress.p_progress_bar->Position = percent;
+  set_progress_bar_value(percent);
+}
+
+void TDataHandlingF::update_measurement_progress()
+{
+  const double one_point_progress = 1./(m_cell_count_end + m_count_point_meas);
+  // Процент выполнения калибровки
+  double percent = 100.*m_count_point_meas*one_point_progress;
+
+  m_exec_progress.p_percent_progress->Caption =
+    FloatToStrF(percent, ffFixed,
+      progress_percent_precision,
+      progress_percent_digits) +
+    "%";
+  set_progress_bar_value(percent);
+}
+
+void TDataHandlingF::set_progress_bar_mode_calibration()
+{
+  m_exec_progress.show();
+  m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
+  m_exec_progress.p_percent_progress->Caption = irst("0%");
+  set_progress_bar_value(0);
+}
+
+void TDataHandlingF::set_progress_bar_mode_program()
+{
+  m_exec_progress.show();
+  m_exec_progress.p_comment->Caption = "Процесс прошивки.";
+  m_exec_progress.p_percent_progress->Caption = "0%";
+  set_progress_bar_value(0);
+}
+
+void TDataHandlingF::set_progress_bar_mode_verification()
+{
+  m_exec_progress.show();
+  m_exec_progress.p_comment->Caption = "Процесс верификации данных.";
+  m_exec_progress.p_percent_progress->Caption = "0%";
+  set_progress_bar_value(0);
+}
+
+void TDataHandlingF::set_progress_bar_value(double a_percent)
+{
+  m_exec_progress.p_progress_bar->Position = irs::bound(
+    a_percent*1000, 0., 100000.);
+}
+
 //---------------------------------------------------------------------------
 void TDataHandlingF::config_button_start_avto_volt_meas()
 {
@@ -1871,17 +2038,19 @@ void TDataHandlingF::config_button_stop_avto_volt_meas()
 void __fastcall TDataHandlingF::RawDataStringGridSelectCell(
       TObject *Sender, int ACol, int ARow, bool &CanSelect)
 {
-  if(m_cur_cell_table1.init){
+  if (m_cur_cell_table1.init) {
     string_type latest_entry_previous_cell_str =
       RawDataStringGrid->Cells
       [m_cur_cell_table1.col][m_cur_cell_table1.row].c_str();
-    if(m_cur_cell_table1.value_str != latest_entry_previous_cell_str){
+    if (m_cur_cell_table1.value_str != latest_entry_previous_cell_str) {
       mp_active_table->cur_cell_in_display();
       RawDataStringGrid->Repaint();
     }
     m_cur_cell_table1.init = false;
   }
   processing_select_cell(RawDataStringGrid, ACol, ARow, CanSelect);
+
+  reset_chart(ACol, ARow);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::RawDataStringGridKeyDown(TObject *Sender,
@@ -2045,7 +2214,12 @@ double TDataHandlingF::calc_meas_value(
   double out_value = a_value_meas*m_config_calibr.out_parametr.koef_shunt;
   if (m_config_calibr.out_param_config_for_measurement.
     consider_out_param) {
-    out_value = out_value/out_param_value;
+    if (out_param_value != 0) {
+      out_value = out_value/out_param_value;
+    } else {
+      m_log << "Ошибка. "
+        "Выходное значение с устройства равно нулю и не учитывается";
+    }
     if (m_inf_in_param.type_anchor == PARAMETR1) {
       if (a_param_cell.col_value.init) {
         out_value = m_param_cur_cell.col_value.value*out_value;
@@ -2061,6 +2235,158 @@ double TDataHandlingF::calc_meas_value(
     }
   }
   return out_value;
+}
+
+void TDataHandlingF::update_result()
+{
+  cell_t cell = process_measured_points();
+  coord_cell_t coord_cur_cell =
+    m_manager_traffic_cell.get_coord_cell();
+  mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
+  mp_active_table->cell_out_display(
+    coord_cur_cell.col, coord_cur_cell.row);
+}
+
+cell_t TDataHandlingF::process_measured_points()
+{
+  vector<double> values;
+  for (size_type i = 0; i < m_points.size(); i++) {
+    values.push_back(m_points[i].y);
+  }
+
+  cell_t cell(0, true);
+  cell.points = m_points;
+  cell.sko = 0;
+  if (values.size() > 0) {
+    cell.value = values.front();
+  }
+  if (values.size() > 1) {
+    double sko_before = 0;
+    double average_before = 0;
+    irs::sample_standard_deviation(values.begin(), values.end(),
+      &sko_before, &average_before);
+
+    cell.sko = sko_before;
+    cell.min = *std::min_element(values.begin(), values.end());
+    cell.max = *std::max_element(values.begin(), values.end());
+    //cell.delta = std::fabs(value_max - value_min)/average_before;
+
+
+    /*const double student_t_95 = irs::student_t_inverse_distribution_2x(
+      confidence_level_0_95, values.size());
+
+    const double student_t_99 = irs::student_t_inverse_distribution_2x(
+      confidence_level_0_99, values.size());
+    double confidence_interval_95 = sko_before*student_t_95;
+    double confidence_interval_99 = sko_before*student_t_99;
+    cell.confidence_interval_95 = confidence_interval_95;
+    cell.confidence_interval_99 = confidence_interval_99;
+      */
+    const irs::level_of_significance_t level_of_significance =
+      irs::level_of_significance_0_1;
+    vector<double>::iterator it =
+      eliminating_outliers_smirnov_criterion_multiple_pass(values.begin(),
+      values.end(), level_of_significance);
+
+
+    //m_log << (String(irst("Удалено выбросов: ")) +
+      //IntToStr(distance(it, values.end())));
+    values.erase(it, values.end());
+
+    if (values.size() > 0) {
+      double sko = 0;
+      double average = 0;
+      irs::sample_standard_deviation(values.begin(), values.end(),
+        &sko, &average);
+      int p = 0;
+      int n = 0;
+      double d_total = 0;
+      for (size_type i = 0; i < values.size(); i++) {
+        if (values[i] > average) {
+          p++;
+          d_total += fabs(values[i] - average);
+        } else if (values[i] < average) {
+          n++;
+        }
+      }
+      // Уточненное среднее
+      const double N_2 = values.size()*values.size();
+      const double result = average + ((p - n)*d_total)/N_2;
+      cell.value = result;
+    }
+  }
+  return cell;
+    //double calc_value = m_meas_value_filter.get();
+}
+
+void TDataHandlingF::reset_chart(
+  const int a_col_displ, const int a_row_displ)
+{
+  // Обработка графика
+  if (!mp_meas_point_chart.is_empty()) {
+    mp_meas_point_chart->clear_param();
+    param_cur_cell_t param = mp_active_table->get_param_cell(a_col_displ,
+      a_row_displ);
+    const string_type name =
+      irs::num_to_str(param.col_value.value) +
+      irst("; ") +
+      irs::num_to_str(param.row_value.value);
+    const string_type points_chart = name + irst(" точки");
+    const string_type result_chart = name + irst(" значение");
+    mp_meas_point_chart->add_param(points_chart);
+    mp_meas_point_chart->add_param(result_chart);
+    mp_meas_point_chart->group_all();
+    update_chart(a_col_displ, a_row_displ);
+  }
+}
+
+void TDataHandlingF::update_chart(const int a_col_displ, const int a_row_displ)
+{
+  // Обработка графика
+  if (!mp_meas_point_chart.is_empty()) {
+    //mp_meas_point_chart->clear_param();
+    param_cur_cell_t param = mp_active_table->get_param_cell(a_col_displ,
+      a_row_displ);
+    const string_type name =
+      irs::num_to_str(param.col_value.value) +
+      irst("; ") +
+      irs::num_to_str(param.row_value.value);
+
+    const string_type points_chart = name + irst(" точки");
+    //mp_meas_point_chart->add_param(points_chart);
+    const cell_t cell = mp_active_table->get_cell_table(a_col_displ,
+      a_row_displ);
+
+    vector<double> x_array;
+    vector<double> y_array;
+
+
+    for (size_type i = 0; i < cell.points.size(); i++) {
+      const cell_t::point_type point = cell.points[i];
+      x_array.push_back(point.x);
+      y_array.push_back(point.y);
+    }
+    mp_meas_point_chart->set(points_chart, x_array, y_array);
+
+
+
+    const string_type result_chart = name + irst(" значение");
+    //mp_meas_point_chart->add_param(result_chart);
+    x_array.clear();
+    y_array.clear();
+    if (!cell.points.empty()) {
+      x_array.push_back(cell.points.front().x);
+      x_array.push_back(cell.points.back().x);
+      y_array.push_back(cell.value);
+      y_array.push_back(cell.value);
+    }
+    mp_meas_point_chart->set(result_chart, x_array, y_array);
+    /*if (!x_array.empty()) {
+      mp_meas_point_chart->add(result_chart, x_array.front(), cell.value);
+      mp_meas_point_chart->add(result_chart, x_array.back(), cell.value);
+    } */
+    //mp_meas_point_chart->group_all();
+  }
 }
 
 double TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
@@ -2186,7 +2512,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   bool select_cell_in_z = (col_table == 0) && (row_table == 0);
   String value = mp_active_table->get_cell_display_variable_precision(
     a_col, a_row).c_str();
-  if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)){
+  if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)) {
     if((a_col == table->Col) && (a_row == table->Row)){
       //цвет фона
       table->Canvas->Brush->Color = clMoneyGreen;
@@ -2200,6 +2526,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
       table->Canvas->TextOutA(
         a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
     } else {
+      //table->Canvas->Brush->Color = clRed;
       table->Canvas->FillRect(a_rect);
       table->Canvas->TextOutA(a_rect.Left, a_rect.Top, value);
     }
@@ -2348,6 +2675,7 @@ void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
   if(!file_namedir.IsEmpty()){
     mp_active_table->save_table_to_file(file_namedir.c_str());
     mp_active_table->save_table_to_m_file(file_namedir.c_str());
+    //mp_active_table->save_table_to_json_file(file_namedir.c_str());
   }else{
     FileSaveAs->Execute();
   }
@@ -2582,7 +2910,7 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 {
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << irst("Текущая конфигурация успешно сохранена.");
+      m_log << irst("1Текущая конфигурация успешно сохранена.");
     }
   }
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
@@ -2733,7 +3061,7 @@ void __fastcall TDataHandlingF::SetTimeIntervalAverageMeasActionExecute(
 }
 
 
-TDataHandlingF::device_mode_status_t
+/*TDataHandlingF::device_mode_status_t
   TDataHandlingF::status_device_mode()
 {
   device_mode_status_t device_mode_status = DM_BUSY;
@@ -2766,7 +3094,7 @@ TDataHandlingF::device_mode_status_t
     }
   }
   return device_mode_status;
-}
+}   */
 
 void TDataHandlingF::meas_execute()
 {
@@ -2776,21 +3104,20 @@ void TDataHandlingF::meas_execute()
     m_config_calibr.out_param_config_for_measurement.out_param_filter_enabled) {
     m_y_out_filter.restart();
   }
-  m_log << "Происходит измерение.";
+  //m_log << "Происходит измерение.";
 }
 
 meas_status_t TDataHandlingF::meas_status()
 {
   meas_status_t meas_status = meas_status_busy;
   meas_status = m_value_meas.get_status_meas();
-  if(meas_status == meas_status_success){
-    m_log << "Измерение успешно завершено!";
-  }
-  else if(meas_status == meas_status_error){
+  if(meas_status == meas_status_success) {
+    //m_log << "Измерение успешно завершено!";
+  } else if(meas_status == meas_status_error) {
     m_log << "Измерение завершилось с ошибкой!";
   }
   return meas_status;
-}   
+}
 
 void __fastcall TDataHandlingF::AddTableActionExecute(TObject *Sender)
 {
@@ -3860,5 +4187,24 @@ TDataHandlingF::make_mxmultimeter_assembly(
   return irs::mxmultimeter_assembly_types()->
     make_assembly(a_device_type, a_device_name);
 }
+
+
+
+
+void __fastcall TDataHandlingF::ShowMeasPointChartActionExecute(TObject *Sender)
+{
+  if (mp_meas_point_chart.is_empty()) {
+    mp_meas_point_chart.reset(new irs::chart::builder_chart_window_t(10000, 1000,
+      irs::chart::builder_chart_window_t::stay_on_top_off));
+    mp_meas_point_chart->show();
+    ShowMeasPointChartAction->Checked = true;
+  } else {
+    mp_meas_point_chart.reset();
+    ShowMeasPointChartAction->Checked = false;
+  }
+
+}
+//---------------------------------------------------------------------------
+
 
 
