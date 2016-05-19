@@ -110,6 +110,7 @@ __published:	// IDE-managed Components
   void __fastcall ConstTimerFilterLEExit(TObject *Sender);
   void __fastcall ConstTimerFilterLEKeyPress(TObject *Sender, char &Key);
   void __fastcall CheckBoxPhasaNorm180Click(TObject *Sender);
+  void __fastcall FormCloseQuery(TObject *Sender, bool &CanClose);
 private:	// User declarations
   typedef irs::string_t string_type;
   bool m_start_prog;

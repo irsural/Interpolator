@@ -90,6 +90,11 @@ __published:	// IDE-managed Components
   TButton *ChangeRefDeviceConfigButton;
   TButton *ChangeNameButton;
   TLabeledEdit *MeasIntervalLabeledEdit;
+  TComboBox *DeviceNameComboBox;
+  TComboBox *RefDeviceNameComboBox;
+  TLabel *DeviceNameLabel;
+  TGroupBox *DevideGroupBox;
+  TGroupBox *RefDeviceGroupBox;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);
@@ -113,6 +118,9 @@ __published:	// IDE-managed Components
   void __fastcall DeviceComboBoxChange(TObject *Sender);
   void __fastcall ExitButtonClick(TObject *Sender);
   void __fastcall ChangeRefDeviceConfigButtonClick(TObject *Sender);
+  void __fastcall DeviceNameComboBoxChange(TObject *Sender);
+  void __fastcall RefDeviceNameComboBoxChange(TObject *Sender);
+  void __fastcall RefDeviceComboBoxChange(TObject *Sender);
 private:	// User declarations
   typedef std::size_t size_type;
   typedef irs::string_t string_type;
@@ -140,18 +148,24 @@ private:	// User declarations
   bool cell_illegal_ListParameterSG_stat(const int a_col, const int a_row);
   void out_parameter_options_components_update();
   void temperature_control_components_update();
+  bool save_with_same_name_dialog() const;
   String get_config_full_file_name();
   String make_config_full_file_name(String a_config_name);
   String generate_new_unique_name(const String& a_device_name);
   String make_device_config_full_file_name(String a_config_name);
   void save_configuration(String a_config_name);
-  void update_ref_device_options_enabled();
+  void update_ref_device_options();
+  void update_main_device();
+  void update_ref_device();
   //void create_configurations_dir();
 public:		// User declarations
   __fastcall TNewConfigF(TComponent* Owner, TDataHandlingF* ap_data_handing);
   //inline void set_path_program(const String& a_path);
   void edit_config(const String& a_filename);
   void set_config_def();
+
+  void load_devices_list();
+
   //int lang_type_to_combo_box(const String& a_lang_type);
   inline void set_config_device(config_calibr_t* ap_config_calibr);
   inline void set_ini_file(irs::ini_file_t* ap_conf_device_ini_file);

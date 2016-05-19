@@ -11,10 +11,12 @@
 TOptionsF *OptionsF;
 //---------------------------------------------------------------------------
 __fastcall TOptionsF::TOptionsF(TComponent* Owner)
-  : TForm(Owner),
-  m_status_options(OFF_PROCESSING)
+  : TForm(Owner)/*,
+  m_options_mnk(),
+  m_options_correct(),
+  m_status_options(OFF_PROCESSING)*/
 {
-  m_options_mnk.index=0;
+  /*m_options_mnk.index=0;
   m_options_mnk.table_raw_data=false;
   m_options_mnk.table_optimal_data=true;
   m_options_mnk.table_correct_data=false;
@@ -33,7 +35,10 @@ __fastcall TOptionsF::TOptionsF(TComponent* Owner)
   m_options_correct.table_correct_data=true;
   m_options_correct.result_save_file=false;
   m_options_correct.name_dir = irst("");
-  m_options_correct.file_name = irst("");
+  m_options_correct.file_name = irst("");*/
+}
+__fastcall TOptionsF::~TOptionsF()
+{
 }
 //---------------------------------------------------------------------------
 void __fastcall TOptionsF::CloseFormButtonClick(TObject *Sender)
@@ -43,17 +48,17 @@ void __fastcall TOptionsF::CloseFormButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void TOptionsF::select_options_mnk()
 {
-  OptDispOutMNKCheckBox1->Checked=m_options_mnk.table_raw_data;
+  /*OptDispOutMNKCheckBox1->Checked=m_options_mnk.table_raw_data;
   OptDispOutMNKCheckBox2->Checked=m_options_mnk.table_optimal_data;
   OptDispOutMNKCheckBox3->Checked=m_options_mnk.table_correct_data;
   OptSveFileMNKCheckBox->Checked=m_options_mnk.result_save_file;
   FileNameMNKLabeledEdit->Text=m_options_mnk.name_dir+
-    m_options_mnk.file_name;
+    m_options_mnk.file_name;*/
 }
 
 void TOptionsF::select_options_correct()
 {
-  EnabledCorrectXCheckBox->Checked=m_options_correct.correct_x;
+  /*EnabledCorrectXCheckBox->Checked=m_options_correct.correct_x;
   CorrectXLabeledEdit->Text=m_options_correct.function_correct_x_str;
   EnabledCorrectYCheckBox->Checked=m_options_correct.correct_y;
   CorrectYLabeledEdit->Text=m_options_correct.function_correct_y_str;
@@ -64,23 +69,26 @@ void TOptionsF::select_options_correct()
   OptDispOutCorCheckBox3->Checked=m_options_correct.table_correct_data;
   OptSveFileCorCheckBox->Checked=m_options_correct.result_save_file;
   FileNameCorLabeledEdit->Text=m_options_correct.name_dir+
-    m_options_correct.file_name;
+    m_options_correct.file_name;*/
 }
 void TOptionsF::reset_status_options()
-{m_status_options = OFF_PROCESSING;}
+{
+  //m_status_options = OFF_PROCESSING;
+}
 
 
-void __fastcall TOptionsF::FormShow(TObject *Sender){
-  OptionsTreeView->Items->Item[0]->Selected=true;
+void __fastcall TOptionsF::FormShow(TObject *Sender)
+{
+  /*OptionsTreeView->Items->Item[0]->Selected = true;
   select_options_mnk();
-  select_options_correct();
+  select_options_correct();*/
 }
 //---------------------------------------------------------------------------
 
 
 void __fastcall TOptionsF::OpenDirCorButtonClick(TObject *Sender)
 {
-  AnsiString dir="";
+  //AnsiString dir="";
   /*if(SelectDirectory("Укажите каталог для сохранения файла", "", dir)){
     if(TypeOptimizeRadioButton1->Checked==true){
       options_mnk.name_dir=dir;
@@ -99,7 +107,7 @@ void __fastcall TOptionsF::OpenDirCorButtonClick(TObject *Sender)
 void __fastcall TOptionsF::OptionsTreeViewChange(TObject *Sender,
       TTreeNode *Node)
 {
-  switch(Node->SelectedIndex)
+  /*switch(Node->SelectedIndex)
   {
     case 0:{
       OptimizeMNKOptionsPanel->Visible=true;
@@ -109,9 +117,10 @@ void __fastcall TOptionsF::OptionsTreeViewChange(TObject *Sender,
       OptimizeMNKOptionsPanel->Visible=false;
       CorrectOptionsPanel->Visible=true;
     } break;
-  }
+  } */
 }
 //---------------------------------------------------------------------------
+
 
 
 

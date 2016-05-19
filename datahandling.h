@@ -1,3 +1,4 @@
+
 //---------------------------------------------------------------------------
 
 #ifndef datahandlingH
@@ -18,7 +19,6 @@
 #include <cbcomp.h>
 #include <irsalg.h>
 #include <irstable.h>
-
 
 #include <Classes.hpp>
 #include <Controls.hpp>
@@ -42,6 +42,9 @@
 #include <SysUtils.hpp>
 #include <Menus.hpp>
 #include <ComCtrls.hpp>
+#include <System.Actions.hpp>
+#include <Vcl.PlatformDefaultStyleActnCtrls.hpp>
+
 
 
 //#pragma hdrstop
@@ -474,7 +477,7 @@ private:	// User declarations
   log_t m_log;
   log_message_t m_log_message;
   TForm* mp_manager_channel;
-  irs::handle_t<TOptionsF> mp_options_form;
+  //irs::handle_t<TOptionsF> mp_options_form;
   //имя каталога программы для хранения конфгураций
   //const String m_foldername_conf;
   //расширение файла конфигурации процесса калибровки
@@ -534,7 +537,7 @@ private:	// User declarations
   irs::chart::builder_chart_window_t m_device_chart;
   device2_t m_device;
 
-  irs::handle_t<device_t> mp_ref_device;
+  //irs::handle_t<device_t> mp_ref_device;
   device2_t m_ref_device;
   //mxnetc m_mxnet;
   irs::handle_t<mxnetc> mp_mxnet_ref_channel;
@@ -560,6 +563,8 @@ private:	// User declarations
   bool m_bad_cells;
   //блокировка перезагрузки конфигурации
   bool m_on_block_reconfiguration;
+  // Индекс текущей загруженной конфигурации в ComboBox
+  int m_cur_index_conf_calibr;
   // Имя текущего файла конфигурации
   String m_cur_filename_conf_calibr_device;
 
@@ -901,7 +906,9 @@ public:		// User declarations
   //вывод конфигураций калибровки на экран
   void load_config_calibr_to_display();
   void select_config(const String& a_config_name);
+  void select_config(int a_index);
   String get_selected_config();
+  String get_selected_config_filename() const;
   //загрузка конфигурации калибровки
   void load_config_calibr();
   void set_connect_if_enabled(bool a_forced_connect = false);
@@ -1040,7 +1047,8 @@ public:
   // Вывод сообщения в лог о текущих параметрах выбранной ячейки
   void out_message_log_cur_param_cell(const param_cur_cell_t& a_param_cur_cell);
   // Проверка на изменения и диалог сохранения файла
-  bool save_dirty_data();
+  // Возвращает false, если пользователь отменил действие
+  bool save_unsaved_changes_dialog();
   // Разбиение на блоки
   irs::matrix_t<cell_t> get_sub_diapason_table_data(const int a_sub_diapason);
   void tick_calibr_data();
@@ -1056,11 +1064,18 @@ public:
   void set_value_default_extra_bits();
   void show_main_device_options();
   void show_ref_device_options();
+
+  void load_devices();
+  //! \brief Перезагружает основное устройство
+  void load_main_device();
+  //! \brief Перезагружает основное устройство
+  void load_ref_device();
+
   //! \brief Загружает настройки соединения с устройством из файла. Если файл
-  //!   отсутствует, то создает файл с настройками по умолчанию
+  //!   отсутствует
   void load_main_device(const String& a_config_name);
   //! \brief Загружает настройки соединения с устройством из файла. Если файл
-  //!   отсутствует, то создает файл с настройками по умолчанию
+  //!   отсутствует
   void load_ref_device(const String& a_config_name);
   //void load_device(const String& a_device_file_name, device_t* ap_device);
 
@@ -1084,7 +1099,10 @@ public:
   void reset_ref_device(const string_type& a_ref_device_file_name,
     const device_options_t& a_ref_device);
   void unset_ref_device();
+  String get_device_name();
   String get_device_type() const;
+  String get_ref_device_name();
+  String get_ref_device_type() const;
   void reset_mxmultimeter_assembly();
   irs::handle_t<irs::mxmultimeter_assembly_t> make_mxmultimeter_assembly(
     const irs::string_t& a_device_name,

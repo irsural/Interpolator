@@ -26,7 +26,11 @@
 #include "debugdigitalinterpolator.h"
 #include "connectionlog.h"
 
+//#include <boost/filesystem/path.hpp>
+
 #include <irsfinal.h>
+
+#define debug_version_digital_interpolator
 //  Command bits
 //using namespace std;
 //---------------------------------------------------------------------------
@@ -217,7 +221,7 @@ private:
   std::vector<irs::matrix_t<cell_t> > mv_table;
   #ifdef  debug_version_digital_interpolator
   // Копия таблицы для обнаружения изменений основной таблицы
-  std::vector<irs::matrix_t<cell_t> > mv_fixed_table;
+  std::vector<irs::matrix_t<cell_t> > mv_saved_table;
   #endif
   int m_cur_col;
   int m_cur_row;
@@ -261,6 +265,8 @@ public:
   void create_subtable();
   void delete_subtable();
 
+  void create_new_table();
+
   void save_table_to_json_file(const string_type& a_file_name);
 
   void save_table_to_file(const string_type& a_file_name);
@@ -291,6 +297,7 @@ public:
   void clear_coord_special_cells();
   void set_file_namedir(String a_file_namedir);
   String get_file_namedir();
+  void clear_file_name();
   inline int table_count() const;
   inline int col_count() const;
   inline int row_count() const;
@@ -358,7 +365,7 @@ public:
   void restruct_date_type_1();
   // Возвращает true, если таблица не отличается от загруженной или сохраненной
   // в файл
-  inline bool no_modifi();
+  inline bool have_unsaved_changes() const;
   inline void set_inf_in_param(const inf_in_param_t& a_inf_in_param);
   // Инвертировать значения ячеек таблицы, не являющихся параметрическими
   void inversion_sign_conrent_table();
@@ -610,12 +617,13 @@ inline void table_data_t::reset_edit_mode_table()
   {mp_display_table->reset_edit_mode_table();}
 inline bool table_data_t::get_edit_mode_table()
   {return mp_display_table->get_edit_mode_table();}
-inline bool table_data_t::no_modifi()
+inline bool table_data_t::have_unsaved_changes() const
 {
-  #ifdef  debug_version_digital_interpolator
-  IRS_ASSERT((!m_table_modifi_stat) && (mv_table == mv_fixed_table));
+  return  (mv_table != mv_saved_table);
+  /*#ifdef  debug_version_digital_interpolator
+  IRS_ASSERT((!m_table_modifi_stat) && (mv_table == mv_saved_table));
   #endif
-  return (!m_table_modifi_stat);
+  return (!m_table_modifi_stat);*/
 }
 inline void table_data_t::set_inf_in_param(const inf_in_param_t& a_inf_in_param)
 {
@@ -955,6 +963,8 @@ struct config_calibr_t
 {
   typedef irs::string_t string_type;
   String type_meas;
+  String device_name;
+  String reference_device_name;
   String ip_adress;
   irs_u32 port;
   parametr1_t in_parametr1;
@@ -1061,15 +1071,21 @@ inline bool StrToNumber(const AnsiString& a_str, T& a_number)
 }
   */
 
-
+/*irs::string_t absolute_file_name_to_relative(
+  const irs::string_t& a_full_file_name,
+  const irs::string_t& a_base);
+  */
 class file_name_service_t
 {
 public:
+  typedef irs::char_t char_type;
   file_name_service_t();
   String get_config_ext() const;
   String get_config_dir() const;
   String get_multimeter_config_ext() const;
   String get_multimeter_config_dir() const;
+  String get_device_config_dir() const;
+  String get_device_config_ext() const;
   String make_config_full_file_name(String a_config_name)  const;
   String make_device_config_full_file_name(String a_config_name) const;
   String make_ref_device_config_full_file_name(String a_config_name) const;
@@ -1079,7 +1095,25 @@ public:
   String get_config_name(const String& a_full_file_name) const;
   String make_multimeter_config_full_file_name(String a_config_name)  const;
   void create_config_dir();
+
+  // Возвращает относительный путь, если возможно, в противном случае
+  // возвращает исходный путь
+  String make_relative_file_name(const String& a_full_file_name) const;
+
+  //! \brief Возвращает \с true, если полное имя файла относительное
+  //bool path_is_relative(const String& a_path);
+
+  //! \brief Возвращает абсолютный путь из директории программы
+  //!   и относительного пути
+  String make_absolute_path(const String& a_relative_path);
+
+  //! \brief Возвращает абсолютный путь, если передаваемый путь является
+  //!   относительным и возвращает его без изменений в противном случае
+  //String make_absolute_path_if_relative(const String& a_relative_path);
 private:
+  String ensure_dir_end(const String& a_dir);
+  char_type path_name_separator();
+  bool is_path_name_separator(const char_type a_ch);
   //рабочий каталог программы
   const String m_path_prog;
   //расширение файла конфигурации процесса калибровки
@@ -1091,6 +1125,8 @@ private:
   const String m_foldername_conf;
   // Имя каталога для конфигураций мультиметров
   const String m_multimeter_foldername_conf;
+  // Имя каталога для конфигураций устройств
+  const String m_device_foldername_conf;
   const String m_device_default_ext;
   const String m_device_grid_options_default_ext;
   const String m_device_suffix;
@@ -1442,6 +1478,7 @@ public:
   //void set_configuration(config_calibr_t a_config_calibr);
   void enable(config_calibr_t a_config_calibr);
   void disable();
+  String get_name();
   String get_type() const;
   data_map_t* get_data();
   irs::mxdata_t* get_mxdata();

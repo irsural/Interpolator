@@ -214,6 +214,10 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 { 
   std::vector<string_type> messages;
   m_name_config = NameConfigLE->Text;
+
+  m_config_calibr.device_name = DeviceNameComboBox->Text;
+  m_config_calibr.reference_device_name = RefDeviceNameComboBox->Text;
+
   //m_config_calibr.ip_adress = IPAdressLE->Text;
   /*if (!irs::cbuilder::str_to_number(PortLE->Text,  m_config_calibr.port)) {
     messages.push_back(irst("Неверно указан порт."));
@@ -653,9 +657,21 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 
     //String filename = m_path_prog + irst("\\") + m_foldername_conf +
       //irst("\\") + m_name_config + irst(".") + m_default_ext;
+
+    m_file_name_service.create_config_dir();
     const String filename =
       m_file_name_service.make_config_full_file_name(m_name_config);
     m_name_new_conf = m_name_config;
+
+    if (m_edit_mode == NEW_CONFIG) {
+      if (FileExists(filename)) {
+        if (!save_with_same_name_dialog()) {
+          m_on_close = false;
+          return;
+        }
+      }
+    }
+
     m_config_calibr.save(filename.c_str());
     m_on_close = true;
     /*bool on_create_file = true;
@@ -696,6 +712,24 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   }
 }
 
+bool TNewConfigF::save_with_same_name_dialog() const
+{
+  const int result = Application->MessageBox(
+    irst("Конфигурация с таким именем уже есть, перезаписать ее?"),
+    irst("Новая конфигурация"),
+    MB_YESNO + MB_ICONQUESTION);
+
+  switch (result) {
+    case mrYes: {
+      // Ничего не делаем
+    } break;
+    case mrNo: {
+      return false;
+    } break;
+  }
+  return true;
+}
+
 String TNewConfigF::get_config_full_file_name()
 {
   return make_config_full_file_name(NameConfigLE->Text);
@@ -719,19 +753,35 @@ String TNewConfigF::make_device_config_full_file_name(String a_config_name)
 void TNewConfigF::edit_config(const String& a_filename)
 {
   m_edit_mode = EXISTENT_CONFIG;
-  if (FileExists(a_filename)){
+  if (FileExists(a_filename)) {
+    load_devices_list();
     m_config_calibr.load(a_filename.c_str());
     //m_name_config = extract_short_filename(ExtractFileName(a_filename));
     m_name_config = m_file_name_service.get_config_name(a_filename);
     NameConfigLE->Text = m_name_config;
-    String type = mp_data_handing->get_device_type();
+
+    const String device_name = mp_data_handing->get_device_name();
+    DeviceNameComboBox->ItemIndex =
+      DeviceNameComboBox->Items->IndexOf(device_name);
+    const String type = mp_data_handing->get_device_type();
     DeviceComboBox->ItemIndex = DeviceComboBox->Items->IndexOf(type);
+
+    const String ref_device_name = mp_data_handing->get_ref_device_name();
+    RefDeviceNameComboBox->ItemIndex =
+      RefDeviceNameComboBox->Items->IndexOf(ref_device_name);
+    const String ref_type = mp_data_handing->get_ref_device_type();
+    RefDeviceComboBox->ItemIndex = RefDeviceComboBox->Items->IndexOf(ref_type);
+
     config_calibr_out_displ(m_config_calibr);
   }
 }
+
 void TNewConfigF::set_config_def()
 {
   m_edit_mode = NEW_CONFIG;
+
+  load_devices_list();
+
   config_calibr_t config_calibr_def;
   config_calibr_def.ip_adress = irst("192.168.0.200");
   config_calibr_def.port = 5005;
@@ -801,18 +851,18 @@ void TNewConfigF::set_config_def()
   config_calibr_def.delay_meas = 10;
   config_calibr_def.meas_interval = 0;
   config_calibr_def.count_reset_over_bit = 3;
-  config_calibr_def.active_filename = irst("");
+  config_calibr_def.active_filename = String();
 
   //String name_config = irst("NewConfig");
   String name_config = generate_new_unique_name(irst("Новая конфигурация"));
   m_name_config = name_config;
   NameConfigLE->Text = name_config;
-  String file_name = make_config_full_file_name(name_config);
-  //create_configurations_dir();
+  // Нет смысла сохранять
+  /*String file_name = make_config_full_file_name(name_config);
   m_file_name_service.create_config_dir();
   m_config_calibr.save(file_name.c_str());
-
   mp_data_handing->load_main_device(name_config);
+  */
 
   /*String device_cfg_file_name = make_device_config_full_file_name(name_config);
   irs::ini_file_t ini_file;
@@ -831,6 +881,38 @@ void TNewConfigF::set_config_def()
   */
 
   config_calibr_out_displ(config_calibr_def);
+}
+
+void TNewConfigF::load_devices_list()
+{
+  DeviceNameComboBox->Clear();
+  RefDeviceNameComboBox->Clear();
+
+  TSearchRec sr;
+  const String dir = m_file_name_service.get_device_config_dir();
+  const String ext = m_file_name_service.get_device_config_ext();
+
+  String filter = dir + String(irst("\\*")) + irst(".") + ext;
+  if (FindFirst(filter, faAnyFile, sr) == 0) {
+    const String name = m_file_name_service.get_config_name(sr.Name);
+    DeviceNameComboBox->Items->Add(name);
+    RefDeviceNameComboBox->Items->Add(name);
+    while (FindNext(sr) == 0) {
+      const String name = m_file_name_service.get_config_name(sr.Name);
+      DeviceNameComboBox->Items->Add(name);
+      RefDeviceNameComboBox->Items->Add(name);
+    }
+  }
+
+  FindClose(sr);
+
+  /* (DeviceNameComboBox->Items->Count > 0) {
+    DeviceNameComboBox->ItemIndex = 0;
+  }
+
+  if (RefDeviceNameComboBox->Items->Count > 0) {
+    RefDeviceNameComboBox->ItemIndex = 0;
+  } */
 }
 
 void TNewConfigF::save_configuration(String a_config_name)
@@ -1100,7 +1182,7 @@ void TNewConfigF::config_calibr_out_displ(
 
 
   ReferenceChannelCheckB->Checked = a_config_calibr.reference_channel.enabled;
-  update_ref_device_options_enabled();
+  update_ref_device_options();
   //IPAdressRefChannelLE->Text = a_config_calibr.reference_channel.ip_adress;
   /*PortRefChannelLE->Text = num_to_cbstr(
     a_config_calibr.reference_channel.port);*/
@@ -1120,22 +1202,47 @@ void __fastcall TNewConfigF::FormClose(TObject *Sender,
 
 void __fastcall TNewConfigF::ReferenceChannelCheckBClick(TObject *Sender)
 {
-  if (ReferenceChannelCheckB->Checked == true){
-    mp_data_handing->load_ref_device(m_name_config);
+  if (ReferenceChannelCheckB->Checked == true) {
+    update_ref_device();
+    //mp_data_handing->load_ref_device(m_name_config);
   }
-  update_ref_device_options_enabled();
+  update_ref_device_options();
 }
 
-void TNewConfigF::update_ref_device_options_enabled()
+void TNewConfigF::update_ref_device_options()
 {
-  if (ReferenceChannelCheckB->Checked == true){
+  if (ReferenceChannelCheckB->Checked == true) {
+    RefDeviceNameComboBox->Enabled = true;
     RefDeviceComboBox->Enabled = true;
     ChangeRefDeviceConfigButton->Enabled = true;
   } else {
+    RefDeviceNameComboBox->Enabled = false;
     RefDeviceComboBox->Enabled = false;
     ChangeRefDeviceConfigButton->Enabled = false;
   }
 }
+
+void TNewConfigF::update_main_device()
+{
+  const String device_name = DeviceNameComboBox->Text;
+  //m_config_calibr.device_name = device_name;
+  const String type = DeviceComboBox->Text;
+  mp_data_handing->change_main_device_type(device_name, type);
+}
+
+void TNewConfigF::update_ref_device()
+{
+  const String device_name = RefDeviceNameComboBox->Text;
+  //m_config_calibr.reference_device_name = device_name;
+  const String type = RefDeviceComboBox->Text;
+  mp_data_handing->change_ref_device_type(device_name, type);
+
+  // Тип может быть не задан пользователем,
+  // тогда после создания устройства мы берем тип, который задан по умолчанию
+  const String ref_type = mp_data_handing->get_ref_device_type();
+  RefDeviceComboBox->ItemIndex = RefDeviceComboBox->Items->IndexOf(ref_type);
+}
+
 //---------------------------------------------------------------------------
 
 void __fastcall TNewConfigF::CSpinEdit1Change(TObject *Sender)
@@ -1245,49 +1352,29 @@ void __fastcall TNewConfigF::ChangeNameButtonClick(TObject *Sender)
   m_name_config = NameConfigLE->Text;
   const String cur_file_name =
     m_file_name_service.make_config_full_file_name(m_name_config);
-  const String cur_device_cfg_file_name =
-    m_file_name_service.make_device_config_full_file_name(m_name_config);
-  const String cur_grid_opt_file_name =
-    m_file_name_service.make_device_grid_config_full_name(m_name_config);
-
   String new_config_name = m_name_config;
   while (InputQuery(irst("Введите имя"), irst("Имя конфигурации"),
       new_config_name)) {
     const String new_cfg_file_name =
       m_file_name_service.make_config_full_file_name(new_config_name);
-    const String new_device_cfg_file_name =
-      m_file_name_service.make_device_config_full_file_name(new_config_name);
-    const String new_grid_opt_file_name =
-      m_file_name_service.make_device_grid_config_full_name(new_config_name);
 
-    if(FileExists(new_cfg_file_name) || FileExists(new_device_cfg_file_name)
-        || FileExists(new_grid_opt_file_name)){
+    if (FileExists(new_cfg_file_name)) {
       Application->MessageBox(
         irst("Конфигурация с указанным именем уже существует, ")
         irst("введите другое имя"),
         irst("Имя конфигурации"),
         MB_OK + MB_ICONINFORMATION);
     } else {
-      if (!RenameFile(cur_file_name, new_cfg_file_name)) {
-        Application->MessageBox(irst("Переименовать файл не удалось"),
-          irst("Ошибка"), MB_OK + MB_ICONERROR);
-        break;
+      if (m_edit_mode == EXISTENT_CONFIG) {
+        if (!RenameFile(cur_file_name, new_cfg_file_name)) {
+          Application->MessageBox(irst("Переименовать файл не удалось"),
+            irst("Ошибка"), MB_OK + MB_ICONERROR);
+          break;
+        }
       }
-      if (!RenameFile(cur_device_cfg_file_name, new_device_cfg_file_name)) {
-        Application->MessageBox(irst("Переименовать файл не удалось"),
-          irst("Ошибка"), MB_OK + MB_ICONERROR);
-        break;
-      }
-      RenameFile(cur_grid_opt_file_name, new_grid_opt_file_name);
 
       m_name_config = new_config_name;
       NameConfigLE->Text = new_config_name;
-      mp_data_handing->load_main_device(m_name_config);
-
-      // tstlan при уничтожении восстанавливает файл. Удаляем его еще раз
-      DeleteFile(cur_device_cfg_file_name);
-      DeleteFile(cur_grid_opt_file_name);
-
       break;
     }
   }
@@ -1317,24 +1404,42 @@ void __fastcall TNewConfigF::ChangeDeviceConfigButtonClick(TObject *Sender)
 
 void __fastcall TNewConfigF::DeviceComboBoxChange(TObject *Sender)
 {
-  String name_config = NameConfigLE->Text;
-  String type = DeviceComboBox->Text;
-  mp_data_handing->change_main_device_type(name_config, type);
+  //String name_config = NameConfigLE->Text;
+  update_main_device();
 }
+
 //---------------------------------------------------------------------------
 
 
 void __fastcall TNewConfigF::ExitButtonClick(TObject *Sender)
 {
-  if (m_edit_mode == NEW_CONFIG) {
+  /*if (m_edit_mode == NEW_CONFIG) {
     mp_data_handing->delete_device_config(m_name_config);
-  }
+  }*/
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TNewConfigF::ChangeRefDeviceConfigButtonClick(TObject *Sender)
 {
   mp_data_handing->show_ref_device_options();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::DeviceNameComboBoxChange(TObject *Sender)
+{
+  update_main_device();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::RefDeviceNameComboBoxChange(TObject *Sender)
+{
+  update_ref_device();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::RefDeviceComboBoxChange(TObject *Sender)
+{
+  update_ref_device();
 }
 //---------------------------------------------------------------------------
 

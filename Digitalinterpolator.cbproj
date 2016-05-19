@@ -65,12 +65,12 @@
         <BCC_wpch>false</BCC_wpch>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <BCC_wpar>false</BCC_wpar>
-        <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;IRS_USE_JSON_CPP=1;$(Defines)</Defines>
+        <Defines>IRS_USE_DEV_EXPRESS=1;IRS_USE_HID_WIN_API=1;IRS_USE_JSON_CPP=1;IRS_USE_BOOST=1;$(Defines)</Defines>
         <Manifest_File>None</Manifest_File>
         <ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
-        <VerInfo_Build>30</VerInfo_Build>
-        <VerInfo_MinorVer>3</VerInfo_MinorVer>
-        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.3.0.30;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
+        <VerInfo_Build>31</VerInfo_Build>
+        <VerInfo_MinorVer>4</VerInfo_MinorVer>
+        <VerInfo_Keys>CompanyName=ИРС;FileDescription=;FileVersion=1.4.0.31;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.2.0.26;Comments=Программа автокалибровки приборов.</VerInfo_Keys>
         <IncludePath>..\mxsrclib\;..\mxsrclib\arch\cbuilder\;..\extern_libs\winapi\hid\;..\extern_libs\jsoncpp\include;..\extern_libs\jsoncpp\src\lib_json\;$(IncludePath)</IncludePath>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1049</VerInfo_Locale>
@@ -98,6 +98,8 @@
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <VerInfo_MinorVer>2</VerInfo_MinorVer>
+        <VerInfo_Build>29</VerInfo_Build>
         <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve</BCC_UserSuppliedOptions>
         <IncludePath>$(BDSINCLUDE)\windows\vcl;$(IncludePath)</IncludePath>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -126,7 +128,7 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.4.0.31;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <BCC_UserSuppliedOptions> -tWM -a4 -wpin -wdef -wstl -wamp -wbbf -wcln -wucp -Vx -wamb -wasm -r- -k -wprc -Ve -k</BCC_UserSuppliedOptions>
         <BCC_Defines>_DEBUG;$(BCC_Defines);$(BCC_Defines)</BCC_Defines>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
@@ -143,6 +145,8 @@
         <DCC_AdditionalSwitches> -M -$O+</DCC_AdditionalSwitches>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <VerInfo_MinorVer>2</VerInfo_MinorVer>
+        <VerInfo_Build>29</VerInfo_Build>
         <LinkPackageStatics>rtl.lib;vcl.lib;vclx.lib;bcbsmp.lib;xmlrtl.lib;inet.lib;vclactnband.lib;VclSmp.lib;cxGridRS17.lib;dxLayoutControlRS17.lib;cxPageControlRS17.lib;cxLibraryRS17.lib;dxGDIPlusRS17.lib;dxCoreRS17.lib;dxThemeRS17.lib;cxEditorsRS17.lib;cxDataRS17.lib;dbrtl.lib;vclimg.lib;vcldb.lib;dxComnRS17.lib;cxExportRS17.lib;dxServerModeRS17.lib</LinkPackageStatics>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.2.0.29;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>

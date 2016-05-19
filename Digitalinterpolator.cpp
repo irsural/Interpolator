@@ -6,16 +6,16 @@
 //#include "irsdigint.h"
 #include <timer.h>
 //#include <irsstd.h>
+USEFORM("managerf.cpp", ManagerDGIF);
 USEFORM("modifidatatable.cpp", ModifiDataTableF);
 USEFORM("newconfig.cpp", NewConfigF);
-USEFORM("managerf.cpp", ManagerDGIF);
 USEFORM("optionsoptimize.cpp", OptionsF);
-USEFORM("showmessages.cpp", MessagesForm);
-USEFORM("connectionlog.cpp", ConnectionLogForm);
-USEFORM("copytable.cpp", CopyTableForm);
 USEFORM("About.cpp", AboutForm);
 USEFORM("addcolrow.cpp", AddCorRowF);
 USEFORM("datahandling.cpp", DataHandlingF);
+USEFORM("connectionlog.cpp", ConnectionLogForm);
+USEFORM("copytable.cpp", CopyTableForm);
+USEFORM("showmessages.cpp", MessagesForm);
 //---------------------------------------------------------------------------
 WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
@@ -34,7 +34,6 @@ WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
      Application->CreateForm(__classid(TMessagesForm), &MessagesForm);
      Application->CreateForm(__classid(TAboutForm), &AboutForm);
      Application->CreateForm(__classid(TConnectionLogForm), &ConnectionLogForm);
-     Application->CreateForm(__classid(TDataHandlingF), &DataHandlingF);
      Application->Run();
   }
   catch (Exception &exception)

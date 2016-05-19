@@ -11,6 +11,8 @@
 //#include "mathv.h"
 #include <irsfinal.h>
 
+//#include <boost/filesystem/path.hpp>
+//#include <boost/filesystem/operations.hpp>
 
 
 //---------------------------------------------------------------------------
@@ -38,7 +40,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_log(LogMemo, irst("Log.txt")),
   m_log_message(&m_log),
   mp_manager_channel(ap_manager_channel),
-  mp_options_form(new TOptionsF(0)),
+  //mp_options_form(new TOptionsF(0)),
   m_value_meas(),
   //m_foldername_conf(irst("configuration")),
   //m_default_ext(irst("cpc")),
@@ -58,7 +60,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_device_chart(10000, 1000,
     irs::chart::builder_chart_window_t::stay_on_top_off),
   m_device(&m_device_chart, &m_file_name_service),
-  mp_ref_device(NULL),
+  //mp_ref_device(NULL),
   m_ref_device(&m_device_chart, &m_file_name_service),
   //m_mxnet(a_num_mxifa_mxnetc),
   //m_mxnet_data(&m_mxnet, MS_TO_CNT(2000)),
@@ -74,6 +76,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_load_conf_calibr_device_success(false),
   m_bad_cells(false),
   m_on_block_reconfiguration(false),
+  m_cur_index_conf_calibr(0),
   m_cur_filename_conf_calibr_device(""),
 
   m_on_write_data_eeprom(false),
@@ -155,8 +158,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_previous_time_meas_sec(0.0),
   m_status_copy_table(OFF_COPY),
   table_string_grid1(RawDataStringGrid),
-  m_table_raw_data(&table_string_grid1,
-    "Таблица исходных значений"),
+  m_table_raw_data(&table_string_grid1, "Таблица исходных значений"),
   m_table_data_size(&m_table_raw_data),
   m_manager_traffic_cell(&m_table_data_size),
   mp_active_table(&m_table_raw_data),
@@ -246,14 +248,136 @@ __fastcall TDataHandlingF::TDataHandlingF(
   set_setting_for_type_jump_next_cell(m_str_type_jump_next_elem);
   AutoUpdateChartAction->Checked = m_chart.on_auto_update;
 
+  load_config_calibr();
   set_connect_if_enabled();
 
   init_to_cnt();
   m_timer_chart_auto_update.start();
   m_exec_progress.hide();
   m_exec_progress.clear();
-  FileOpen->Enabled;  
+  FileOpen->Enabled;
+
+  // Проверка
+ /* namespace fs = boost::filesystem;
+
+  //fs::wpath wp(L"C:\\Temp\\temp_prog\\1.txt", fs::native);
+  //std::wstring a1 = wp.native_file_string();
+
+  {
+    irs::string_t p(L"..\\..\\..\\file\\1.txt");
+    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
+    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
+    int a = 0;
+  }
+
+  {
+    irs::string_t p(L"C:\\Temp\\progs\\myprog\\file\\1.txt");
+    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
+    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
+    int a = 0;
+  }
+  {
+    irs::string_t p(L"");
+    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
+    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
+    int a = 0;
+  }    */
+
+  /*{
+    fs::wpath p(L"..\\..\\file\\1.txt", fs::native);
+    fs::wpath base(L"C:\\Temp\\progs\\myprog\\", fs::native);
+    fs::wpath c = fs::complete(p, base);
+    int a = 0;
+  } */
+
+  /*{
+    std::string n = typeid(fs::wpath::value_type).name();
+
+    fs::wpath p(L"C:\\Temp\\temp_prog\\1.txt", fs::native);
+    fs::wpath::iterator it = p.begin();
+    while (it != p.end()) {
+      std::wstring elem = *it;
+      ++it;
+    }
+    bool relative = p.has_relative_path();
+    std::wstring root_dir = p.root_directory();
+    std::wstring root_name = p.root_name();
+    std::wstring p_s = p.native_file_string();
+    fs::wpath rp = p.relative_path();
+    std::wstring rp_r = rp.native_file_string();
+    int a = 0;
+  }
+  {
+    fs::wpath p(L".\\Temp\\temp_prog\\1.txt", fs::native);
+    bool relative = p.has_relative_path();
+    std::wstring root_dir = p.root_directory();
+    std::wstring root_name = p.root_name();
+    std::wstring p_s = p.native_file_string();
+    fs::wpath rp = p.relative_path();
+    std::wstring rp_r = rp.native_file_string();
+    int a = 0;
+  }
+  {
+    fs::wpath p(L"\\\\5-10\\dev\\Programs1\\prog.exe", fs::native);
+    fs::wpath::iterator it = p.begin();
+    while (it != p.end()) {
+      fs::wpath p = *it;
+      std::wstring pns = p.native_file_string();
+      std::wstring elem = *it;
+      ++it;
+    }
+    bool relative = p.has_relative_path();
+    std::wstring root_dir = p.root_directory();
+    std::wstring root_name = p.root_name();
+    //std::wstring root_name2 = p.root().native_directory_string();
+
+    fs::wpath root_n(root_name);
+    std::wstring native_root_name = root_n.native_file_string();
+    std::wstring p_s = p.native_file_string();
+    fs::wpath rp = p.relative_path();
+    std::wstring rp_r = rp.native_file_string();
+    int a = 0;
+  }
+
+  {
+    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\"));
+    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
+    int a = 0;
+  }
+  {
+    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
+    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
+    int a = 0;
+  }
+  {
+    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\file\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
+    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
+    int a = 0;
+  }
+  {
+    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\..\\..\\file\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
+    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
+    int a = 0;
+  }
+  {
+    irs::string_t absolute(irst("C:\\Temp\\..\\Temp\\..\\Temp\\temp_prog\\file\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
+    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
+    int a = 0;
+  }*/
+  /*{
+    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
+    irs::string_t base(irst("C:\\Temp\\"));
+    irs::string_t relative = irs::absolute_path_to_relative(absolute, base);
+    int a = 0;
+  } */
 }
+
+
 
 void TDataHandlingF::load_multimeters_list()
 {
@@ -330,8 +454,13 @@ void TDataHandlingF::load_config_calibr_to_display()
 void TDataHandlingF::select_config(const String& a_config_name)
 {
   const int index = ConfigCB->Items->IndexOf(a_config_name);
-  if (index >= 0) {
-    ConfigCB->ItemIndex = index;
+  select_config(index);
+}
+
+void TDataHandlingF::select_config(int a_index)
+{
+  if ((a_index >= 0) && (a_index < ConfigCB->Items->Count)) {
+    ConfigCB->ItemIndex = a_index;
   } else {
     ConfigCB->ItemIndex = 0;
   }
@@ -344,6 +473,17 @@ String TDataHandlingF::get_selected_config()
   }
   return String();
 }
+
+String TDataHandlingF::get_selected_config_filename() const
+{
+  const int index_file = ConfigCB->ItemIndex;
+  const int file_count = static_cast<int>(mv_list_config_calibr.size());
+  if((index_file >= 0) && (index_file < file_count)) {
+    return mv_list_config_calibr[index_file];
+  }
+  return String();
+}
+
 //загрузка конфигурации калибровки
 void TDataHandlingF::load_config_calibr()
 {
@@ -352,13 +492,13 @@ void TDataHandlingF::load_config_calibr()
   m_load_conf_calibr_device_success = false;
   int index_file = ConfigCB->ItemIndex;
   // если выбран файл
-  if(index_file >= 0){
-  // если файл существует
+  if (index_file >= 0) {
+    // если файл существует
     String filename_conf = mv_list_config_calibr[index_file];
-    if(FileExists(filename_conf)){
+    if (FileExists(filename_conf)) {
       //m_conf_device_ini_file.set_ini_name(filename_conf);
       //m_conf_device_ini_file.load();
-
+      m_cur_index_conf_calibr = index_file;
       m_cur_filename_conf_calibr_device = filename_conf.c_str();
       m_conf_calibr_buf.load(m_cur_filename_conf_calibr_device.c_str());
       m_config_calibr = m_conf_calibr_buf;
@@ -383,18 +523,28 @@ void TDataHandlingF::load_config_calibr()
       //m_log << (irst("Порт устройства ") +
         //irs::str_conv<String>(irs::num_to_str(m_config_calibr.port)));
 
-      const String config_name = ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+      load_devices();
+      //const String config_name = ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+      /*const String config_name = m_config_calibr.device_name;
       if (is_main_device_config_exists(config_name)) {
         load_main_device(config_name);
       } else {
-        create_main_device_config_from_old(config_name, irst("mxnet"),
-          m_config_calibr);
-      }
+        if (!config_name.IsEmpty()) {
+          m_log << irst("Конфигурация устройства отсутствует");
+        }
+        //create_main_device_config_from_old(config_name, irst("mxnet"),
+          //m_config_calibr);
+      }*/
 
       /*m_mxnet.set_dest_port(m_config_calibr.port);
       mxip_t ip = {{192, 168, 0, 38}};
       str_to_mxip(m_config_calibr.ip_adress, &ip);
       m_mxnet.set_dest_ip(ip);*/
+
+      //m_cur_config_device = m_config_calibr.device_name;
+
+      //m_cur_config_device = extract_short_filename(
+        //ExtractFileName(mv_list_config_calibr[index_file]));
 
       type_meas_t type_meas = tm_volt_dc;
       IRS_ASSERT(
@@ -423,18 +573,20 @@ void TDataHandlingF::load_config_calibr()
 
       //m_on_mismatch_state = m_config_calibr.mismatch_mode;
       //mismatch_mode_change_stat(m_on_mismatch_state);
-      m_cur_config_device = extract_short_filename(
-        ExtractFileName(mv_list_config_calibr[index_file]));
+
 
       mp_active_table->set_inf_in_param(m_inf_in_param);
 
-      // загрузка последнего активного файла
-      String file_namedir = m_config_calibr.active_filename;
-      if(FileExists(file_namedir)){
+      // Загрузка последнего активного файла
+      String file_namedir = m_file_name_service.make_absolute_path(
+        m_config_calibr.active_filename);
+
+      if (FileExists(file_namedir)) {
         mp_active_table->set_file_namedir(file_namedir);
         mp_active_table->load_table_from_file(file_namedir.c_str());
-      }else{
-        mp_active_table->clear_table_def();
+      } else {
+        mp_active_table->clear_file_name();
+        mp_active_table->create_new_table();
       }
       Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 
@@ -471,14 +623,16 @@ void TDataHandlingF::load_config_calibr()
 
       // загрузка конфигурации опорного канала
       if (m_config_calibr.reference_channel.enabled) {
-        const String config_name =
-          ConfigCB->Items->Strings[ConfigCB->ItemIndex];
+        /*const String config_name = m_config_calibr.reference_device_name;
         if (is_ref_device_config_exists(config_name)) {
           load_ref_device(config_name);
         } else {
-          create_ref_device_config_from_old(config_name, irst("mxnet"),
-            m_config_calibr);
-        }
+          if (!config_name.IsEmpty()) {
+            m_log << irst("Конфигурация устройства отсутствует");
+          }
+          //create_ref_device_config_from_old(config_name, irst("mxnet"),
+            //m_config_calibr);
+        }*/
 
 
 
@@ -515,59 +669,41 @@ void TDataHandlingF::set_connect_if_enabled(bool a_forced_connect)
 {
   if (ConnectAction->Checked) {
     set_connect_calibr_device(a_forced_connect);
-  } else {
+  }/* else {
     load_config_calibr();
-  }
+  }*/
 }
 
 void TDataHandlingF::set_connect_calibr_device(
   bool a_forced_connect)
 {
-  if((!m_on_block_reconfiguration) || (a_forced_connect == true)){
+  if ((!m_on_block_reconfiguration) || (a_forced_connect == true)) {
     int index_file = ConfigCB->ItemIndex;
     if (index_file >= 0) {
-      const String select_config_device = extract_short_filename(
-        ExtractFileName(mv_list_config_calibr[index_file]));
+
+      load_config_calibr();
+
       bool reset_connect = false;
-      if ((m_cur_config_device != select_config_device) || (a_forced_connect)) {
+      if (a_forced_connect) {
         reset_connect = true;
       }
+      m_cur_config_device = m_config_calibr.device_name;
+
       if (!m_device.created()) {
         reset_connect = true;
       }
       if (reset_connect) {
+        load_devices();
+        //m_cur_config_device = select_config_device;
+        // В этой функции пересоздается устройство
+        //load_config_calibr();
         m_log << irst("Установка соединения с устройством");
-        m_cur_config_device = select_config_device;
-        load_config_calibr();
       }
       m_device.enable(m_config_calibr);
       if (m_config_calibr.reference_channel.enabled) {
-        //mp_ref_device->mxdata_assembly->enabled(true);
         m_ref_device.enable(m_config_calibr_ref_channel);
       }
       m_on_reset_functional_bits = true;
-      #ifdef NOP
-      if((m_cur_config_device != select_config_device) || (a_forced_connect)){
-        m_log << irst("Установка соединения с устройством");
-        m_cur_config_device = select_config_device;
-        load_config_calibr();
-
-
-        m_device.mxdata_assembly->enabled(true);
-        if (m_config_calibr.reference_channel.enabled) {
-          mp_ref_device->mxdata_assembly->enabled(true);
-        }
-        /*if (m_device.mxdata_assembly->enabled()) {
-          m_data_map.connect(m_device.mxdata_assembly->mxdata(),
-            m_config_calibr);
-        }
-
-        if (m_config_calibr.reference_channel.enabled) {
-          mp_data_map_ref_channel->connect(
-            mp_mxnet_data_ref_channel.get(), m_config_calibr_ref_channel);
-        }*/
-      }
-      #endif // NOP
     }
   }
 }
@@ -931,7 +1067,7 @@ void TDataHandlingF::tick()
         status_connect = CONNECT;
       } break;
     }
-    switch(m_status_options)
+    /*switch(m_status_options)
     {
       case OFF_PROCESSING:{
         m_status_options = mp_options_form->status_options();
@@ -952,7 +1088,7 @@ void TDataHandlingF::tick()
         mp_options_form->reset_status_options();
         m_status_options = OFF_PROCESSING;
       } break;
-    }
+    } */
   }//if(m_load_conf_calibr_device_success)
   else {
     CurrentStatusLabeledEdit->Font->Color = clBlack;
@@ -972,6 +1108,15 @@ void TDataHandlingF::tick()
   //mp_active_table->no_modifi();
   #endif
   tick_calibr_data();
+
+  if (ShowMeasPointChartAction->Checked) {
+    // Если пользователь закрыл окно, удаляем объект графика и
+    // сбрасываем галочку в меню
+    if (!mp_meas_point_chart->visible()) {
+      mp_meas_point_chart.reset();
+      ShowMeasPointChartAction->Checked = false;
+    }
+  }
 }
 
 void TDataHandlingF::eeprom_tick()
@@ -2440,7 +2585,6 @@ void TDataHandlingF::unset_ref_channel()
 }
 bool TDataHandlingF::get_on_close_form_stat()
 {
-
   bool on_close_form_stat = m_on_close_form_stat;
   m_on_close_form_stat = false;
   return on_close_form_stat;
@@ -2672,11 +2816,11 @@ void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
 {
   String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
-  if(!file_namedir.IsEmpty()){
+  if (!file_namedir.IsEmpty()) {
     mp_active_table->save_table_to_file(file_namedir.c_str());
     mp_active_table->save_table_to_m_file(file_namedir.c_str());
     //mp_active_table->save_table_to_json_file(file_namedir.c_str());
-  }else{
+  } else {
     FileSaveAs->Execute();
   }
 }
@@ -2688,7 +2832,8 @@ void __fastcall TDataHandlingF::FileSaveAsAccept(TObject *Sender)
   file_namedir = FileSaveAs->Dialog->FileName;
   mp_active_table->set_file_namedir(file_namedir);
   mp_active_table->save_table_to_file(file_namedir.c_str());
-  m_config_calibr.active_filename = file_namedir;
+  m_config_calibr.active_filename =
+    m_file_name_service.make_relative_file_name(file_namedir);
   Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 }
 //---------------------------------------------------------------------------
@@ -2708,11 +2853,14 @@ void __fastcall TDataHandlingF::FileSaveAsBeforeExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 {
-  String file_namedir;
-  file_namedir = mp_active_table->get_file_namedir();
-  if(!file_namedir.IsEmpty()){
-    mp_active_table->load_table_from_file(file_namedir.c_str());
-  }else{
+  if (!save_unsaved_changes_dialog()) {
+    return;
+  }
+  String filename;
+  filename = mp_active_table->get_file_namedir();
+  if(!filename.IsEmpty()) {
+    mp_active_table->load_table_from_file(filename.c_str());
+  } else {
     FileOpen->Execute();
   }
 }
@@ -2724,7 +2872,8 @@ void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
   file_namedir = FileOpen->Dialog->FileName;
   mp_active_table->set_file_namedir(file_namedir);
   mp_active_table->load_table_from_file(file_namedir.c_str());
-  m_config_calibr.active_filename = file_namedir;
+  m_config_calibr.active_filename =
+    m_file_name_service.make_relative_file_name(file_namedir);
   Caption = m_prog_name + String(irst(" - "))+file_namedir;
 }
 //---------------------------------------------------------------------------
@@ -2908,16 +3057,20 @@ void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
 
 void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 {
+  if (!save_unsaved_changes_dialog()) {
+    return;
+  }
+
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << irst("1Текущая конфигурация успешно сохранена.");
+      m_log << irst("Текущая конфигурация успешно сохранена.");
     }
   }
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
   //config_form->set_path_program(m_path_prog);
   config_form->set_config_def();
   //load_config_calibr_to_display();
-  if(config_form->Visible == false){
+  if (config_form->Visible == false) {
     int button_result = config_form->ShowModal();
     if (button_result == mrOk) {
       m_on_block_reconfiguration = true;
@@ -2937,6 +3090,7 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
           ConfigCB->ItemIndex = index_pos_text;
         }
       }
+      load_config_calibr();
       bool forsed_connect = true;
       // устанавливаем принудительно реконнект
       set_connect_if_enabled(forsed_connect);
@@ -2946,16 +3100,21 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
 {
+  if (!save_unsaved_changes_dialog()) {
+    return;
+  }
+
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
       m_log << irst("Текущая конфигурация успешно сохранена.");
     }
   }
+
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
   //config_form->set_path_program(m_path_prog);
   if(config_form->Visible == false) {
     int index = ConfigCB->ItemIndex;
-    if(index >= 0) {
+    if (index >= 0) {
       config_form->edit_config(mv_list_config_calibr[index]);
       int button_result = config_form->ShowModal();
       if (button_result == mrOk) {
@@ -2976,6 +3135,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
             ConfigCB->ItemIndex = index_pos_text;
           }
         }
+        load_config_calibr();
         const bool forsed_connect = true;
         // устанавливаем принудительно реконнект
         set_connect_if_enabled(forsed_connect);
@@ -3002,13 +3162,20 @@ void __fastcall TDataHandlingF::CloseFormButtonClick(TObject *Sender)
 
 void __fastcall TDataHandlingF::FormClose(TObject *Sender,
       TCloseAction &Action)
-{  
+{
   m_main_opt_ini_file.save();
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
   //save_cur_config_device();
+
   if (m_mode_program == mode_prog_single_channel) {
-    m_on_close_form_stat = true;
+    if (save_unsaved_changes_dialog()) {
+      m_on_close_form_stat = true;
+    } else {
+      Action = caNone;
+    }
+    //m_on_close_form_stat = true;
   }
+  //Action = caNone;
 }
 //---------------------------------------------------------------------------
 
@@ -3028,8 +3195,18 @@ void __fastcall TDataHandlingF::Panel1Resize(TObject *Sender)
 
 void __fastcall TDataHandlingF::ConfigCBChange(TObject *Sender)
 {
-  m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
-  set_connect_if_enabled();
+  const String new_selected_cfg = get_selected_config_filename();
+  if (m_cur_filename_conf_calibr_device != new_selected_cfg) {
+    m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
+    if (save_unsaved_changes_dialog()) {
+      load_config_calibr();
+      set_connect_if_enabled();
+    } else {
+      // Возвращаем предыдущий выбранный конфиг, так как пользователь отменил
+      // действие
+      select_config(m_cur_index_conf_calibr);
+    }
+  }
 }
 //---------------------------------------------------------------------------
 
@@ -3191,24 +3368,35 @@ void TDataHandlingF::out_message_log_cur_param_cell(
   }
   m_log << message_param.c_str();
 }
-bool TDataHandlingF::save_dirty_data()
+bool TDataHandlingF::save_unsaved_changes_dialog()
 {
   bool fsuccess = true;
-  if (!(mp_active_table->no_modifi())) {
-    MessageDlg("The list has ",
-      mtInformation, TMsgDlgButtons(), 0);
-    int status = MessageDlg(
-      "Сохранить изменения в файл?",
-      mtConfirmation,
-      TMsgDlgButtons() << mbYes << mbNo << mbCancel,
-      0);
-    switch (status) {
+  if (mp_active_table->have_unsaved_changes()) {
+
+    string_type filename =
+      irs::str_conv<string_type>(mp_active_table->get_file_namedir());
+    if (!filename.empty()) {
+      filename = string_type(irst(" \"")) + filename + irst("\"");
+    }
+    const string_type message =
+      irst("Сохранить изменения в таблице данных") + filename + irst("?");
+
+    const string_type caption = irs::str_conv<string_type>(m_prog_name);
+
+    const int result = Application->MessageBox(
+      message.c_str(),
+      caption.c_str(),
+      MB_YESNOCANCEL + MB_ICONQUESTION);
+
+    switch (result) {
       case mrYes: {
-        FileSave->OnExecute;
-        if (mp_active_table->no_modifi())
-          fsuccess = true;
-        else
+        int a = 0;
+        FileSave->Execute();
+        if (mp_active_table->have_unsaved_changes()) {
           fsuccess = false;
+        } else {
+          fsuccess = true;
+        }
       } break;
       case mrNo: {
         fsuccess = true;
@@ -3459,6 +3647,10 @@ void TDataHandlingF::set_value_default_extra_params()
 
 void TDataHandlingF::set_value_working_extra_bits()
 {
+  if (!m_device.connected()) {
+    //m_log << "Устройство не подключено, не можем записать значения битов";
+    return;
+  }
   int bit_type2_count = m_config_calibr.bit_type2_array.size();
   int extra_bit_count = m_device.get_data()->v_extra_bit.size();
   if (bit_type2_count == extra_bit_count) {
@@ -3475,9 +3667,13 @@ void TDataHandlingF::set_value_working_extra_bits()
 }
 void TDataHandlingF::set_value_default_extra_bits()
 {
+  if (!m_device.connected()) {
+    //m_log << "Устройство не подключено, не можем записать значения битов";
+    return;
+  }
   int bit_type2_count = m_config_calibr.bit_type2_array.size();
   int extra_bit_count = m_device.get_data()->v_extra_bit.size();
-  IRS_ASSERT(bit_type2_count == extra_bit_count);
+  //IRS_ASSERT(bit_type2_count == extra_bit_count);
   if (bit_type2_count == extra_bit_count) {
     for (int i = 0; i < extra_bit_count; i++) {
       m_device.get_data()->v_extra_bit[i] =
@@ -3503,12 +3699,44 @@ void TDataHandlingF::show_ref_device_options()
   }
 }
 
+void TDataHandlingF::load_devices()
+{
+  load_main_device();
+  if (m_config_calibr.reference_channel.enabled) {
+    load_ref_device();
+  }
+}
+
+void TDataHandlingF::load_main_device()
+{
+  const String config_name = m_config_calibr.device_name;
+  if (is_main_device_config_exists(config_name)) {
+    load_main_device(config_name);
+  } else {
+    if (!config_name.IsEmpty()) {
+      m_log << irst("Конфигурация устройства отсутствует");
+    }
+  }
+}
+
+void TDataHandlingF::load_ref_device()
+{
+  const String config_name = m_config_calibr.reference_device_name;
+  if (is_ref_device_config_exists(config_name)) {
+    load_ref_device(config_name);
+  } else {
+    if (!config_name.IsEmpty()) {
+      m_log << irst("Конфигурация устройства отсутствует");
+    }
+  }
+}
+
 void TDataHandlingF::load_main_device(const String& a_config_name)
 {
-  if (a_config_name != get_selected_config()) {
+  /*if (a_config_name != get_selected_config()) {
     load_config_calibr_to_display();
     select_config(a_config_name);
-  }
+  }*/
 
   String device_file_name =
     m_file_name_service.make_device_config_full_file_name(a_config_name);
@@ -3519,10 +3747,10 @@ void TDataHandlingF::load_main_device(const String& a_config_name)
 
 void TDataHandlingF::load_ref_device(const String& a_config_name)
 {
-  if (a_config_name != get_selected_config()) {
+  /*if (a_config_name != get_selected_config()) {
     load_config_calibr_to_display();
     select_config(a_config_name);
-  }
+  }*/
 
   String ref_device_file_name =
     m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
@@ -3609,29 +3837,16 @@ void TDataHandlingF::delete_device_config(const String& a_config_name)
     const String cur_config_name =
       ConfigCB->Items->Strings[ConfigCB->ItemIndex];
     if (a_config_name == cur_config_name) {
-      //unset_main_device();
       m_device.reset();
     }
   }
   const String cfg_file_name =
     m_file_name_service.make_config_full_file_name(a_config_name);
-  const String device_cfg_file_name =
-    m_file_name_service.make_device_config_full_file_name(a_config_name);
-  const String grid_opt_file_name =
-    m_file_name_service.make_device_grid_config_full_name(a_config_name);
-
-  const String ref_device_cfg_file_name =
-    m_file_name_service.make_ref_device_config_full_file_name(a_config_name);
-  const String ref_grid_opt_file_name =
-    m_file_name_service.make_ref_device_grid_config_full_name(a_config_name);
 
   DeleteFile(cfg_file_name);
-  DeleteFile(device_cfg_file_name);
-  DeleteFile(grid_opt_file_name);
-  DeleteFile(ref_device_cfg_file_name);
-  DeleteFile(ref_grid_opt_file_name);
 
   load_config_calibr_to_display();
+  load_config_calibr();
   set_connect_if_enabled();
 }
 
@@ -3640,11 +3855,25 @@ void TDataHandlingF::unset_ref_device()
   m_ref_device.reset();
 }
 
+String TDataHandlingF::get_device_name()
+{
+  return m_device.get_name();
+}
+
 String TDataHandlingF::get_device_type() const
 {
   return m_device.get_type();
 }
 
+String TDataHandlingF::get_ref_device_name()
+{
+  return m_ref_device.get_name();
+}
+
+String TDataHandlingF::get_ref_device_type() const
+{
+  return m_ref_device.get_type();
+}
 
 void __fastcall TDataHandlingF::RestructDataType1ActionExecute(
       TObject *Sender)
@@ -4128,6 +4357,10 @@ void __fastcall TDataHandlingF::ConnectionLogActionExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::DeleteConfigButtonClick(TObject *Sender)
 {
+  if (!save_unsaved_changes_dialog()) {
+    return;
+  }
+
   const String config_name = get_selected_config();
   if (!config_name.IsEmpty()) {
     if (Application->MessageBox(
@@ -4188,23 +4421,26 @@ TDataHandlingF::make_mxmultimeter_assembly(
     make_assembly(a_device_type, a_device_name);
 }
 
-
-
-
 void __fastcall TDataHandlingF::ShowMeasPointChartActionExecute(TObject *Sender)
 {
   if (mp_meas_point_chart.is_empty()) {
     mp_meas_point_chart.reset(new irs::chart::builder_chart_window_t(10000, 1000,
       irs::chart::builder_chart_window_t::stay_on_top_off));
     mp_meas_point_chart->show();
+
+    const int col = mp_active_table->get_col_displ();
+    const int row = mp_active_table->get_row_displ();
+    reset_chart(col, row);
+
     ShowMeasPointChartAction->Checked = true;
   } else {
     mp_meas_point_chart.reset();
     ShowMeasPointChartAction->Checked = false;
   }
-
 }
 //---------------------------------------------------------------------------
+
+
 
 
 

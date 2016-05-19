@@ -15,6 +15,7 @@ object ManagerDGIF: TManagerDGIF
   OldCreateOrder = False
   Position = poMainFormCenter
   OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13

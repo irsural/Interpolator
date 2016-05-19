@@ -120,7 +120,7 @@ table_string_grid_t::get_display_cell_variable_precision(
   const string_type& a_type_variable)
 {
   string_type cell_str;
-  if(a_cell.init == true){ 
+  if(a_cell.init == true){
 
     irs::number_to_string(a_cell.value, &cell_str, m_precision);
     cell_str += string_type(irst(" ")) + a_type_variable.c_str();
@@ -181,6 +181,7 @@ table_data_t::table_data_t(display_table_t* ap_display_table,
   m_name(a_name),
   m_file_namedir(),
   mv_table(),
+  mv_saved_table(),
   m_cur_col(0),
   m_cur_row(0),
   m_cur_table(0),
@@ -205,6 +206,7 @@ void table_data_t::cell_out_display_variable_precision(
     string_type type_variable;
     bool select_cell_x = (a_col_displ > 0) && (cur_row == 0);
     bool select_cell_y = (a_col_displ == 0) && (cur_row > 0);
+
     if (select_cell_x) {
       type_variable = m_inf_in_param.type_variable_param1;
     } else if (select_cell_y) {
@@ -218,7 +220,8 @@ void table_data_t::cell_out_display_variable_precision(
         type_variable = m_inf_in_param.type_variable_param3;
       }
     }
-    if(select_cell_x || select_cell_y){
+
+    if (select_cell_x || select_cell_y) {
       int row_displ_begin = cur_row;
       for(int i = 0; i < table_count; i++){
         cell_t cur_cell = mv_table[i][a_col_displ][cur_row];
@@ -226,7 +229,7 @@ void table_data_t::cell_out_display_variable_precision(
         mp_display_table->out_display_cell_variable_precision(
           a_col_displ, row_displ, cur_cell, type_variable);
       }
-    }else{
+    } else {
       cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
       mp_display_table->out_display_cell_variable_precision(
         a_col_displ, a_row_displ, cur_cell, type_variable);
@@ -268,6 +271,37 @@ table_data_t::string_type table_data_t::get_cell_display_variable_precision(
       value = mp_display_table->get_display_cell_variable_precision(
         a_col_displ, row_displ, cur_cell, type_variable);
     } else {
+      /////////////
+      /*double ref_value = 0;
+      switch (m_inf_in_param.type_anchor) {
+        case PARAMETR1: {
+          cell_t cur_cell = mv_table[cur_table][a_col_displ][0];
+          if (cur_cell.init == true) {
+            ref_value = cur_cell.value;
+          }
+        } break;
+        case PARAMETR2: {
+          cell_t cur_cell = mv_table[cur_table][0][cur_row];
+          ref_value = cur_cell.value;
+        } break;
+        case PARAMETR3: {
+          cell_t cur_cell = mv_table[cur_table][0][0];
+        } break;
+      }
+      cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
+
+      double result = 0;
+      if (cur_cell.init == true) {
+        if (ref_value != 0) {
+          result = fabs(ref_value - cur_cell.value)/ref_value*100;
+        }
+      }
+
+      cur_cell.value = result;
+      value = mp_display_table->get_display_cell_variable_precision(
+        a_col_displ, a_row_displ, cur_cell, string_type(irst("%")));*/
+      /////////////
+
       cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
       value = mp_display_table->get_display_cell_variable_precision(
         a_col_displ, a_row_displ, cur_cell, type_variable);
@@ -509,6 +543,12 @@ void table_data_t::delete_subtable()
 
 //---------------------------------------------------------------------------
 
+void table_data_t::create_new_table()
+{
+  clear_table_def();
+  mv_saved_table = mv_table;
+}
+
 void table_data_t::save_table_to_json_file(const string_type& a_file_name)
 {
   Json::Value data;
@@ -561,7 +601,7 @@ void table_data_t::save_table_to_json_file(const string_type& a_file_name)
   ofile << data << std::endl;
 
   #ifdef debug_version_digital_interpolator
-  mv_fixed_table = mv_table;
+  mv_saved_table = mv_table;
   #endif
 }
 
@@ -692,7 +732,7 @@ void table_data_t::save_table_to_ini_file(const string_type a_file_name)
     }
   }
   #ifdef  debug_version_digital_interpolator
-  mv_fixed_table = mv_table;
+  mv_saved_table = mv_table;
   #endif
 }
 
@@ -911,8 +951,8 @@ void table_data_t::load_table_from_json_file(const string_type a_file_name)
 
   mv_table.clear();
   #ifdef debug_version_digital_interpolator
-  mv_fixed_table.clear();
-  mv_fixed_table = table;
+  mv_saved_table.clear();
+  mv_saved_table = table;
   #endif
   mv_table = table;
   mp_display_table->out_display(mv_table, m_inf_in_param);
@@ -1016,8 +1056,8 @@ void table_data_t::load_table_from_ini_file(const string_type& a_file_name)
   if (m_inf_in_param.number_in_param == param_count_from_file) {
     mv_table.clear();
     #ifdef  debug_version_digital_interpolator
-    mv_fixed_table.clear();
-    mv_fixed_table = table;
+    mv_saved_table.clear();
+    mv_saved_table = table;
     #endif
     mv_table = table;
     mp_display_table->out_display(mv_table, m_inf_in_param);
@@ -1048,8 +1088,8 @@ void table_data_t::load_subtable_from_file(const string_type& a_file_name)
       } break;
     }
     #ifdef  debug_version_digital_interpolator
-    mv_fixed_table.clear();
-    mv_fixed_table = mv_table;
+    mv_saved_table.clear();
+    mv_saved_table = mv_table;
     #endif
     mp_display_table->out_display(mv_table, m_inf_in_param);
   }
@@ -1193,13 +1233,24 @@ void table_data_t::search_pip(const double a_limit)
 }
 //-------------------------------------------------------------
 void table_data_t::clear_coord_special_cells()
-  {mv_coord_special_cells.resize(0);}
+{
+  mv_coord_special_cells.resize(0);
+}
 
 void table_data_t::set_file_namedir(String a_file_namedir)
-  {m_file_namedir = a_file_namedir;}
+{
+  m_file_namedir = a_file_namedir;
+}
 
 String table_data_t::get_file_namedir()
-  {return m_file_namedir;}
+{
+  return m_file_namedir;
+}
+
+void table_data_t::clear_file_name()
+{
+  m_file_namedir = String();
+}
 /*void table_data_t::out_display(const vector<matrix_t<cell_t> >& av_data)
 {
   unsigned int size_z = mv_table.size();
@@ -1804,6 +1855,8 @@ int get_index_row_combo_box_str(
 //struct config_calibr_t
 config_calibr_t::config_calibr_t():
   type_meas(irs::str_conv<String>(type_meas_to_str(tm_first))),
+  device_name(),
+  reference_device_name(),
   ip_adress(irst("192.168.0.200")),
   port(5005),
   in_parametr1(),
@@ -1850,6 +1903,13 @@ bool config_calibr_t::save(const string_type& a_filename)
   add_static_param(&ini_file);
   ini_file.save();
   ini_file.clear_control();
+
+  ini_file.set_section(irst("Конфигурация устройства"));
+  ini_file.add(irst("Имя"), &device_name);
+
+  ini_file.set_section(irst("Конфигурация опорного устройства"));
+  ini_file.add(irst("Имя"), &reference_device_name);
+
   string_type in_parametr1_unit_str =
     lang_type_to_str(in_parametr1.unit);
   string_type in_parametr2_unit_str =
@@ -1970,6 +2030,13 @@ bool config_calibr_t::load(const string_type& a_filename)
   add_static_param(&ini_file);
   ini_file.load();
   ini_file.clear_control();
+
+  ini_file.set_section(irst("Конфигурация устройства"));
+  ini_file.add(irst("Имя"), &device_name);
+
+  ini_file.set_section(irst("Конфигурация опорного устройства"));
+  ini_file.add(irst("Имя"), &reference_device_name);
+
   string_type in_parametr1_unit_str;
   string_type in_parametr2_unit_str;
   string_type in_parametr3_unit_str;
@@ -2301,6 +2368,84 @@ void param_filter_t::tick()
   }
 }
 
+#ifdef NOP
+irs::string_t absolute_file_name_to_relative(
+  const irs::string_t& a_path,
+  const irs::string_t& a_base)
+{
+  namespace fs = boost::filesystem;
+
+  std::wstring full_file_name_str =
+    irs::str_conv<irs::string_t>(a_path);
+  std::wstring base_str = irs::str_conv<irs::string_t>(a_base);
+
+  fs::wpath base(base_str);
+  fs::wpath file_name(full_file_name_str);
+
+  if (!base.has_root_path()) {
+    return a_path;
+  }
+
+  // Здесь стоит проверить наличие слеша после буквы диска и добавить его, если
+  // он отсутвует
+
+  if (!file_name.has_root_path()) {
+    return a_path;
+  }
+
+  if (base.root_path() != file_name.root_path()) {
+    return a_path;
+  }
+
+  const std::wstring _dot  = std::wstring(1, fs::dot<fs::wpath>::value);
+  const std::wstring _dots = std::wstring(2, fs::dot<fs::wpath>::value);
+  const std::wstring _sep = std::wstring(1, fs::slash<fs::wpath>::value);
+  const std::wstring _dots_sep = _dots + _sep;
+
+  fs::wpath::iterator base_it = base.begin();
+  fs::wpath::iterator file_name_it = file_name.begin();
+  while ((base_it != base.end()) && (file_name_it != file_name.end())) {
+    std::wstring elem = *base_it;
+    if (*base_it != *file_name_it) {
+      break;
+    }
+    ++base_it;
+    ++file_name_it;
+  }
+
+  fs::wpath relative_path;
+  for (; base_it != base.end(); ++base_it) {
+
+    if (*base_it == _dot) {
+      continue;
+    } else if (*base_it == _sep) {
+      continue;
+    }
+
+    relative_path /= _dots_sep;
+  }
+
+  /*fs::wpath::iterator path_it_start = file_name_it;
+  for (; file_name_it != file_name.end(); ++file_name_it) {
+    if (file_name_it != path_it_start)
+      relative_path /= irst("/");
+    if (*file_name_it == _dot)
+      continue;
+    if (*file_name_it == _sep)
+      continue;
+    relative_path /= *file_name_it;
+  }*/
+
+
+  for (; file_name_it != file_name.end(); ++file_name_it) {
+    relative_path /= *file_name_it;
+  }
+
+  std::wstring relative_str = relative_path.native_file_string();
+  return irs::str_conv<irs::string_t>(relative_str);
+}
+#endif
+
 // struct file_name_service_t
 file_name_service_t::file_name_service_t():
   m_path_prog(ExtractFilePath(Application->ExeName)),
@@ -2308,7 +2453,8 @@ file_name_service_t::file_name_service_t():
   m_multimeter_config_ext(irst("ini")),
   m_default_filename(irst("config1.cpc")),
   m_foldername_conf(irst("configuration")),
-  m_multimeter_foldername_conf(irst("multimeter_configurations")),
+  m_multimeter_foldername_conf(irst("multimeters")),
+  m_device_foldername_conf(irst("devices")),
   m_device_default_ext(irst("ini")),
   m_device_grid_options_default_ext(
     irs::str_conv<String>(irs::tstlan::get_grid_options_file_ext())),
@@ -2339,6 +2485,15 @@ String file_name_service_t::get_multimeter_config_dir() const
   return m_path_prog + m_multimeter_foldername_conf;
 }
 
+String file_name_service_t::get_device_config_dir() const
+{
+  return m_path_prog + m_device_foldername_conf;
+}
+
+String file_name_service_t::get_device_config_ext() const
+{
+  return m_device_default_ext;
+}
 
 String file_name_service_t::make_config_full_file_name(
   String a_config_name) const
@@ -2350,17 +2505,15 @@ String file_name_service_t::make_config_full_file_name(
 String file_name_service_t::make_device_config_full_file_name(
   String a_config_name) const
 {
-  return m_path_prog + m_foldername_conf +
-    irst("\\") + a_config_name + m_device_suffix  + irst(".") +
-    m_device_default_ext;
+  return m_path_prog + m_device_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_device_default_ext;
 }
 
 String file_name_service_t::make_ref_device_config_full_file_name(
   String a_config_name) const
 {
-  return m_path_prog + m_foldername_conf +
-    irst("\\") + a_config_name + m_ref_device_suffix  + irst(".") +
-    m_ref_device_default_ext;
+  return m_path_prog + m_device_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_ref_device_default_ext;
 }
 
 String file_name_service_t::make_device_grid_config_full_name(
@@ -2391,6 +2544,15 @@ String file_name_service_t::get_config_name(
   return extract_short_filename(ExtractFileName(a_full_file_name));
 }
 
+
+
+String file_name_service_t::make_multimeter_config_full_file_name(
+  String a_config_name)  const
+{
+  return m_path_prog + m_multimeter_foldername_conf +
+    irst("\\") + a_config_name + irst(".") + m_multimeter_config_ext;
+}
+
 void file_name_service_t::create_config_dir()
 {
   String dir = get_config_dir();
@@ -2401,11 +2563,83 @@ void file_name_service_t::create_config_dir()
   }
 }
 
-String file_name_service_t::make_multimeter_config_full_file_name(
-  String a_config_name)  const
+// Возвращает относительный путь, если возможно, в противном случае
+// возвращает исходный путь
+String file_name_service_t::make_relative_file_name(
+  const String& a_full_file_name) const
 {
-  return m_path_prog + m_multimeter_foldername_conf +
-    irst("\\") + a_config_name + irst(".") + m_multimeter_config_ext;
+  irs::string_t absolute = irs::str_conv<irs::string_t>(a_full_file_name);
+  irs::string_t base = irs::str_conv<irs::string_t>(m_path_prog);
+  irs::string_t relative = irs::absolute_path_to_relative(absolute, base);
+
+  return irs::str_conv<String>(relative);
+}
+
+/*bool file_name_service_t::path_is_relative(const String& a_path)
+{
+  const irs::string_t path = irs::str_conv<irs::string_t>(a_path);
+  if (path.size() > 0) {
+    if (path[0] == irst('\\')) {
+      return false;
+    }
+  }
+  if (path.size() > 1) {
+    if (irs::isalphat(path[0]) && (path[1] == irst(':'))) {
+      return false;
+    }
+  }
+  return true;
+}*/
+
+String file_name_service_t::make_absolute_path(
+  const String& a_relative_path)
+{
+  const irs::string_t base = irs::str_conv<irs::string_t>(m_path_prog);
+  const irs::string_t relative_path =
+    irs::str_conv<irs::string_t>(a_relative_path);
+
+  irs::string_t result;
+  result = irs::relative_path_to_absolute(relative_path, base);
+  return irs::str_conv<String>(result);
+}
+
+/*String file_name_service_t::make_absolute_path_if_relative(
+  const String& a_relative_path)
+{
+  //const irs::string_t dir = irs::str_conv<irs::string_t>(m_path_prog);
+  String result;
+  if (path_is_relative(a_relative_path)) {
+    result = make_absolute_path(a_relative_path);
+  } else {
+    result = a_relative_path;
+  }
+  return result;
+}*/
+
+String file_name_service_t::ensure_dir_end(const String& a_dir)
+{
+  String dir;
+  if (!a_dir.IsEmpty()) {
+    if (is_path_name_separator(a_dir[a_dir.Length() - 1])) {
+      dir = a_dir;
+    } else {
+      dir = a_dir + path_name_separator();
+    }
+  } else {
+    IRS_LIB_ERROR(irs::ec_standard, "Для пустого имени операция не определена");
+  }
+  return dir;
+}
+
+file_name_service_t::char_type
+file_name_service_t::path_name_separator()
+{
+  return irst('\\');
+}
+
+bool file_name_service_t::is_path_name_separator(const char_type a_ch)
+{
+  return (a_ch == irst('\\')) || (a_ch == irst('/'));
 }
 
 // class vars_ini_file_t
@@ -2625,6 +2859,16 @@ void device2_t::disable()
   m_data_map.reset_connection();
 }
 
+String device2_t::get_name()
+{
+  String name;
+  if (!mp_tstlan4lib.is_empty()) {
+    name = mp_file_name_service->get_config_name(
+      irs::str_conv<String>(mp_tstlan4lib->ini_name()));
+  }
+  return name;
+}
+
 String device2_t::get_type() const
 {
   return irs::str_conv<String>(m_type);
@@ -2728,9 +2972,10 @@ void device2_t::change_type(const String& a_device_file_name,
   if (!FileExists(a_device_file_name)) {
     ini_file.save();
   }
-
-  device_options.type = a_type.c_str();
-  ini_file.save();
+  if (!a_type.IsEmpty()) {
+    device_options.type = a_type.c_str();
+    ini_file.save();
+  }
   reset(a_device_file_name.c_str(), device_options);
 }
 
@@ -2755,7 +3000,9 @@ void device2_t::show_connection_log()
 void device2_t::reset()
 {
   m_data_map.reset_connection();
-  mp_mxdata_assembly->enabled(false);
+  if (!mp_mxdata_assembly.is_empty()) {
+    mp_mxdata_assembly->enabled(false);
+  }
   mp_tstlan4lib.reset();
   mp_mxdata_assembly.reset();
   mp_connection_log.reset();

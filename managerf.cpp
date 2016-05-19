@@ -161,6 +161,7 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
 }
 __fastcall TManagerDGIF::~TManagerDGIF()
 {
+  int a = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -242,7 +243,7 @@ void __fastcall TManagerDGIF::OnChannel2CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 2",
+          irst("Channel 2"),
           m_filename_options_channel2,
           MXIFA_MXNETC_2));
         RefChannel2RB->Enabled = true;
@@ -266,7 +267,7 @@ void __fastcall TManagerDGIF::OnChannel3CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 3",
+          irst("Channel 3"),
           m_filename_options_channel3,
           MXIFA_MXNETC_3));
         RefChannel3RB->Enabled = true;
@@ -290,7 +291,7 @@ void __fastcall TManagerDGIF::OnChannel4CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 4",
+          irst("Channel 4"),
           m_filename_options_channel4,
           MXIFA_MXNETC_4));
         RefChannel4RB->Enabled = true;
@@ -314,7 +315,7 @@ void __fastcall TManagerDGIF::OnChannel5CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 5",
+          irst("Channel 5"),
           m_filename_options_channel5,
           MXIFA_MXNETC_5));
         RefChannel5RB->Enabled = true;
@@ -338,7 +339,7 @@ void __fastcall TManagerDGIF::OnChannel6CBClick(TObject *Sender)
           NULL,
           mode_prog_multi_channel,
           ref_channel,
-          "Channel 6",
+          irst("Channel 6"),
           m_filename_options_channel6,
           MXIFA_MXNETC_6));
         RefChannel6RB->Enabled = true;
@@ -406,7 +407,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 1",
+        irst("Channel 1"),
         m_filename_options_channel1,
         MXIFA_MXNETC));
     }
@@ -417,7 +418,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 2",
+        irst("Channel 2"),
         m_filename_options_channel2,
         MXIFA_MXNETC_2));
     }
@@ -428,7 +429,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 3",
+        irst("Channel 3"),
         m_filename_options_channel3,
         MXIFA_MXNETC_3));
     }
@@ -439,7 +440,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 4",
+        irst("Channel 4"),
         m_filename_options_channel4,
         MXIFA_MXNETC_4));
     }
@@ -450,7 +451,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 5",
+        irst("Channel 5"),
         m_filename_options_channel5,
         MXIFA_MXNETC_5));
     }
@@ -461,7 +462,7 @@ void TManagerDGIF::tick()
         NULL,
         mode_prog_multi_channel,
         ref_channel,
-        "Channel 6",
+        irst("Channel 6"),
         m_filename_options_channel6,
         MXIFA_MXNETC_6));
     }
@@ -1145,5 +1146,19 @@ void __fastcall TManagerDGIF::CheckBoxPhasaNorm180Click(TObject *Sender)
 //---------------------------------------------------------------------------
 
 
-
+void __fastcall TManagerDGIF::FormCloseQuery(TObject *Sender, bool &CanClose)
+{
+  if (!SingleModeProgramCB->Checked) {
+    for (size_t i = 0; i < mv_channels.size(); i++) {
+      if (!mv_channels[i]->is_empty()) {
+        TDataHandlingF* data_handing = mv_channels[i]->get();
+        if (!data_handing->save_unsaved_changes_dialog()) {
+          CanClose = false;
+          break;
+        }
+      }
+    }
+  }
+}
+//---------------------------------------------------------------------------
 

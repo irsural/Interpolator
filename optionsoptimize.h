@@ -51,11 +51,12 @@ __published:	// IDE-managed Components
   void __fastcall OpenDirCorButtonClick(TObject *Sender);
   void __fastcall OptionsTreeViewChange(TObject *Sender, TTreeNode *Node);
 private:	// User declarations
-  options_optimize_type_mnk_t m_options_mnk;
+  /*options_optimize_type_mnk_t m_options_mnk;
   options_optimize_type_correct_t m_options_correct;
-  status_options_t m_status_options;
+  status_options_t m_status_options;*/
 public:		// User declarations
   __fastcall TOptionsF(TComponent* Owner);
+  __fastcall ~TOptionsF();
   void select_options_mnk();
   void select_options_correct();
   inline status_options_t status_options();
@@ -66,17 +67,27 @@ public:		// User declarations
   void write_options_correct(options_optimize_type_correct_t a_options);
 };
 inline status_options_t TOptionsF::status_options()
-  {return m_status_options;}          
+{
+  //return m_status_options;
+}
 inline options_optimize_type_mnk_t TOptionsF::read_options_mnk()
-  {return m_options_mnk;}
+{
+  //return m_options_mnk;
+}
 inline options_optimize_type_correct_t TOptionsF::read_options_correct()
-  {return m_options_correct;}
+{
+  //return m_options_correct;
+}
 inline void TOptionsF::write_options_mnk(
   options_optimize_type_mnk_t a_options)
-  {m_options_mnk = a_options;}
+{
+  //m_options_mnk = a_options;
+}
 inline void TOptionsF::write_options_correct(
   options_optimize_type_correct_t a_options)
-  {m_options_correct = a_options;}
+{
+  //m_options_correct = a_options;
+}
 //---------------------------------------------------------------------------
 extern PACKAGE TOptionsF *OptionsF;
 //---------------------------------------------------------------------------

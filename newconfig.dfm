@@ -107,15 +107,11 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 441
-      ActivePage = MeasAndCalibrationSettingsTabSheet
+      ActivePage = PrimaryNetworkVariablesTabSheet
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
-        Caption = #1054#1089#1085#1086#1074#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
+        Caption = #1057#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 2
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object ListParameterSG: TStringGrid
           Left = 0
           Top = 0
@@ -142,12 +138,8 @@ object NewConfigF: TNewConfigF
         end
       end
       object SecondaryNetworkVariablesTabSheet: TTabSheet
-        Caption = #1042#1089#1087#1086#1084#1086#1075#1072#1090#1077#1083#1100#1085#1099#1077' '#1089#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
+        Caption = #1057#1077#1090#1077#1074#1099#1077' '#1073#1080#1090#1099
         ImageIndex = 1
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object ListByteSG: TStringGrid
           Left = 0
           Top = 0
@@ -495,96 +487,138 @@ object NewConfigF: TNewConfigF
     BevelOuter = bvLowered
     TabOrder = 5
     object Label4: TLabel
-      Left = 704
-      Top = 8
+      Left = 756
+      Top = 4
       Width = 147
       Height = 13
       Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1076#1086#1087'. '#1087#1072#1088#1072#1084#1077#1090#1088#1086#1074
     end
     object Label2: TLabel
-      Left = 864
-      Top = 8
+      Left = 916
+      Top = 4
       Width = 115
       Height = 13
       Caption = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1076#1086#1087'. '#1073#1080#1090#1086#1074
     end
-    object DeviceLabel: TLabel
-      Left = 24
-      Top = 7
-      Width = 19
-      Height = 13
-      Caption = #1058#1080#1087
-    end
-    object RefDeviceLabel: TLabel
-      Left = 344
-      Top = 7
-      Width = 19
-      Height = 13
-      Caption = #1058#1080#1087
-    end
-    object ReferenceChannelCheckB: TCheckBox
-      Left = 241
-      Top = 26
-      Width = 97
-      Height = 17
-      Caption = #1054#1087#1086#1088#1085#1099#1081' '#1082#1072#1085#1072#1083
-      TabOrder = 0
-      OnClick = ReferenceChannelCheckBClick
-    end
     object BitsExCSpinEdit: TCSpinEdit
-      Left = 864
-      Top = 24
+      Left = 916
+      Top = 20
       Width = 121
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 1
+      TabOrder = 0
       OnChange = BitsExCSpinEditChange
     end
+    object DevideGroupBox: TGroupBox
+      Left = 24
+      Top = 6
+      Width = 350
+      Height = 115
+      Caption = #1059#1089#1090#1088#1086#1081#1089#1090#1074#1086
+      TabOrder = 1
+      object DeviceNameLabel: TLabel
+        Left = 17
+        Top = 17
+        Width = 22
+        Height = 13
+        Caption = #1048#1084#1103
+      end
+      object DeviceLabel: TLabel
+        Left = 16
+        Top = 67
+        Width = 82
+        Height = 13
+        Caption = #1058#1080#1087' '#1089#1086#1077#1076#1080#1085#1077#1085#1080#1103
+      end
+      object DeviceNameComboBox: TComboBox
+        Left = 16
+        Top = 36
+        Width = 321
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 0
+        OnChange = DeviceNameComboBoxChange
+      end
+      object ChangeDeviceConfigButton: TButton
+        Left = 262
+        Top = 83
+        Width = 75
+        Height = 25
+        Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+        TabOrder = 1
+        OnClick = ChangeDeviceConfigButtonClick
+      end
+      object DeviceComboBox: TComboBox
+        Left = 16
+        Top = 85
+        Width = 240
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 2
+        OnChange = DeviceComboBoxChange
+      end
+    end
+    object RefDeviceGroupBox: TGroupBox
+      Left = 380
+      Top = 8
+      Width = 350
+      Height = 113
+      Caption = #1054#1087#1086#1088#1085#1086#1077' '#1091#1089#1090#1088#1086#1081#1089#1090#1074#1086
+      TabOrder = 2
+      object RefDeviceLabel: TLabel
+        Left = 16
+        Top = 67
+        Width = 82
+        Height = 13
+        Caption = #1058#1080#1087' '#1089#1086#1077#1076#1080#1085#1077#1085#1080#1103
+      end
+      object RefDeviceNameComboBox: TComboBox
+        Left = 16
+        Top = 36
+        Width = 321
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 0
+        OnChange = RefDeviceNameComboBoxChange
+      end
+      object ReferenceChannelCheckB: TCheckBox
+        Left = 16
+        Top = 14
+        Width = 97
+        Height = 17
+        Caption = #1054#1087#1086#1088#1085#1099#1081' '#1082#1072#1085#1072#1083
+        TabOrder = 1
+        OnClick = ReferenceChannelCheckBClick
+      end
+      object ChangeRefDeviceConfigButton: TButton
+        Left = 262
+        Top = 83
+        Width = 75
+        Height = 25
+        Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+        TabOrder = 2
+        OnClick = ChangeRefDeviceConfigButtonClick
+      end
+      object RefDeviceComboBox: TComboBox
+        Left = 16
+        Top = 85
+        Width = 240
+        Height = 21
+        Style = csDropDownList
+        TabOrder = 3
+        OnChange = RefDeviceComboBoxChange
+      end
+    end
     object ParamsExCSpinEdit: TCSpinEdit
-      Left = 704
-      Top = 24
+      Left = 757
+      Top = 20
       Width = 153
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 2
-      OnChange = ParamsExCSpinEditChange
-    end
-    object DeviceComboBox: TComboBox
-      Left = 24
-      Top = 26
-      Width = 145
-      Height = 21
-      Style = csDropDownList
       TabOrder = 3
-      OnChange = DeviceComboBoxChange
-    end
-    object ChangeDeviceConfigButton: TButton
-      Left = 94
-      Top = 53
-      Width = 75
-      Height = 25
-      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-      TabOrder = 4
-      OnClick = ChangeDeviceConfigButtonClick
-    end
-    object RefDeviceComboBox: TComboBox
-      Left = 344
-      Top = 26
-      Width = 145
-      Height = 21
-      Style = csDropDownList
-      TabOrder = 5
-    end
-    object ChangeRefDeviceConfigButton: TButton
-      Left = 414
-      Top = 53
-      Width = 75
-      Height = 25
-      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-      TabOrder = 6
-      OnClick = ChangeRefDeviceConfigButtonClick
+      OnChange = ParamsExCSpinEditChange
     end
   end
 end
