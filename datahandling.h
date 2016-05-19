@@ -465,23 +465,15 @@ private:	// User declarations
   String m_prog_name;
   mode_program_t m_mode_program;
   file_name_service_t m_file_name_service;
-  //директория, где находится программа
-  //String m_path_prog;
   //имя файла настроек программы
   String m_name_main_opt_ini_file;
   //класс работы с ini-файлом настроек программы
   irs::ini_file_t m_main_opt_ini_file;
-  //класс работы с ini-файлом конфигураций устройства
-  //  irs::ini_file_t m_conf_device_ini_file;
+
   //класс логов
   log_t m_log;
   log_message_t m_log_message;
   TForm* mp_manager_channel;
-  //irs::handle_t<TOptionsF> mp_options_form;
-  //имя каталога программы для хранения конфгураций
-  //const String m_foldername_conf;
-  //расширение файла конфигурации процесса калибровки
-  //const String m_default_ext;
   //идентификатор файла конфигурации процесса калибровки
   const String m_fileid_conf;
   config_calibr_t m_config_calibr;
@@ -510,7 +502,6 @@ private:	// User declarations
     sce_reset};
 
   const String m_name_file_options_ini;// = "options.ini";
-  //static const m_index_funnel = 40;
   enum {
     progress_percent_precision = 6,
     progress_percent_digits = 3
@@ -530,24 +521,18 @@ private:	// User declarations
     }
   };
 
-  //vector<correct_map_t> mv_correct_map, mv_correct_map_local;
-  //data_map_t m_data_map;
-
   irs::handle_t<data_map_t> mp_data_map_ref_channel;
   irs::chart::builder_chart_window_t m_device_chart;
   device2_t m_device;
 
-  //irs::handle_t<device_t> mp_ref_device;
   device2_t m_ref_device;
-  //mxnetc m_mxnet;
   irs::handle_t<mxnetc> mp_mxnet_ref_channel;
 
-  //irs::mxdata_to_mxnet_t m_mxnet_data;
   irs::handle_t<irs::mxdata_to_mxnet_t> mp_mxnet_data_ref_channel;
 
   irs::handle_t<irs::funnel_client_t> mp_eeprom;
   irs::handle_t<irs::local_data_t> mp_local_data;
-  //irs::conn_data_t<irs_u32> work_time;
+
 
   irs::handle_t<irs::mxmultimeter_assembly_t> mp_mxmultimeter_assembly;
 
@@ -573,8 +558,6 @@ private:	// User declarations
   bool m_on_out_data;
   bool m_on_correct;
   bool m_correct_mode_previous_stat;
-
-  status_options_t m_status_options;
 
   // необходимый размер в памяти для прошивки
   int m_need_size_memory;
@@ -830,7 +813,6 @@ private:	// User declarations
     {}
     void show()
     {
-      //#ifdef NOP
       if ((!p_comment->Visible) && (p_comment != IRS_NULL)) {
         p_comment->Visible = true;
       }
@@ -840,7 +822,6 @@ private:	// User declarations
       if ((!p_progress_bar->Visible)  && (p_percent_progress != IRS_NULL)) {
         p_progress_bar->Visible = true;
       }
-      //#endif // NOP
     }
     void hide()
     {
@@ -952,9 +933,6 @@ public:
   inline void mismatch_mode_change_stat();
   // принудительно установить/сбросить режим расстройки
   inline void mismatch_mode_change_stat(const bool a_mismatch_mode);
-
-  //void set_device_mode(const param_cur_cell_t& a_param_cur_cell);
-  //device_mode_status_t status_device_mode();
 
   void meas_execute();
   meas_status_t meas_status();
@@ -1138,12 +1116,8 @@ inline void TDataHandlingF::save_cur_config_device()
     String filename_conf = mv_list_config_calibr[index_file];
     if(FileExists(filename_conf)){
       m_config_calibr.save(filename_conf.c_str());
-      //m_conf_calibr_buf = m_config_calibr;
-      //m_conf_calibr_buf.save(filename_conf.c_str());
     }
   }
-  //m_conf_calibr_buf = m_config_calibr;
-  //m_conf_device_ini_file.save();
 }
 
 inline void TDataHandlingF::set_mismatch_state(

@@ -229,12 +229,6 @@
             <DependentOn>newconfig.h</DependentOn>
             <BuildOrder>17</BuildOrder>
         </CppCompile>
-        <CppCompile Include="optionsoptimize.cpp">
-            <BuildOrder>48</BuildOrder>
-            <Form>OptionsF</Form>
-            <DependentOn>optionsoptimize.h</DependentOn>
-            <BuildOrder>20</BuildOrder>
-        </CppCompile>
         <CppCompile Include="parsemathematic.cpp">
             <BuildOrder>49</BuildOrder>
             <BuildOrder>23</BuildOrder>
@@ -478,7 +472,6 @@
         <FormResources Include="managerf.dfm"/>
         <FormResources Include="modifidatatable.dfm"/>
         <FormResources Include="newconfig.dfm"/>
-        <FormResources Include="optionsoptimize.dfm"/>
         <FormResources Include="About.dfm"/>
         <FormResources Include="addcolrow.dfm"/>
         <FormResources Include="datahandling.dfm"/>

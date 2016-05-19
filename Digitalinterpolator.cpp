@@ -9,7 +9,6 @@
 USEFORM("managerf.cpp", ManagerDGIF);
 USEFORM("modifidatatable.cpp", ModifiDataTableF);
 USEFORM("newconfig.cpp", NewConfigF);
-USEFORM("optionsoptimize.cpp", OptionsF);
 USEFORM("About.cpp", AboutForm);
 USEFORM("addcolrow.cpp", AddCorRowF);
 USEFORM("datahandling.cpp", DataHandlingF);

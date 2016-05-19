@@ -8,12 +8,8 @@
 #include <tstlan5lib.h>
 #include <irsalg.h>
 #include "newconfig.h"
-//#include "mathv.h"
+
 #include <irsfinal.h>
-
-//#include <boost/filesystem/path.hpp>
-//#include <boost/filesystem/operations.hpp>
-
 
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
@@ -33,17 +29,12 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_prog_name(irst("Digital interpolator")),
   m_mode_program(a_mode_program),
   m_file_name_service(),
-  //m_path_prog(),
   m_name_main_opt_ini_file(a_opt_ini.c_str()),
   m_main_opt_ini_file(),
-  //m_conf_device_ini_file(),
   m_log(LogMemo, irst("Log.txt")),
   m_log_message(&m_log),
   mp_manager_channel(ap_manager_channel),
-  //mp_options_form(new TOptionsF(0)),
   m_value_meas(),
-  //m_foldername_conf(irst("configuration")),
-  //m_default_ext(irst("cpc")),
   m_fileid_conf(irst("Конфигурация настроек калибровки.")),
   m_config_calibr(),
   m_conf_calibr_buf(),
@@ -55,15 +46,14 @@ __fastcall TDataHandlingF::TDataHandlingF(
   status_connect_eeprom(sce_off),
 
   m_name_file_options_ini(irst("interpoptions.ini")),
-  //m_data_map(),
+
   mp_data_map_ref_channel(NULL),
   m_device_chart(10000, 1000,
     irs::chart::builder_chart_window_t::stay_on_top_off),
   m_device(&m_device_chart, &m_file_name_service),
-  //mp_ref_device(NULL),
+
   m_ref_device(&m_device_chart, &m_file_name_service),
-  //m_mxnet(a_num_mxifa_mxnetc),
-  //m_mxnet_data(&m_mxnet, MS_TO_CNT(2000)),
+
   mp_mxnet_ref_channel(NULL),
   mp_mxnet_data_ref_channel(NULL),
 
@@ -86,8 +76,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_on_correct(false),
   m_correct_mode_previous_stat(false),
 
-  m_status_options(OFF_PROCESSING),
-
   m_need_size_memory(0),
   m_on_mismatch_state(false),
   m_on_mismatch_state_previous(false),
@@ -103,11 +91,9 @@ __fastcall TDataHandlingF::TDataHandlingF(
   mv_coef_data(),
 
   mv_list_config_calibr(0),
-  ///////////////////////////////////////////////////////////////////////
-  //m_my_file_name("Data.txt"),
+
   m_chart(),
-  mp_meas_point_chart(NULL/*new irs::chart::builder_chart_window_t(10000, 1000,
-    irs::chart::builder_chart_window_t::stay_on_top_off)*/),
+  mp_meas_point_chart(NULL),
   m_timer_chart_auto_update(irs::make_cnt_ms(1000)),
   m_successfully_mode_setting(false),
 
@@ -134,7 +120,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_max_cur_elem(m_start_elem),
   m_min_cur_elem(m_start_elem),
 
-  //m_temperature_allowable(false),
   m_out_param_stability_control(0, 0, 0),
   m_out_param_stable_min_time(),
   m_temperature_stability_control(0, 0, temperature_stability_min_time),
@@ -211,16 +196,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
       unset_ref_channel();
     }
   }
-  //String ExeName = Application->ExeName;
-  //m_path_prog = ExtractFilePath(ExeName);
-  //String file_namedir_ini = m_path_prog + m_name_file_options_ini;
-  //если папка существует
-  //определяет, существует ли каталог
+  // Если папка существует, то определяет, существует ли каталог
   load_config_calibr_to_display();
-  /*String dir_config = m_file_name_service.get_config_dir();
-  if(DirectoryExists(dir_config)){
-    load_config_calibr_to_display(dir_config);
-  } */
 
   load_multimeters_list();
 
@@ -256,125 +233,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_exec_progress.hide();
   m_exec_progress.clear();
   FileOpen->Enabled;
-
-  // Проверка
- /* namespace fs = boost::filesystem;
-
-  //fs::wpath wp(L"C:\\Temp\\temp_prog\\1.txt", fs::native);
-  //std::wstring a1 = wp.native_file_string();
-
-  {
-    irs::string_t p(L"..\\..\\..\\file\\1.txt");
-    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
-    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
-    int a = 0;
-  }
-
-  {
-    irs::string_t p(L"C:\\Temp\\progs\\myprog\\file\\1.txt");
-    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
-    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
-    int a = 0;
-  }
-  {
-    irs::string_t p(L"");
-    irs::string_t base(L"C:\\Temp\\progs\\myprog\\");
-    irs::string_t absolute = irs::relative_path_to_absolute(p, base);
-    int a = 0;
-  }    */
-
-  /*{
-    fs::wpath p(L"..\\..\\file\\1.txt", fs::native);
-    fs::wpath base(L"C:\\Temp\\progs\\myprog\\", fs::native);
-    fs::wpath c = fs::complete(p, base);
-    int a = 0;
-  } */
-
-  /*{
-    std::string n = typeid(fs::wpath::value_type).name();
-
-    fs::wpath p(L"C:\\Temp\\temp_prog\\1.txt", fs::native);
-    fs::wpath::iterator it = p.begin();
-    while (it != p.end()) {
-      std::wstring elem = *it;
-      ++it;
-    }
-    bool relative = p.has_relative_path();
-    std::wstring root_dir = p.root_directory();
-    std::wstring root_name = p.root_name();
-    std::wstring p_s = p.native_file_string();
-    fs::wpath rp = p.relative_path();
-    std::wstring rp_r = rp.native_file_string();
-    int a = 0;
-  }
-  {
-    fs::wpath p(L".\\Temp\\temp_prog\\1.txt", fs::native);
-    bool relative = p.has_relative_path();
-    std::wstring root_dir = p.root_directory();
-    std::wstring root_name = p.root_name();
-    std::wstring p_s = p.native_file_string();
-    fs::wpath rp = p.relative_path();
-    std::wstring rp_r = rp.native_file_string();
-    int a = 0;
-  }
-  {
-    fs::wpath p(L"\\\\5-10\\dev\\Programs1\\prog.exe", fs::native);
-    fs::wpath::iterator it = p.begin();
-    while (it != p.end()) {
-      fs::wpath p = *it;
-      std::wstring pns = p.native_file_string();
-      std::wstring elem = *it;
-      ++it;
-    }
-    bool relative = p.has_relative_path();
-    std::wstring root_dir = p.root_directory();
-    std::wstring root_name = p.root_name();
-    //std::wstring root_name2 = p.root().native_directory_string();
-
-    fs::wpath root_n(root_name);
-    std::wstring native_root_name = root_n.native_file_string();
-    std::wstring p_s = p.native_file_string();
-    fs::wpath rp = p.relative_path();
-    std::wstring rp_r = rp.native_file_string();
-    int a = 0;
-  }
-
-  {
-    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\"));
-    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
-    int a = 0;
-  }
-  {
-    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
-    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
-    int a = 0;
-  }
-  {
-    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\file\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
-    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
-    int a = 0;
-  }
-  {
-    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\..\\..\\file\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
-    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
-    int a = 0;
-  }
-  {
-    irs::string_t absolute(irst("C:\\Temp\\..\\Temp\\..\\Temp\\temp_prog\\file\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\temp_prog\\my_prog\\prog\\"));
-    irs::string_t relative = absolute_file_name_to_relative(absolute, base);
-    int a = 0;
-  }*/
-  /*{
-    irs::string_t absolute(irst("C:\\Temp\\temp_prog\\1.txt"));
-    irs::string_t base(irst("C:\\Temp\\"));
-    irs::string_t relative = irs::absolute_path_to_relative(absolute, base);
-    int a = 0;
-  } */
 }
 
 
@@ -388,45 +246,30 @@ void TDataHandlingF::load_multimeters_list()
   String filter = dir + String(irst("\\*")) + irst(".") + config_ext;
 
   if (FindFirst(filter, faAnyFile, sr) == 0) {
-    //add_device(dir + irst("\\") + sr.Name);
     String multimeter_name = extract_short_filename(sr.Name);
     PatternOfMeasuringInstrumentCB->Items->Add(multimeter_name);
     while (FindNext(sr) == 0) {
-      //add_device(dir + irst("\\") + sr.Name);
       String multimeter_name = extract_short_filename(sr.Name);
       PatternOfMeasuringInstrumentCB->Items->Add(multimeter_name);
     }
   }
 
   FindClose(sr);
-  /*type_multimetr_t type_multimetr = tmul_first;
-  int index = static_cast<int>(type_multimetr);
-  while(true){
-    type_multimetr = static_cast<type_multimetr_t>(index);
-    string_type type_multimetr_str = type_multimetr_to_str(type_multimetr);
-    PatternOfMeasuringInstrumentCB->Items->Add(type_multimetr_str.c_str());
-    if(type_multimetr == tmul_last)
-      break;
-    index++;
-  }
-
-  PatternOfMeasuringInstrumentCB->ItemIndex = 0;*/
 }
 
 __fastcall TDataHandlingF::~TDataHandlingF()
 {
   void* p = RawDataStringGrid;
-  //m_log << irst("Начало деструктора");
+
   reset_connect_multimetr();
   deinit_to_cnt();
   m_main_opt_ini_file.save();
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
-  //save_cur_config_device();
+
   if (m_mode_program == mode_prog_single_channel) {
     // обработчик ошибок
     irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, IRS_NULL);
   }
-  //m_log << irst("Конец деструктора");
 }
 //загрузка конфигураций калибровки на экран
 void TDataHandlingF::load_config_calibr_to_display()
@@ -496,8 +339,6 @@ void TDataHandlingF::load_config_calibr()
     // если файл существует
     String filename_conf = mv_list_config_calibr[index_file];
     if (FileExists(filename_conf)) {
-      //m_conf_device_ini_file.set_ini_name(filename_conf);
-      //m_conf_device_ini_file.load();
       m_cur_index_conf_calibr = index_file;
       m_cur_filename_conf_calibr_device = filename_conf.c_str();
       m_conf_calibr_buf.load(m_cur_filename_conf_calibr_device.c_str());
@@ -519,32 +360,8 @@ void TDataHandlingF::load_config_calibr()
         m_inf_in_param.type_anchor = PARAMETR3;
         m_inf_in_param.number_in_param = THREE_PARAM;
       }
-      //m_log << (irst("Ip устройства ") + m_config_calibr.ip_adress);
-      //m_log << (irst("Порт устройства ") +
-        //irs::str_conv<String>(irs::num_to_str(m_config_calibr.port)));
 
       load_devices();
-      //const String config_name = ConfigCB->Items->Strings[ConfigCB->ItemIndex];
-      /*const String config_name = m_config_calibr.device_name;
-      if (is_main_device_config_exists(config_name)) {
-        load_main_device(config_name);
-      } else {
-        if (!config_name.IsEmpty()) {
-          m_log << irst("Конфигурация устройства отсутствует");
-        }
-        //create_main_device_config_from_old(config_name, irst("mxnet"),
-          //m_config_calibr);
-      }*/
-
-      /*m_mxnet.set_dest_port(m_config_calibr.port);
-      mxip_t ip = {{192, 168, 0, 38}};
-      str_to_mxip(m_config_calibr.ip_adress, &ip);
-      m_mxnet.set_dest_ip(ip);*/
-
-      //m_cur_config_device = m_config_calibr.device_name;
-
-      //m_cur_config_device = extract_short_filename(
-        //ExtractFileName(mv_list_config_calibr[index_file]));
 
       type_meas_t type_meas = tm_volt_dc;
       IRS_ASSERT(
@@ -623,33 +440,12 @@ void TDataHandlingF::load_config_calibr()
 
       // загрузка конфигурации опорного канала
       if (m_config_calibr.reference_channel.enabled) {
-        /*const String config_name = m_config_calibr.reference_device_name;
-        if (is_ref_device_config_exists(config_name)) {
-          load_ref_device(config_name);
-        } else {
-          if (!config_name.IsEmpty()) {
-            m_log << irst("Конфигурация устройства отсутствует");
-          }
-          //create_ref_device_config_from_old(config_name, irst("mxnet"),
-            //m_config_calibr);
-        }*/
-
-
-
-        /*mp_mxnet_ref_channel.reset(new mxnetc(MXIFA_MXNETC_2));
-        mp_mxnet_data_ref_channel.reset(new irs::mxdata_to_mxnet_t(
-          mp_mxnet_ref_channel.get(), MS_TO_CNT(2000)));*/
-
         m_config_calibr_ref_channel = m_config_calibr;
         m_config_calibr_ref_channel.ip_adress =
           m_config_calibr_ref_channel.reference_channel.ip_adress;
         m_config_calibr_ref_channel.port =
           m_config_calibr_ref_channel.reference_channel.port;
         m_config_calibr_ref_channel.reference_channel.enabled = false;
-        /*mp_mxnet_ref_channel->set_dest_port(m_config_calibr_ref_channel.port);
-        mxip_t ip = {{192, 168, 0, 38}};
-        str_to_mxip(m_config_calibr_ref_channel.ip_adress, &ip);
-        mp_mxnet_ref_channel->set_dest_ip(ip);*/
       }
 
     }else{
@@ -669,9 +465,7 @@ void TDataHandlingF::set_connect_if_enabled(bool a_forced_connect)
 {
   if (ConnectAction->Checked) {
     set_connect_calibr_device(a_forced_connect);
-  }/* else {
-    load_config_calibr();
-  }*/
+  }
 }
 
 void TDataHandlingF::set_connect_calibr_device(
