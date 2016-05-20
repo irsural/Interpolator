@@ -23,6 +23,7 @@ void table_string_grid_t::out_display(
   const vector<irs::matrix_t<cell_t> >& av_data,
   const inf_in_param_t& a_inf_in_param)
 {
+//return;
   //mp_table->Repaint();
   unsigned int size_z = av_data.size();
   unsigned int size_x = 0;
@@ -193,6 +194,36 @@ table_data_t::table_data_t(display_table_t* ap_display_table,
   mp_display_table->out_display(mv_table, m_inf_in_param);
   mv_coord_special_cells.resize(0);
 }
+
+void table_data_t::cell_out_display(
+  const int a_col_displ, const int a_row_displ)
+{
+  int table_count = mv_table.size();
+  if(table_count > 0){
+    int row_count = mv_table[0].row_count();
+    div_t val = div(a_row_displ, row_count);
+    int cur_table = val.quot;
+    int cur_row = val.rem;
+    cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
+    mp_display_table->out_display_cell(a_col_displ,a_row_displ, cur_cell);
+  }
+}
+
+void table_data_t::cur_cell_out_display()
+{
+  int cur_col = mp_display_table->col();
+  int cur_row_displ = mp_display_table->row();
+  int table_count = mv_table.size();
+  if(table_count > 0){
+    int row_count = mv_table[0].row_count();
+    div_t val = div(cur_row_displ, row_count);
+    int cur_table = val.quot;
+    int cur_row = val.rem;
+    cell_t cur_cell = mv_table[cur_table][cur_col][cur_row];
+    mp_display_table->out_display_cur_cell(cur_cell);
+  }
+}
+
 void table_data_t::cell_out_display_variable_precision(
   const int a_col_displ,
   const int a_row_displ)
@@ -233,6 +264,29 @@ void table_data_t::cell_out_display_variable_precision(
       cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
       mp_display_table->out_display_cell_variable_precision(
         a_col_displ, a_row_displ, cur_cell, type_variable);
+    }
+  }
+}
+
+void table_data_t::cur_cell_in_display()
+{
+  int cur_col = mp_display_table->col();
+  int cur_row_displ = mp_display_table->row();
+  int table_count = mv_table.size();
+  if(table_count > 0){
+    int row_count = mv_table[0].row_count();
+    div_t val = div(cur_row_displ, row_count);
+    int cur_table = val.quot;
+    int cur_row = val.rem;
+    cell_t cur_cell = mp_display_table->in_display_cur_cell();
+    bool select_cell_x = (cur_col > 0) && (cur_row == 0);
+    bool select_cell_y = (cur_col == 0) && (cur_row > 0);
+    if(select_cell_x || select_cell_y){
+      for(int i = 0; i < table_count; i++){
+        mv_table[i][cur_col][cur_row] = cur_cell;
+      }
+    }else{
+      mv_table[cur_table][cur_col][cur_row] = cur_cell;
     }
   }
 }
@@ -2900,11 +2954,18 @@ bool device2_t::enabled() const
 
 bool device2_t::connected() const
 {
-  bool connected = false;
+  if (created()) {
+    if (mp_mxdata_assembly->mxdata()) {
+      return m_data_map.is_connected() &&
+        mp_mxdata_assembly->mxdata()->connected();
+    }
+  }
+
+  /*bool connected = false;
   if (mp_mxdata_assembly->mxdata()) {
     connected = m_data_map.is_connected() &&
       mp_mxdata_assembly->mxdata()->connected();
-  }
+  } */
   return m_data_map.is_connected();
 }
 

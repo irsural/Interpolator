@@ -236,17 +236,24 @@ public:
   inline String name() const;
   inline coord_t coord_special_cell(const int a_n) const;
   inline int size_special_cells() const;
-  inline void cell_out_display(const int a_col_displ, const int a_row_displ);
-  inline string_type get_cell_value_str_table_data(
-    const int a_col_displ, const int a_row_displ);
-  inline void cur_cell_out_display();
+
+
+  void cell_out_display(const int a_col_displ, const int a_row_displ);
+  void cur_cell_out_display();
   void cell_out_display_variable_precision(
     const int a_col_displ,
     const int a_row_displ);
+
+  // !\brief Записывает значение из ячейки визуальной таблицы во внутреннюю
+  void cur_cell_in_display();
+
   string_type get_cell_display_variable_precision(
     const int a_col_displ,
     const int a_row_displ);
-  inline void cur_cell_in_display();
+
+  inline string_type get_cell_value_str_table_data(
+    const int a_col_displ, const int a_row_displ);
+
   void create_col_table();
   void create_group_col_table(
     double a_num_begin,
@@ -412,19 +419,7 @@ inline coord_t table_data_t::coord_special_cell(const int a_n) const
   {return mv_coord_special_cells[a_n];}
 inline int table_data_t::size_special_cells() const
   {return mv_coord_special_cells.size();}
-inline void table_data_t::cell_out_display(
-  const int a_col_displ, const int a_row_displ)
-{
-  int table_count = mv_table.size();
-  if(table_count > 0){
-    int row_count = mv_table[0].row_count();
-    div_t val = div(a_row_displ, row_count);
-    int cur_table = val.quot;
-    int cur_row = val.rem;
-    cell_t cur_cell = mv_table[cur_table][a_col_displ][cur_row];
-    mp_display_table->out_display_cell(a_col_displ,a_row_displ,cur_cell);
-  }
-}
+
 inline table_data_t::string_type
 table_data_t::get_cell_value_str_table_data(
   const int a_col_displ, const int a_row_displ)
@@ -445,43 +440,7 @@ table_data_t::get_cell_value_str_table_data(
   }
   return cell_value_str;
 }
-inline void table_data_t::cur_cell_out_display()
-{
-  int cur_col = mp_display_table->col();
-  int cur_row_displ = mp_display_table->row();
-  int table_count = mv_table.size();
-  if(table_count > 0){
-    int row_count = mv_table[0].row_count();
-    div_t val = div(cur_row_displ, row_count);
-    int cur_table = val.quot;
-    int cur_row = val.rem;
-    cell_t cur_cell = mv_table[cur_table][cur_col][cur_row];
-    mp_display_table->out_display_cur_cell(cur_cell);
-  }
-}
 
-inline void table_data_t::cur_cell_in_display()
-{
-  int cur_col = mp_display_table->col();
-  int cur_row_displ = mp_display_table->row();
-  int table_count = mv_table.size();
-  if(table_count > 0){
-    int row_count = mv_table[0].row_count();
-    div_t val = div(cur_row_displ, row_count);
-    int cur_table = val.quot;
-    int cur_row = val.rem;
-    cell_t cur_cell = mp_display_table->in_display_cur_cell();
-    bool select_cell_x = (cur_col > 0) && (cur_row == 0);
-    bool select_cell_y = (cur_col == 0) && (cur_row > 0);
-    if(select_cell_x || select_cell_y){
-      for(int i = 0; i < table_count; i++){
-        mv_table[i][cur_col][cur_row] = cur_cell;
-      }
-    }else{
-      mv_table[cur_table][cur_col][cur_row] = cur_cell;
-    }
-  }
-}
 inline int table_data_t::table_count() const
   {return mv_table.size();}
 inline int table_data_t::col_count() const
@@ -527,17 +486,29 @@ inline void table_data_t::set_row_table_data(const int a_row)
 inline void table_data_t::set_num_table_data(const int a_table)
   {m_cur_table = a_table;}
 inline void table_data_t::set_col_displ(const int a_col)
-  {mp_display_table->set_col(a_col);}
+{
+  mp_display_table->set_col(a_col);
+}
 inline void table_data_t::set_row_displ(const int a_row)
-  {mp_display_table->set_row(a_row);}
+{
+  mp_display_table->set_row(a_row);
+}
 inline int table_data_t::get_col_displ() const
-  {return mp_display_table->col();}
+{
+  return mp_display_table->col();
+}
 inline int table_data_t::get_row_displ() const
-  {return mp_display_table->row();}
+{
+  return mp_display_table->row();
+}
 inline int table_data_t::get_col_count_displ() const
-  {return mp_display_table->col_count();}
+{
+  return mp_display_table->col_count();
+}
 inline int table_data_t::get_row_count_displ() const
-  {return mp_display_table->row_count();}
+{
+  return mp_display_table->row_count();
+}
 
 inline coord3d_t table_data_t::get_coord_cell_table(
   const int a_col_displ, const int a_row_displ) const
