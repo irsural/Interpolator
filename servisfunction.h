@@ -124,6 +124,23 @@ struct param_cur_cell_t
   param_cur_cell_t():col_value(), row_value(), top_value()
   {}
 };
+
+struct displ_cell_t
+{
+  double value;
+  bool init;
+  displ_cell_t():
+    value(0),
+    init(false)
+  {
+  }
+  displ_cell_t(const cell_t& a_cell):
+    value(a_cell.value),
+    init(a_cell.init)
+  {
+  }
+};
+
 class display_table_t
 {
 public:
@@ -136,19 +153,19 @@ public:
   virtual void set_col(const int a_col) = 0;
   virtual void set_row(const int a_row) = 0;
   virtual void out_display_cell(
-    const int a_col_displ, const int a_row_displ, const cell_t a_cell) = 0;
-  virtual void out_display_cur_cell(const cell_t a_cell) = 0;
-  virtual cell_t in_display_cur_cell() = 0;
+    const int a_col_displ, const int a_row_displ, const displ_cell_t a_cell) = 0;
+  virtual void out_display_cur_cell(const displ_cell_t a_cell) = 0;
   virtual void out_display_cell_variable_precision(
     const int a_col_displ,
     const int a_row_displ,
-    const cell_t a_cell,
+    const displ_cell_t a_cell,
     const string_type& a_type_variable) = 0;
   virtual string_type get_display_cell_variable_precision(
     const int a_col_displ,
     const int a_row_displ,
-    const cell_t a_cell,
+    const displ_cell_t a_cell,
     const string_type& a_type_variable) = 0;
+  virtual displ_cell_t in_display_cur_cell() = 0;
   virtual void set_edit_mode_table() = 0;
   virtual void reset_edit_mode_table() = 0;
   virtual bool get_edit_mode_table() = 0 ;
@@ -171,19 +188,19 @@ class table_string_grid_t:public display_table_t
   void set_col(const int a_col);
   void set_row(const int a_row);
   void out_display_cell(
-    const int a_col_displ, const int a_row_displ, const cell_t a_cell);
-  void out_display_cur_cell(const cell_t a_cell);
+    const int a_col_displ, const int a_row_displ, const displ_cell_t a_cell);
+  void out_display_cur_cell(const displ_cell_t a_cell);
   void out_display_cell_variable_precision(
     const int a_col_displ,
     const int a_row_displ,
-    const cell_t a_cell,
+    const displ_cell_t a_cell,
     const string_type& a_type_variable);
   string_type get_display_cell_variable_precision(
     const int a_col_displ,
     const int a_row_displ,
-    const cell_t a_cell,
+    const displ_cell_t a_cell,
     const string_type& a_type_variable);
-  cell_t in_display_cur_cell();
+  displ_cell_t in_display_cur_cell();
   void set_edit_mode_table();
   void reset_edit_mode_table();
   bool get_edit_mode_table();

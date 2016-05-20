@@ -85,7 +85,7 @@ void table_string_grid_t::set_row(const int a_row)
   mp_table->Row = a_row;
 }
 void table_string_grid_t::out_display_cell(
-  const int a_col_displ, const int a_row_displ, const cell_t a_cell)
+  const int a_col_displ, const int a_row_displ, const displ_cell_t a_cell)
 {
   String cell_str;
   if(a_cell.init == true){
@@ -93,7 +93,7 @@ void table_string_grid_t::out_display_cell(
   }
   mp_table->Cells[a_col_displ][a_row_displ] = cell_str;
 }
-void table_string_grid_t::out_display_cur_cell(const cell_t a_cell)
+void table_string_grid_t::out_display_cur_cell(const displ_cell_t a_cell)
 {
   int col = mp_table->Col;
   int row = mp_table->Row;
@@ -106,7 +106,7 @@ void table_string_grid_t::out_display_cur_cell(const cell_t a_cell)
 void table_string_grid_t::out_display_cell_variable_precision(
   const int a_col_displ,
   const int a_row_displ,
-  const cell_t a_cell,
+  const displ_cell_t a_cell,
   const string_type& a_type_variable)
 {
   mp_table->Cells[a_col_displ][a_row_displ] =
@@ -117,26 +117,25 @@ table_string_grid_t::string_type
 table_string_grid_t::get_display_cell_variable_precision(
   const int a_col_displ,
   const int a_row_displ,
-  const cell_t a_cell,
+  const displ_cell_t a_cell,
   const string_type& a_type_variable)
 {
   string_type cell_str;
-  if(a_cell.init == true){
-
+  if (a_cell.init == true) {
     irs::number_to_string(a_cell.value, &cell_str, m_precision);
     cell_str += string_type(irst(" ")) + a_type_variable.c_str();
-  }else{
+  } else {
     cell_str.clear();
   }
   return cell_str;
 }
 
-cell_t table_string_grid_t::in_display_cur_cell()
+displ_cell_t table_string_grid_t::in_display_cur_cell()
 {
   int col = mp_table->Col;
   int row = mp_table->Row;
   String cell_str = mp_table->Cells[col][row];
-  cell_t cell;
+  displ_cell_t cell;
   if(cell_str.IsEmpty()){
     cell.value = 0.0;
     cell.init = false;
@@ -278,15 +277,21 @@ void table_data_t::cur_cell_in_display()
     div_t val = div(cur_row_displ, row_count);
     int cur_table = val.quot;
     int cur_row = val.rem;
-    cell_t cur_cell = mp_display_table->in_display_cur_cell();
+    displ_cell_t cur_cell = mp_display_table->in_display_cur_cell();
     bool select_cell_x = (cur_col > 0) && (cur_row == 0);
     bool select_cell_y = (cur_col == 0) && (cur_row > 0);
     if(select_cell_x || select_cell_y){
       for(int i = 0; i < table_count; i++){
-        mv_table[i][cur_col][cur_row] = cur_cell;
+        cell_t cell = mv_table[i][cur_col][cur_row];
+        cell.value = cur_cell.value;
+        cell.init = cur_cell.init;
+        mv_table[i][cur_col][cur_row] = cell;
       }
-    }else{
-      mv_table[cur_table][cur_col][cur_row] = cur_cell;
+    } else {
+      cell_t cell = mv_table[cur_table][cur_col][cur_row];
+      cell.value = cur_cell.value;
+      cell.init = cur_cell.init;
+      mv_table[cur_table][cur_col][cur_row] = cell;
     }
   }
 }

@@ -143,7 +143,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_previous_time_meas_sec(0.0),
   m_status_copy_table(OFF_COPY),
   table_string_grid1(RawDataStringGrid),
-  m_table_raw_data(&table_string_grid1, "Таблица исходных значений"),
+  m_table_raw_data(&table_string_grid1, irst("Таблица исходных значений")),
   m_table_data_size(&m_table_raw_data),
   m_manager_traffic_cell(&m_table_data_size),
   mp_active_table(&m_table_raw_data),
