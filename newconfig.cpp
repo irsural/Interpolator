@@ -153,7 +153,7 @@ void TNewConfigF::draw_cell_illegal(
   //заливаем фон
   ((TStringGrid*)Sender)->Canvas->FillRect(Rect);
   //красим текст
-  ((TStringGrid*)Sender)->Canvas->TextOutA(
+  ((TStringGrid*)Sender)->Canvas->TextOutW(
     Rect.Left, Rect.Top, ((TStringGrid*)Sender)->Cells[ACol][ARow]);
 }
 bool TNewConfigF::cell_illegal_ListParameterSG_stat(

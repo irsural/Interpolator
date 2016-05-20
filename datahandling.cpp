@@ -2461,12 +2461,12 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
       //заливаем фон
       table->Canvas->FillRect(a_rect);
       //красим текст
-      table->Canvas->TextOutA(
+      table->Canvas->TextOutW(
         a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
     } else {
       //table->Canvas->Brush->Color = clRed;
       table->Canvas->FillRect(a_rect);
-      table->Canvas->TextOutA(a_rect.Left, a_rect.Top, value);
+      table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
     }
   } else {
     //цвет фона
@@ -2476,7 +2476,7 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
     //заливаем фон
     table->Canvas->FillRect(a_rect);
     //красим текст
-    table->Canvas->TextOutA(
+    table->Canvas->TextOutW(
       a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
   }
 }
