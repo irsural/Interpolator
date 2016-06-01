@@ -1443,3 +1443,4 @@ void __fastcall TNewConfigF::RefDeviceComboBoxChange(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+

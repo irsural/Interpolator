@@ -475,7 +475,7 @@ void TManagerDGIF::meas_tick()
   if (!SingleModeProgramCB->Checked) {
     TDataHandlingF* m_cur_ref_channel = get_ptr_ref_channel();
     if (m_cur_ref_channel != IRS_NULL) {
-      bool on_auto_meas = m_cur_ref_channel->get_stat_on_auto_meas();
+      bool on_auto_meas = m_cur_ref_channel->is_auto_meas_running();
       if (on_auto_meas != m_on_auto_meas_previous_value) {
         for (int channel = 0; channel < m_channel_count; channel++) {
           if ((*mv_channels[channel]).get() != IRS_NULL) {

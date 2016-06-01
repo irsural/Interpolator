@@ -660,9 +660,9 @@ private:	// User declarations
   //начать новый процесс автоматического измерения напряжений
   bool m_on_start_new_auto_meas;
   //процесс запущен
-  bool m_on_auto_meas;
+  bool m_auto_meas_is_running;
   //остановить процесс
-  bool m_on_stop_process_avto_volt_meas;
+  bool m_on_stop_process_auto_volt_meas;
   //процесс автоматического измерения с активной ячейки
   bool m_on_process_auto_meas_active_cell;
 
@@ -714,6 +714,7 @@ private:	// User declarations
   irs::timer_t m_timer_delay_control_error_bit;
   irs::timer_t m_timer_delay_next_cell;
   irs::timer_t m_timer_waiting_set_extra_vars;
+  bool m_reset_time_meas;
   // Счетчик времени измерений
   irs::measure_time_t m_time_meas;
   // Количество измеренных точек
@@ -735,7 +736,6 @@ private:	// User declarations
   vector<int> mv_config_table_copy;
   int m_memory_capacity;
   param_cur_cell_t m_param_cur_cell;
-  inline void reset_start_new_avto_volt_meas_stat();
   inline void reset_stat_stop_process_avto_volt_meas();
   
   //установка типа перехода
@@ -1011,7 +1011,7 @@ public:
   inline int table_displ_col_count();
   inline int table_displ_row_count();
 
-  inline bool get_stat_on_auto_meas();
+  inline bool is_auto_meas_running() const;
   // Запрос координат текущей ячейки измерения
   inline coord_cell_t get_coord_cur_cell_meas();
   inline void cell_out_display_variable_precision(
@@ -1147,14 +1147,9 @@ inline void TDataHandlingF::set_successfully_mode_setting_stat()
 inline int TDataHandlingF::read_memory_capacity()
   {return m_memory_capacity;}
 
-inline void TDataHandlingF::reset_start_new_avto_volt_meas_stat()
-{
-  m_on_start_new_auto_meas = false;
-}
-
 inline void TDataHandlingF::reset_stat_stop_process_avto_volt_meas()
 {
-  m_on_stop_process_avto_volt_meas = false;
+  m_on_stop_process_auto_volt_meas = false;
 }
 
 inline void TDataHandlingF::set_deley_volt_meas(const unsigned int a_delay)
@@ -1278,9 +1273,9 @@ inline int TDataHandlingF::table_displ_row_count()
 {
   return mp_active_table->get_row_count_displ();
 }
-inline bool TDataHandlingF::get_stat_on_auto_meas()
+inline bool TDataHandlingF::is_auto_meas_running() const
 {
-  return m_on_auto_meas;
+  return m_auto_meas_is_running;
 }
 inline coord_cell_t TDataHandlingF::get_coord_cur_cell_meas()
 {

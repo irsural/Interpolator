@@ -101,8 +101,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_on_connect_eeprom(false),
 
   m_on_start_new_auto_meas(false),
-  m_on_auto_meas(false),
-  m_on_stop_process_avto_volt_meas(false),
+  m_auto_meas_is_running(false),
+  m_on_stop_process_auto_volt_meas(false),
   m_on_process_auto_meas_active_cell(false),
   on_reg_ready_back_cycle(false),
 
@@ -135,6 +135,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_timer_delay_control_error_bit(m_delay_control_error_bit),
   m_timer_delay_next_cell(m_delay_next_cell),
   m_timer_waiting_set_extra_vars(irs::make_cnt_s(3)),
+  m_reset_time_meas(false),
   m_time_meas(),
   m_count_point_meas(0),
   m_previous_count_point_meas(0),
@@ -395,12 +396,15 @@ void TDataHandlingF::load_config_calibr()
       mp_active_table->set_inf_in_param(m_inf_in_param);
 
       // Загрузка последнего активного файла
-      String file_namedir = m_file_name_service.make_absolute_path(
+      const String file_namedir = m_file_name_service.make_absolute_path(
         m_config_calibr.active_filename);
 
       if (FileExists(file_namedir)) {
-        mp_active_table->set_file_namedir(file_namedir);
-        mp_active_table->load_table_from_file(file_namedir.c_str());
+        const String cur_file_name = mp_active_table->get_file_namedir();
+        if (cur_file_name != file_namedir) {
+          mp_active_table->set_file_namedir(file_namedir);
+          mp_active_table->load_table_from_file(file_namedir.c_str());
+        }
       } else {
         mp_active_table->clear_file_name();
         mp_active_table->create_new_table();
@@ -715,7 +719,7 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
 
 void TDataHandlingF::tick()
 {
-  m_on_block_reconfiguration = m_on_auto_meas;
+  m_on_block_reconfiguration = m_auto_meas_is_running;
   if (m_load_conf_calibr_device_success && m_device.enabled()) {
     m_device.tick();
     m_ref_device.tick();
@@ -739,7 +743,7 @@ void TDataHandlingF::tick()
       const irs_u32 work_time = m_device.get_data()->work_time;
       WorkTimeDeviceLE->Text = num_to_cbstr(work_time);
       if (m_config_calibr.out_param_control_config.enabled) {
-        if (m_on_auto_meas) {
+        if (m_auto_meas_is_running) {
           double out_param = m_device.get_data()->y_out;
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
@@ -1317,7 +1321,7 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
 void TDataHandlingF::process_volt_meas()
 {
   if(m_on_process_auto_meas_active_cell == true) {
-    if (m_on_auto_meas != true) {
+    if (m_auto_meas_is_running != true) {
       m_on_start_new_auto_meas = true;
       /*if(m_status_process_meas != spm_jump_next_elem){
         m_on_process_auto_meas_active_cell = false;
@@ -1326,14 +1330,14 @@ void TDataHandlingF::process_volt_meas()
       m_on_start_new_auto_meas = true;
     }  */
   }
-  if(m_on_stop_process_avto_volt_meas == true){
+  if(m_on_stop_process_auto_volt_meas == true){
     reset_stat_stop_process_avto_volt_meas();
-    m_on_auto_meas = false;
+    m_auto_meas_is_running = false;
     //config_button_stop_avto_volt_meas();
     m_status_process_meas = spm_reset;
     m_log << irst("Стоп.");
   }
-  if (m_on_auto_meas) {
+  if (m_auto_meas_is_running) {
     config_button_start_avto_volt_meas();
     m_timer_delay_control_error_bit.check();
     if (m_device.connected()) {
@@ -1342,10 +1346,11 @@ void TDataHandlingF::process_volt_meas()
         if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
           m_cur_count_reset_over_bit++;
           m_device.get_data()->reset_over_bit = 1;
-          m_on_start_new_auto_meas = true;
-          m_on_process_auto_meas_active_cell = true;
+          //m_on_start_new_auto_meas = true;
+          //m_on_process_auto_meas_active_cell = true;
 
-          m_status_process_meas = spm_off_process;
+          //m_status_process_meas = spm_off_process;
+          m_status_process_meas = spb_wait_connect;
 
           /*if (m_mode_program == mode_prog_single_channel) {
             m_status_process_meas = spm_set_range;
@@ -1378,8 +1383,8 @@ void TDataHandlingF::process_volt_meas()
         m_previous_count_point_meas = 0;
         set_connect_calibr_device();
         set_connect_multimetr();
-        reset_start_new_avto_volt_meas_stat();
-        m_on_auto_meas = true;
+        m_on_start_new_auto_meas = false;
+        m_auto_meas_is_running = true;
         m_manager_traffic_cell.set_min_col(1);
         m_manager_traffic_cell.set_min_row(1);
         illegal_cells_t illegal_cells =
@@ -1426,6 +1431,7 @@ void TDataHandlingF::process_volt_meas()
         m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
         m_cell_count_end++;
         //m_time_meas.start();
+        m_reset_time_meas = true;
         set_progress_bar_mode_calibration();
         //m_exec_progress.show();
         //m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
@@ -1435,19 +1441,26 @@ void TDataHandlingF::process_volt_meas()
       }
     } break;
     case spb_wait_connect: {
-      if(m_device.connected()) {
-        set_value_working_extra_params();
-        set_value_working_extra_bits();
-        /*if (m_mode_program == mode_prog_single_channel) {
-          m_status_process_meas = spm_set_range;
-        } else {
-          m_status_process_meas = spm_wait_ext_trig_set_range;
-          m_log <<
-            irst("Ожидание внешнего запуска установки диапазона измерений.");
-        } */
-        m_timer_waiting_set_extra_vars.start();
-        m_time_meas.start();
-        m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+      if (m_device.connected()) {
+        if (m_timer_delay_control_error_bit.stopped()) {
+          set_value_working_extra_params();
+          set_value_working_extra_bits();
+          /*if (m_mode_program == mode_prog_single_channel) {
+            m_status_process_meas = spm_set_range;
+          } else {
+            m_status_process_meas = spm_wait_ext_trig_set_range;
+            m_log <<
+              irst("Ожидание внешнего запуска установки диапазона измерений.");
+          } */
+          m_timer_waiting_set_extra_vars.start();
+
+          if (m_reset_time_meas) {
+            m_time_meas.start();
+            m_reset_time_meas = false;
+          }
+
+          m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+        }
       }
     } break;
     case spb_wait_apply_extra_params_and_bits: {
@@ -1702,6 +1715,7 @@ void TDataHandlingF::process_volt_meas()
         m_points.push_back(point);
       }
       update_point_measurement_progress();
+      //m_log << "Обновление значения.";
       //--------------------------------------
       if (!mp_meas_point_chart.is_empty()) {
         update_result();
@@ -1747,7 +1761,7 @@ void TDataHandlingF::process_volt_meas()
       } */
       m_param_cur_cell = m_default_param_cur_cell;
       m_on_out_data = true;
-      m_on_auto_meas = false;
+      m_auto_meas_is_running = false;
       m_on_process_auto_meas_active_cell = false;
       config_button_stop_avto_volt_meas();
       //m_status_process_meas = spm_off_process;
@@ -1771,7 +1785,7 @@ void TDataHandlingF::process_volt_meas()
       }
     } break;
   }
-  if (m_on_auto_meas) {
+  if (m_auto_meas_is_running) {
     double time_meas_sec = m_time_meas.get();
     irs::millisecond_t time_meas_ms =
       static_cast<irs::millisecond_t>(time_meas_sec*1000);
@@ -2592,7 +2606,7 @@ void __fastcall TDataHandlingF::StartAutoVoltMeasActionExecute(
 
 void __fastcall TDataHandlingF::StopVoltMeasActionExecute(TObject *Sender)
 {
-  m_on_stop_process_avto_volt_meas = true;
+  m_on_stop_process_auto_volt_meas = true;
 }
 //---------------------------------------------------------------------------
 
@@ -2662,6 +2676,9 @@ void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
 {
+  if (!save_unsaved_changes_dialog()) {
+    return;
+  }
   String file_namedir;
   file_namedir = FileOpen->Dialog->FileName;
   mp_active_table->set_file_namedir(file_namedir);
@@ -2669,6 +2686,8 @@ void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
   m_config_calibr.active_filename =
     m_file_name_service.make_relative_file_name(file_namedir);
   Caption = m_prog_name + String(irst(" - "))+file_namedir;
+  // Сохраняем текущий открытый документ
+  m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
 }
 //---------------------------------------------------------------------------
 
@@ -2894,9 +2913,9 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
 {
-  if (!save_unsaved_changes_dialog()) {
+  /*if (!save_unsaved_changes_dialog()) {
     return;
-  }
+  }*/
 
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
@@ -4233,6 +4252,7 @@ void __fastcall TDataHandlingF::ShowMeasPointChartActionExecute(TObject *Sender)
   }
 }
 //---------------------------------------------------------------------------
+
 
 
 
