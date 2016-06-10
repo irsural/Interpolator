@@ -371,6 +371,7 @@ void __fastcall TManagerDGIF::SingleModeProgramCBClick(TObject *Sender)
     irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, NULL);
     mp_channel_1.reset(new TDataHandlingF(0, ManagerDGIF));
     mp_channel_1->Visible = true;
+    //Application->
     ManagerDGIF->Visible = false;
   }
 }

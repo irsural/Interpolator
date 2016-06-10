@@ -25,7 +25,7 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
   try
   {
      Application->Initialize();
-     Application->MainFormOnTaskBar = true;
+     //Application->MainFormOnTaskBar = true;
      Application->CreateForm(__classid(TManagerDGIF), &ManagerDGIF);
      Application->CreateForm(__classid(TCopyTableForm), &CopyTableForm);
      Application->CreateForm(__classid(TAddCorRowF), &AddCorRowF);
