@@ -62,6 +62,8 @@
 //#include "configdevice.h"
 #include "modifidatatable.h"
 #include "connectionlog.h"
+#include "comparison.h"
+#include "parameters.h"
 #include "About.h"
 #include <System.Actions.hpp>
 #include <Vcl.PlatformDefaultStyleActnCtrls.hpp>
@@ -202,7 +204,7 @@ __published:	// IDE-managed Components
   TStringGrid *RawDataStringGrid;
   TGroupBox *OptionsGroupBox;
   TPanel *ButtomPanel;
-  TTimer *FormDataHandingTimer1;
+  TTimer *FormDataHandingTimer;
   TMemo *LogMemo;
   TActionManager *ActionManager1;
   TImageList *ImageList2;
@@ -368,12 +370,15 @@ __published:	// IDE-managed Components
   TAction *ShowMeasPointChartAction;
   TMenuItem *N19;
   TMenuItem *N20;
+  TMenuItem *N21;
+  TMenuItem *ComparsionMenuItem;
+  TMenuItem *ParametersMenuItem;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
           TShiftState Shift);
   void __fastcall FormCreate(TObject *Sender);
-  void __fastcall FormDataHandingTimer1Timer(TObject *Sender);
+  void __fastcall FormDataHandingTimerTimer(TObject *Sender);
   void __fastcall ClearTableButtonClick(TObject *Sender);
   void __fastcall RawDataStringGridDrawCell(TObject *Sender, int ACol,
           int ARow, TRect &Rect, TGridDrawState State);
@@ -455,6 +460,8 @@ __published:	// IDE-managed Components
   void __fastcall ShowMultimeterOptionsButtonClick(TObject *Sender);
   void __fastcall PatternOfMeasuringInstrumentCBChange(TObject *Sender);
   void __fastcall ShowMeasPointChartActionExecute(TObject *Sender);
+  void __fastcall ComparsionMenuItemClick(TObject *Sender);
+  void __fastcall ParametersMenuItemClick(TObject *Sender);
 
 
 private:	// User declarations
@@ -894,7 +901,7 @@ public:		// User declarations
   void load_config_calibr();
   void set_connect_if_enabled(bool a_forced_connect = false);
   void set_connect_calibr_device(bool a_forced_connect = false);
-  void set_connect_multimetr();
+  bool set_connect_multimetr();
   String get_selected_multimeter();
   void reset_connect_calibr_device();
   void reset_connect_multimetr();

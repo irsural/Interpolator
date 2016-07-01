@@ -12,6 +12,8 @@
 
 #include <irsfinal.h>
 
+
+const double not_a_number = 2e300;
 //---------------------------------------------------------------------------
 //table_string_grid_t
 table_string_grid_t::table_string_grid_t(TStringGrid* const ap_table):
@@ -176,7 +178,7 @@ table_data_t::table_data_t(display_table_t* ap_display_table,
   String a_name):
   mp_error_trans(irs::error_trans()),
   m_min_fractional_part_count(0.00000000001),
-  m_nan(2e300),    
+  //m_nan(2e300),
   mp_display_table(ap_display_table),
   m_name(a_name),
   m_file_namedir(),
@@ -779,7 +781,7 @@ void table_data_t::save_table_to_ini_file(const string_type a_file_name)
         if(cell.init == true){
           value_cell = cell.value;
         }else{
-          value_cell = m_nan;
+          value_cell = not_a_number;
         }
         row_str<<setw(m_field_width)<<left<<setprecision(m_precision)<<
           value_cell;
@@ -862,10 +864,10 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
       }
     }else{
       if(x != mp_table->ColCount-3){
-        outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+        outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
         outfile<<","<<" "<<flush;
       }else{
-        outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+        outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
         outfile<<"];"<<flush;
       }
     }
@@ -885,10 +887,10 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
       }
     }else{
       if(y != mp_table->RowCount-3){
-        outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+        outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
         outfile<<","<<" "<<flush;
       }else{
-        outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+        outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
         outfile<<"];"<<flush;
       }
     }
@@ -911,10 +913,10 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
         }
       }else{
         if(x != mp_table->ColCount-3){
-          outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+          outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
           outfile<<","<<" "<<flush;
         }else{
-          outfile<<setprecision(m_precision)<<StrToFloat(m_nan)<<flush;
+          outfile<<setprecision(m_precision)<<StrToFloat(not_a_number)<<flush;
           outfile<<"];"<<flush;
         }
       }
@@ -937,89 +939,33 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
 
 void table_data_t::load_table_from_file(const string_type& a_file_name)
 {
-  try {
-    load_table_from_json_file(a_file_name);
-  } catch (...) {
-    load_table_from_ini_file(a_file_name);
-  }
-}
-
-void table_data_t::load_table_from_json_file(const string_type a_file_name)
-{
-  std::ifstream ifile;
-  ifile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()), ios::in);
-  if (!ifile.good()) {
-    throw runtime_error("Не удалось загрузить файл");
-  }
-  Json::Reader reader;
-  Json::Value data;
-  const bool collect_comments = false;
-  const bool parsed_success = reader.parse(ifile, data, collect_comments);
-  if(!parsed_success) {
-    std::cout << "Failed to parse JSON" <<
-      std::endl << reader.getFormatedErrorMessages() <<
-      std::endl;
-    throw std::runtime_error("Неудалось разобрать файл");
-  }
-
-  const unsigned int param_count = data["parameter_count"].asUInt();
-
+  std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
-  if (param_count == 2)  {
-    param_count_from_file = TWO_PARAM;
-  } else if(param_count == 3) {
-    param_count_from_file = THREE_PARAM;
-  }
 
-  if (m_inf_in_param.number_in_param != param_count_from_file) {
-    return;
+  ::load_table_from_file(param_count_from_file, a_file_name, table);
+  /*try {
+    load_table_from_json_file(param_count_from_file, a_file_name, subtable);
+  } catch (...) {
+    load_table_from_ini_file(param_count_from_file, a_file_name, subtable);
+  } */
+
+  if (m_inf_in_param.number_in_param == param_count_from_file) {
+    mv_table.clear();
+    #ifdef debug_version_digital_interpolator
+    mv_saved_table.clear();
+    mv_saved_table = table;
+    #endif
+    mv_table = table;
+    mp_display_table->out_display(mv_table, m_inf_in_param);
+  } else {
     // сообщение о несоответствии загруженного файла выбранной конфигурации
   }
-
-  std::vector<irs::matrix_t<cell_t> > table;
-  switch (param_count_from_file) {
-    case TWO_PARAM: {
-      Json::Value col_parameters = data["parameters"];
-      irs::matrix_t<cell_t> matrix;
-      load_table_from_json(col_parameters, &matrix);
-      table.push_back(matrix);
-    } break;
-    case THREE_PARAM: {
-      Json::Value top_parameters = data["parameters"];
-      const size_type table_count = top_parameters.size();
-      table.reserve(table_count);
-      for (unsigned int z = 0; z < table_count; z++) {
-        Json::Value parameter = top_parameters[z];
-        std::string param_str = parameter["param"].asString();
-        cell_t cell;
-        double param = 0;
-        if (irs::str_to_num_classic(param_str, &param)) {
-          cell.init = true;
-          cell.value = param;
-        }
-
-        Json::Value col_parameters = parameter["parameters"];
-
-        irs::matrix_t<cell_t> matrix;
-        load_table_from_json(col_parameters, &matrix);
-        matrix[0][0] = cell;
-        table.push_back(matrix);
-      }
-    } break;
-  }
-
-  mv_table.clear();
-  #ifdef debug_version_digital_interpolator
-  mv_saved_table.clear();
-  mv_saved_table = table;
-  #endif
-  mv_table = table;
-  mp_display_table->out_display(mv_table, m_inf_in_param);
 }
 
-void table_data_t::load_table_from_json(
+void load_table_from_json(
   const Json::Value& a_parameters, irs::matrix_t<cell_t>* ap_matrix)
 {
+  typedef size_t size_type;
   irs::matrix_t<cell_t> matrix;
   const size_type col_count = a_parameters.size();
   for (size_type col = 0; col < col_count; col++) {
@@ -1085,9 +1031,11 @@ void table_data_t::load_table_from_json(
   *ap_matrix = matrix;
 }
 
-void table_data_t::load_points(const Json::Value& a_points_value,
+void load_points(const Json::Value& a_points_value,
   cell_t::points_type* ap_points)
 {
+  typedef size_t size_type;
+
   ap_points->clear();
 
   if (!a_points_value.isArray()) {
@@ -1107,11 +1055,85 @@ void table_data_t::load_points(const Json::Value& a_points_value,
   }
 }
 
-void table_data_t::load_table_from_ini_file(const string_type& a_file_name)
+void load_table_from_json_file(
+  number_in_param_t& a_number_in_param,
+  const irs::string_t& a_file_name,
+  std::vector<irs::matrix_t<cell_t> >& a_table)
+{
+  typedef size_t size_type;
+  typedef irs::string_t string_type;
+
+  std::ifstream ifile;
+  ifile.open(IRS_SIMPLE_FROM_TYPE_STR(a_file_name.c_str()), ios::in);
+  if (!ifile.good()) {
+    throw runtime_error("Не удалось загрузить файл");
+  }
+  Json::Reader reader;
+  Json::Value data;
+  const bool collect_comments = false;
+  const bool parsed_success = reader.parse(ifile, data, collect_comments);
+  if(!parsed_success) {
+    std::cout << "Failed to parse JSON" <<
+      std::endl << reader.getFormatedErrorMessages() <<
+      std::endl;
+    throw std::runtime_error("Неудалось разобрать файл");
+  }
+
+  const unsigned int param_count = data["parameter_count"].asUInt();
+
+  number_in_param_t param_count_from_file = TWO_PARAM;
+  if (param_count == 2)  {
+    param_count_from_file = TWO_PARAM;
+  } else if(param_count == 3) {
+    param_count_from_file = THREE_PARAM;
+  }
+
+  a_number_in_param = param_count_from_file;
+
+  /*if (m_inf_in_param.number_in_param != param_count_from_file) {
+    return;
+    // сообщение о несоответствии загруженного файла выбранной конфигурации
+  } */
+
+  a_table.clear();
+  //std::vector<irs::matrix_t<cell_t> > table;
+  switch (param_count_from_file) {
+    case TWO_PARAM: {
+      Json::Value col_parameters = data["parameters"];
+      irs::matrix_t<cell_t> matrix;
+      load_table_from_json(col_parameters, &matrix);
+      a_table.push_back(matrix);
+    } break;
+    case THREE_PARAM: {
+      Json::Value top_parameters = data["parameters"];
+      const size_type table_count = top_parameters.size();
+      a_table.reserve(table_count);
+      for (unsigned int z = 0; z < table_count; z++) {
+        Json::Value parameter = top_parameters[z];
+        std::string param_str = parameter["param"].asString();
+        cell_t cell;
+        double param = 0;
+        if (irs::str_to_num_classic(param_str, &param)) {
+          cell.init = true;
+          cell.value = param;
+        }
+
+        Json::Value col_parameters = parameter["parameters"];
+
+        irs::matrix_t<cell_t> matrix;
+        load_table_from_json(col_parameters, &matrix);
+        matrix[0][0] = cell;
+        a_table.push_back(matrix);
+      }
+    } break;
+  }
+}
+
+/*void table_data_t::load_table_from_ini_file(const string_type& a_file_name)
 {
   std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
-  load_table_from_file(param_count_from_file, a_file_name, table);
+  load_table_from_ini_file(param_count_from_file, a_file_name, table);
   if (m_inf_in_param.number_in_param == param_count_from_file) {
     mv_table.clear();
     #ifdef  debug_version_digital_interpolator
@@ -1123,14 +1145,22 @@ void table_data_t::load_table_from_ini_file(const string_type& a_file_name)
   } else {
     // сообщение о несоответствии загруженного файла выбранной конфигурации
   }
-}
+} */
 
 //---------------------------------------------------------------------------
 void table_data_t::load_subtable_from_file(const string_type& a_file_name)
 {
   std::vector<irs::matrix_t<cell_t> > subtable;
   number_in_param_t param_count_from_file = TWO_PARAM;
-  load_table_from_file(param_count_from_file, a_file_name, subtable);
+
+  ::load_table_from_file(param_count_from_file, a_file_name, subtable);
+  /*try {
+    load_table_from_json_file(param_count_from_file, a_file_name, subtable);
+  } catch (...) {
+    load_table_from_ini_file(param_count_from_file, a_file_name, subtable);
+  }*/
+
+  //load_table_from_ini_file(param_count_from_file, a_file_name, subtable);
   if(m_inf_in_param.number_in_param != param_count_from_file){
     // сообщение о несоответствии загруженного файла выбранной конфигурации
   }else{
@@ -1444,11 +1474,25 @@ illegal_cells_t table_data_t::get_illegal_cells() const
   return illegal_cells;
 }
 
-void table_data_t::load_table_from_file(
+void load_table_from_file(
   number_in_param_t& a_number_in_param,
-  const string_type& a_file_name,
+  const irs::string_t& a_file_name,
   std::vector<irs::matrix_t<cell_t> >& a_table)
 {
+  try {
+    load_table_from_json_file(a_number_in_param, a_file_name, a_table);
+  } catch (...) {
+    load_table_from_ini_file(a_number_in_param, a_file_name, a_table);
+  }
+}
+
+void load_table_from_ini_file(
+  number_in_param_t& a_number_in_param,
+  const irs::string_t& a_file_name,
+  std::vector<irs::matrix_t<cell_t> >& a_table)
+{
+  typedef irs::string_t string_type;
+
   //чтение из ini файла размеров кватерниона
   irs::handle_t<TIniFile> inifile(new TIniFile(a_file_name.c_str()));
 
@@ -1487,7 +1531,7 @@ void table_data_t::load_table_from_file(
          row_str >> value_cell;
          cell_t cell;
          cell.value = value_cell;
-        if (value_cell != m_nan){
+        if (value_cell != not_a_number){
           cell.init = true;
         } else {
           cell.init = false;
@@ -1735,7 +1779,7 @@ void table_data_t::inversion_sign_conrent_table()
   }
 }
 
-void table_data_t::modifi_content_table(const string_type& a_str)
+void table_data_t::modify_content_table(const string_type& a_str)
 {
   const string_type z_name = irst("z");
   const string_type x_name = irst("x");
@@ -2960,10 +3004,12 @@ bool device2_t::enabled() const
 bool device2_t::connected() const
 {
   if (created()) {
-    if (mp_mxdata_assembly->mxdata()) {
-      return m_data_map.is_connected() &&
-        mp_mxdata_assembly->mxdata()->connected();
-    }
+    //if (mp_mxdata_assembly->enabled()) {
+      if (mp_mxdata_assembly->mxdata()) {
+        return m_data_map.is_connected() &&
+          mp_mxdata_assembly->mxdata()->connected();
+      }
+    //}
   }
 
   /*bool connected = false;
@@ -2971,7 +3017,8 @@ bool device2_t::connected() const
     connected = m_data_map.is_connected() &&
       mp_mxdata_assembly->mxdata()->connected();
   } */
-  return m_data_map.is_connected();
+  return false;
+  //return m_data_map.is_connected();
 }
 
 void device2_t::load(const String& a_device_file_name)
@@ -3138,3 +3185,46 @@ void device2_t::tick()
   }
 }
 
+void save_string_grid_to_csv_with_dialog(TStringGrid* ap_string_grid,
+  const String& a_file_name_default)
+{
+  typedef size_t size_type;
+  typedef irs::string_t string_type;
+
+  irs::handle_t<TSaveDialog> SaveDialog(new TSaveDialog(NULL));
+
+  SaveDialog->Filter = irst("Текстовые файлы Microsoft Excel (*.csv)")
+    irst("|*.csv|Все файлы (*.*)|*.*");
+  SaveDialog->DefaultExt = irst("csv");
+  if (a_file_name_default.IsEmpty()) {
+    SaveDialog->FileName = irst("Новый файл.csv");
+  } else {
+    SaveDialog->FileName = a_file_name_default;
+  }
+  if (SaveDialog->Execute()) {
+    if (FileExists(SaveDialog->FileName)) {
+      if (Application->MessageBox(
+          irst("Такой файл уже существует. Перезаписать?"),
+          irst("Вопрос"),  MB_OKCANCEL + MB_DEFBUTTON2 + MB_ICONQUESTION) !=
+            IDOK) {
+        return;
+      }
+    }
+    const string_type file_name = SaveDialog->FileName.c_str();
+    irs::csvwork::csv_file_synchro_t csv_file(file_name);
+
+    irs::table_string_t table_string;
+
+    table_string.set_col_count(ap_string_grid->ColCount);
+    table_string.set_row_count(ap_string_grid->RowCount);
+    for (size_type c = 0; c < table_string.get_col_count(); c++) {
+      for (size_type r = 0; r < table_string.get_row_count(); r++) {
+        const string_type cell_value =
+          irs::str_conv<string_type>(ap_string_grid->Cells[c][r]);
+        table_string.write_cell(c, r, cell_value);
+      }
+    }
+
+    csv_file.save(table_string);
+  }
+}

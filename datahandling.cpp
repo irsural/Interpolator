@@ -9,6 +9,7 @@
 #include <irsalg.h>
 #include "newconfig.h"
 
+
 #include <irsfinal.h>
 
 //---------------------------------------------------------------------------
@@ -67,7 +68,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_bad_cells(false),
   m_on_block_reconfiguration(false),
   m_cur_index_conf_calibr(0),
-  m_cur_filename_conf_calibr_device(""),
+  m_cur_filename_conf_calibr_device(String()),
 
   m_on_write_data_eeprom(false),
   m_on_verification_data_eeprom(false),
@@ -506,7 +507,7 @@ void TDataHandlingF::set_connect_calibr_device(
   }
 }
 
-void TDataHandlingF::set_connect_multimetr()
+bool TDataHandlingF::set_connect_multimetr()
 {
   /*String cur_multimetr = get_selected_multimeter();
   multimeter_mode_type_t mode = mul_mode_type_active;
@@ -520,9 +521,17 @@ void TDataHandlingF::set_connect_multimetr()
     if (m_type_meas == tm_value) {
       mode = mul_mode_type_passive;
     }
-    mp_mxmultimeter_assembly->enable(mode);
-    m_value_meas.set_connect_multimetr(mp_mxmultimeter_assembly->mxmultimeter());
+    //try {
+      mp_mxmultimeter_assembly->enable(mode);
+      m_value_meas.set_connect_multimetr(
+        mp_mxmultimeter_assembly->mxmultimeter());
+    /*} catch (Exception& e) {
+      Application->ShowException(&e);
+      m_value_meas.disconnect_multimetr();
+      return false;
+    }*/
   }
+  return true;
 }
 
 String TDataHandlingF::get_selected_multimeter()
@@ -734,7 +743,7 @@ void TDataHandlingF::tick()
     m_on_out_data = false;
     #endif //debug_irsdigint
 
-    if(m_device.connected()) {
+    if  (m_device.connected()) {
 
       m_y_out_filter.add(m_device.get_data()->y_out);
       m_y_out_filter.tick();
@@ -870,7 +879,7 @@ void TDataHandlingF::tick()
       case OFF_PROCESSING:{
         m_status_options = mp_options_form->status_options();
       } break;
-      case ON_UPDAT:{
+      case ON_UPDATE:{
         m_options_mnk = mp_options_form->read_options_mnk();
         m_options_correct = mp_options_form->read_options_correct();
         m_options_coef = mp_options_form->read_options_coef();
@@ -1330,7 +1339,8 @@ void TDataHandlingF::process_volt_meas()
       m_on_start_new_auto_meas = true;
     }  */
   }
-  if(m_on_stop_process_auto_volt_meas == true){
+  if (m_on_stop_process_auto_volt_meas == true) {
+    m_on_start_new_auto_meas = false;
     reset_stat_stop_process_avto_volt_meas();
     m_auto_meas_is_running = false;
     //config_button_stop_avto_volt_meas();
@@ -1391,11 +1401,6 @@ void TDataHandlingF::process_volt_meas()
           mp_active_table->get_illegal_cells();
         m_manager_traffic_cell.set_illegal_cell(illegal_cells);
         m_cur_count_reset_over_bit = 0;
-        /*if(!m_device.connected()) {
-          int a = 0;
-        }
-        set_value_working_extra_params();
-        set_value_working_extra_bits();*/
         if (m_type_jump_next_elem == HORIZONTAL_DOWN ||
           m_type_jump_next_elem == HORIZONTAL_DOWN_SMOOTH ||
           m_type_jump_next_elem == VERTICAL_FORWARD ||
@@ -1430,14 +1435,8 @@ void TDataHandlingF::process_volt_meas()
         }*/
         m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
         m_cell_count_end++;
-        //m_time_meas.start();
         m_reset_time_meas = true;
         set_progress_bar_mode_calibration();
-        //m_exec_progress.show();
-        //m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
-        //m_exec_progress.p_percent_progress->Caption = irst("0%");
-        //m_exec_progress.p_progress_bar->Position = 0;
-        //set_progress_bar_value(0);
       }
     } break;
     case spb_wait_connect: {
@@ -1717,8 +1716,8 @@ void TDataHandlingF::process_volt_meas()
       update_point_measurement_progress();
       //m_log << "Обновление значения.";
       //--------------------------------------
+      update_result();
       if (!mp_meas_point_chart.is_empty()) {
-        update_result();
         int col = mp_active_table->get_col_displ();
         int row = mp_active_table->get_row_displ();
         coord_cell_t coord_cur_cell =
@@ -2495,17 +2494,19 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   }
 }
 //---------------------------------------------------------------------------
-void __fastcall TDataHandlingF::FormDataHandingTimer1Timer(TObject *Sender)
+void __fastcall TDataHandlingF::FormDataHandingTimerTimer(TObject *Sender)
 {
   try{
     tick();
     tick2();
   } catch (Exception &exception) {
-    FormDataHandingTimer1->Enabled = false;
+    FormDataHandingTimer->Enabled = false;
     Application->ShowException(&exception);
-    exit(1);
+    m_on_stop_process_auto_volt_meas = true;
+    FormDataHandingTimer->Enabled = true;
+    //exit(1);
   } catch (...) {
-    FormDataHandingTimer1->Enabled = false;
+    FormDataHandingTimer->Enabled = false;
     try {
       throw Exception("");
     } catch (Exception &exception) {
@@ -2642,6 +2643,8 @@ void __fastcall TDataHandlingF::FileSaveAsAccept(TObject *Sender)
   mp_active_table->save_table_to_file(file_namedir.c_str());
   m_config_calibr.active_filename =
     m_file_name_service.make_relative_file_name(file_namedir);
+  // Сохраняем изменения конфигурации (изменен активный документ)
+  m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
   Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 }
 //---------------------------------------------------------------------------
@@ -2685,9 +2688,9 @@ void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
   mp_active_table->load_table_from_file(file_namedir.c_str());
   m_config_calibr.active_filename =
     m_file_name_service.make_relative_file_name(file_namedir);
-  Caption = m_prog_name + String(irst(" - "))+file_namedir;
-  // Сохраняем текущий открытый документ
+  // Сохраняем изменения конфигурации (изменен активный документ)
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
+  Caption = m_prog_name + String(irst(" - "))+file_namedir;
 }
 //---------------------------------------------------------------------------
 
@@ -3419,7 +3422,7 @@ void TDataHandlingF::modifi_table_data()
     int result = modifi_data_table->ShowModal();
     if (result == mrOk) {
       if (!str.empty()) {
-        mp_active_table->modifi_content_table(str);
+        mp_active_table->modify_content_table(str);
       }  
     }
   }
@@ -3443,6 +3446,9 @@ void TDataHandlingF::set_value_working_extra_params()
 
 void TDataHandlingF::set_value_default_extra_params()
 {
+  if (!m_device.connected()) {
+    return;
+  }
   int parametr_ex_count = m_config_calibr.v_parametr_ex.size();
   int extra_param_count = m_device.get_data()->v_extra_param.size();
   if (parametr_ex_count == extra_param_count) {
@@ -4253,10 +4259,17 @@ void __fastcall TDataHandlingF::ShowMeasPointChartActionExecute(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TDataHandlingF::ComparsionMenuItemClick(TObject *Sender)
+{
+  ComparsionDataForm->Show();
+}
+//---------------------------------------------------------------------------
 
 
-
-
-
-
+void __fastcall TDataHandlingF::ParametersMenuItemClick(TObject *Sender)
+{
+  ParametersForm->set_table(&mp_active_table);
+  ParametersForm->Show();
+}
+//---------------------------------------------------------------------------
 

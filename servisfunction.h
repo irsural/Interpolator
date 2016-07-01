@@ -35,6 +35,9 @@
 //using namespace std;
 //---------------------------------------------------------------------------
 
+// константа дл€ обозначени€ "не чисел"
+extern const double not_a_number;
+
 template<class N>
 String num_to_cbstr(const N& a_num, const locale& a_loc = irs::loc().get())
 {
@@ -43,8 +46,15 @@ String num_to_cbstr(const N& a_num, const locale& a_loc = irs::loc().get())
   return irs::str_conv<String>(base_str);
 }
 
-enum m_copy_data{ON_COPY, OFF_COPY};
-enum status_options_t{OFF_PROCESSING, ON_UPDAT, ON_READ};
+enum m_copy_data{
+  ON_COPY, OFF_COPY
+};
+
+enum status_options_t {
+  OFF_PROCESSING,
+  ON_UPDATE,
+  ON_READ
+};
 
 struct options_optimize_type_mnk_t
 {
@@ -218,7 +228,7 @@ private:
   irs::error_trans_base_t *mp_error_trans;
   const long double m_min_fractional_part_count;
   // константа дл€ обозначени€ "не чисел"
-  const double m_nan;
+  // const double m_nan;
   // ширина пол€ в файле дл€ чисел двойной точности
   static const int m_field_width = 30;
   // точность вывода чисел в файл
@@ -246,7 +256,7 @@ private:
   inf_in_param_t m_inf_in_param;
   bool m_table_modifi_stat;
 public:
-  inline std::vector<irs::matrix_t<cell_t> > read_table() const;
+  inline const std::vector<irs::matrix_t<cell_t> >& read_table() const;
   table_data_t(display_table_t* ap_display_table, String a_name);
   inline unsigned int index() const;
   inline TStringGrid* pointer_table() const;
@@ -300,8 +310,8 @@ public:
   void save_table_to_m_file(const string_type a_file_name) const;
 
   void load_table_from_file(const string_type& a_file_name);
-  void load_table_from_json_file(const string_type a_file_name);
-  void load_table_from_ini_file(const string_type& a_file_name);
+  //void load_table_from_json_file(const string_type a_file_name);
+  //void load_table_from_ini_file(const string_type& a_file_name);
   // загрузить подтаблицу из файла
   void load_subtable_from_file(const string_type& a_file_name);
   const table_data_t&
@@ -390,6 +400,7 @@ public:
   // ¬озвращает true, если таблица не отличаетс€ от загруженной или сохраненной
   // в файл
   inline bool have_unsaved_changes() const;
+  inline const inf_in_param_t& get_inf_in_param() const;
   inline void set_inf_in_param(const inf_in_param_t& a_inf_in_param);
   // »нвертировать значени€ €чеек таблицы, не €вл€ющихс€ параметрическими
   void inversion_sign_conrent_table();
@@ -399,22 +410,21 @@ public:
   // Y - значение текущего параметра по строке.
   // ѕосле выполнени€ функции непараметрические €чейки таблицы будут содержать
   // данные вида Z = Z + 2+X*Y;
-  void modifi_content_table(const string_type& a_str);
+  void modify_content_table(const string_type& a_str);
 private:
   void save_table_to_ini_file(const string_type a_file_name);
   void save_table_to_json(size_type a_index, Json::Value* ap_parameters);
   void save_points(const cell_t::points_type& a_points,
     Json::Value* ap_points_value) const;
 
-  void load_table_from_json(const Json::Value& a_parameters,
-    irs::matrix_t<cell_t>* ap_matrix);
-  void load_points(const Json::Value& a_points_value,
-    cell_t::points_type* ap_points);
 
-  void load_table_from_file(
-    number_in_param_t& a_number_in_param,
-    const string_type& a_file_name,
-    std::vector<irs::matrix_t<cell_t> >& a_table);
+
+
+  
+
+
+  ///
+
   void concatenate_table_matrix(
     const irs::matrix_t<cell_t>& a_in_table1,
     const irs::matrix_t<cell_t>& a_in_table2,
@@ -424,7 +434,29 @@ private:
     const vector<irs::matrix_t<cell_t> >& av_in_table2,
     vector<irs::matrix_t<cell_t> >& av_out_table);
 };
-inline std::vector<irs::matrix_t<cell_t> > table_data_t::read_table() const
+
+
+void load_table_from_file(
+  number_in_param_t& a_number_in_param,
+  const irs::string_t& a_file_name,
+  std::vector<irs::matrix_t<cell_t> >& a_table);
+
+void load_table_from_json_file(
+  number_in_param_t& a_number_in_param,
+  const irs::string_t& a_file_name,
+  std::vector<irs::matrix_t<cell_t> >& a_table);
+void load_table_from_json(const Json::Value& a_parameters,
+  irs::matrix_t<cell_t>* ap_matrix);
+void load_points(const Json::Value& a_points_value,
+  cell_t::points_type* ap_points);
+
+void load_table_from_ini_file(
+  number_in_param_t& a_number_in_param,
+  const irs::string_t& a_file_name,
+  std::vector<irs::matrix_t<cell_t> >& a_table);
+
+inline const std::vector<irs::matrix_t<cell_t> >&
+  table_data_t::read_table() const
   {return mv_table;}
 inline unsigned int table_data_t::index() const
   {return m_index;}
@@ -612,6 +644,10 @@ inline bool table_data_t::have_unsaved_changes() const
   IRS_ASSERT((!m_table_modifi_stat) && (mv_table == mv_saved_table));
   #endif
   return (!m_table_modifi_stat);*/
+}
+inline const inf_in_param_t& table_data_t::get_inf_in_param() const
+{
+  return m_inf_in_param;
 }
 inline void table_data_t::set_inf_in_param(const inf_in_param_t& a_inf_in_param)
 {
@@ -1499,5 +1535,8 @@ private:
   irs::handle_t<TConnectionLogForm> mp_connection_log;
   data_map_t m_data_map;
 };
+
+void save_string_grid_to_csv_with_dialog(TStringGrid* ap_string_grid,
+  const String& a_file_name_default = String());
 
 #endif

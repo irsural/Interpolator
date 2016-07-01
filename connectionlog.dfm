@@ -38,8 +38,6 @@ object ConnectionLogForm: TConnectionLogForm
     Constraints.MinWidth = 300
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitWidth = 1007
-    ExplicitHeight = 606
   end
   object CloseButton: TButton
     Left = 857
@@ -50,8 +48,6 @@ object ConnectionLogForm: TConnectionLogForm
     Caption = #1047#1072#1082#1088#1099#1090#1100
     TabOrder = 2
     OnClick = CloseButtonClick
-    ExplicitLeft = 936
-    ExplicitTop = 654
   end
   object AutoUpdateCheckBox: TCheckBox
     Left = 8

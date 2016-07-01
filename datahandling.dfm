@@ -3,7 +3,7 @@ object DataHandlingF: TDataHandlingF
   Top = 291
   Caption = 'DataHandlingF'
   ClientHeight = 640
-  ClientWidth = 964
+  ClientWidth = 1044
   Color = clWindow
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,7 +20,7 @@ object DataHandlingF: TDataHandlingF
   object TableValuePanel: TPanel
     Left = 249
     Top = 30
-    Width = 715
+    Width = 795
     Height = 561
     Align = alClient
     BevelOuter = bvLowered
@@ -29,7 +29,7 @@ object DataHandlingF: TDataHandlingF
     object LogMemo: TMemo
       Left = 1
       Top = 410
-      Width = 713
+      Width = 793
       Height = 150
       Align = alBottom
       Constraints.MaxHeight = 150
@@ -47,7 +47,7 @@ object DataHandlingF: TDataHandlingF
     object RawDataStringGrid: TStringGrid
       Left = 1
       Top = 105
-      Width = 713
+      Width = 793
       Height = 305
       Align = alClient
       Constraints.MinHeight = 150
@@ -78,7 +78,7 @@ object DataHandlingF: TDataHandlingF
     object Panel1: TPanel
       Left = 1
       Top = 1
-      Width = 713
+      Width = 793
       Height = 104
       Align = alTop
       TabOrder = 2
@@ -148,7 +148,7 @@ object DataHandlingF: TDataHandlingF
       object RightPanel: TPanel
         Left = 359
         Top = 1
-        Width = 353
+        Width = 433
         Height = 102
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
@@ -156,12 +156,12 @@ object DataHandlingF: TDataHandlingF
         BevelOuter = bvLowered
         TabOrder = 1
         DesignSize = (
-          353
+          433
           102)
         object PatternOfMeasuringInstrumentCB: TComboBox
           Left = 8
           Top = 36
-          Width = 338
+          Width = 418
           Height = 21
           Style = csDropDownList
           Anchors = [akLeft, akRight]
@@ -171,7 +171,7 @@ object DataHandlingF: TDataHandlingF
         object Panel5: TPanel
           Left = 8
           Top = 11
-          Width = 336
+          Width = 416
           Height = 17
           Anchors = [akLeft, akRight]
           BevelOuter = bvLowered
@@ -179,7 +179,7 @@ object DataHandlingF: TDataHandlingF
           TabOrder = 1
         end
         object ShowMultimeterOptionsButton: TButton
-          Left = 268
+          Left = 348
           Top = 72
           Width = 76
           Height = 25
@@ -360,12 +360,12 @@ object DataHandlingF: TDataHandlingF
   object ButtomPanel: TPanel
     Left = 0
     Top = 591
-    Width = 964
+    Width = 1044
     Height = 49
     Align = alBottom
     TabOrder = 2
     DesignSize = (
-      964
+      1044
       49)
     object CommentProgressL: TLabel
       Left = 8
@@ -376,15 +376,16 @@ object DataHandlingF: TDataHandlingF
       Caption = 'CommentProgress'
     end
     object PercentProgressL: TLabel
-      Left = 821
+      Left = 901
       Top = 24
       Width = 37
       Height = 13
       Anchors = [akRight, akBottom]
       Caption = 'Percent'
+      ExplicitLeft = 821
     end
     object CloseFormButton: TButton
-      Left = 885
+      Left = 965
       Top = 15
       Width = 75
       Height = 25
@@ -396,7 +397,7 @@ object DataHandlingF: TDataHandlingF
     object ProgressBar1: TProgressBar
       Left = 8
       Top = 24
-      Width = 806
+      Width = 886
       Height = 16
       Anchors = [akLeft, akRight, akBottom]
       Max = 100000
@@ -406,7 +407,7 @@ object DataHandlingF: TDataHandlingF
   object CoolBar1: TCoolBar
     Left = 0
     Top = 0
-    Width = 964
+    Width = 1044
     Height = 30
     AutoSize = True
     Bands = <
@@ -435,7 +436,7 @@ object DataHandlingF: TDataHandlingF
         Control = ActionToolBar4
         ImageIndex = -1
         MinHeight = 26
-        Width = 504
+        Width = 584
       end>
     Color = clBtnFace
     Images = ImageList1
@@ -528,9 +529,9 @@ object DataHandlingF: TDataHandlingF
       Spacing = 0
     end
   end
-  object FormDataHandingTimer1: TTimer
+  object FormDataHandingTimer: TTimer
     Interval = 10
-    OnTimer = FormDataHandingTimer1Timer
+    OnTimer = FormDataHandingTimerTimer
     Left = 304
     Top = 312
   end
@@ -1023,7 +1024,7 @@ object DataHandlingF: TDataHandlingF
     Left = 456
     Top = 312
     Bitmap = {
-      494C010117001800000110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800140110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2072,6 +2073,17 @@ object DataHandlingF: TDataHandlingF
       object ConnectionLogMenuItem: TMenuItem
         Action = ConnectionLogAction
       end
+      object N21: TMenuItem
+        Caption = '-'
+      end
+      object ComparsionMenuItem: TMenuItem
+        Caption = #1057#1088#1072#1074#1085#1080#1090#1100' '#1080#1079#1084#1077#1088#1077#1085#1085#1099#1077' '#1079#1085#1072#1095#1077#1085#1080#1103
+        OnClick = ComparsionMenuItemClick
+      end
+      object ParametersMenuItem: TMenuItem
+        Caption = #1044#1088#1091#1075#1080#1077' '#1080#1079#1084#1077#1088#1077#1085#1085#1099#1077' '#1087#1072#1088#1072#1084#1077#1090#1088#1099
+        OnClick = ParametersMenuItemClick
+      end
     end
     object N17: TMenuItem
       Caption = #1057#1087#1088#1072#1074#1082#1072
@@ -2085,7 +2097,7 @@ object DataHandlingF: TDataHandlingF
     Left = 408
     Top = 312
     Bitmap = {
-      494C010117001800000110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010117001800140110001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000006000000001002000000000000060
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

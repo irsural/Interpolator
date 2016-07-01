@@ -8,14 +8,16 @@
 
 //---------------------------------------------------------------------------
 USEFORM("modifidatatable.cpp", ModifiDataTableF);
-USEFORM("newconfig.cpp", NewConfigF);
 USEFORM("managerf.cpp", ManagerDGIF);
 USEFORM("showmessages.cpp", MessagesForm);
+USEFORM("newconfig.cpp", NewConfigF);
 USEFORM("About.cpp", AboutForm);
 USEFORM("addcolrow.cpp", AddCorRowF);
 USEFORM("datahandling.cpp", DataHandlingF);
-USEFORM("connectionlog.cpp", ConnectionLogForm);
 USEFORM("copytable.cpp", CopyTableForm);
+USEFORM("comparison.cpp", ComparsionDataForm);
+USEFORM("connectionlog.cpp", ConnectionLogForm);
+USEFORM("parameters.cpp", ParametersForm);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
@@ -32,6 +34,8 @@ int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
      Application->CreateForm(__classid(TMessagesForm), &MessagesForm);
      Application->CreateForm(__classid(TAboutForm), &AboutForm);
      Application->CreateForm(__classid(TConnectionLogForm), &ConnectionLogForm);
+     Application->CreateForm(__classid(TComparsionDataForm), &ComparsionDataForm);
+     Application->CreateForm(__classid(TParametersForm), &ParametersForm);
      Application->Run();
   }
   catch (Exception &exception)
