@@ -2387,7 +2387,9 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
 bool correct_map_t::connect(
   irs::mxdata_t *ap_data,
   irs_uarc a_start_index,
-  config_calibr_t& a_config_calibr)
+  config_calibr_t& a_config_calibr,
+  const irs_uarc a_number_of_koef_per_point
+  )
 {
   bool fsuccess = true;
   irs_uarc index = a_start_index;
@@ -2405,7 +2407,8 @@ bool correct_map_t::connect(
     ap_data,
     index,
     y_count);
-  irs_uarc koef_array_size = x_count * y_count;
+  irs_uarc koef_array_size = x_count * y_count * a_number_of_koef_per_point;
+
   koef_array.connect(
     a_config_calibr.out_parametr.unit,
     ap_data,

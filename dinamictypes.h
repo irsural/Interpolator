@@ -36,8 +36,10 @@ private:
   irs::mxdata_t *m_data;
 public:
   dynamic_conn_data_t();
-	operator long double();
+	operator long double() const;
 	long double operator=(long double a_val);
+  //bool operator==(const dynamic_conn_data_t& a_dynamic_conn_data) const;
+  //bool operator!=(const dynamic_conn_data_t& a_dynamic_conn_data) const;
   void connect(lang_type_t, irs::mxdata_t *a_data, irs_uarc a_index);
 };
 
@@ -62,6 +64,6 @@ public:
   inline int size() const;
 };
 inline int dynamic_array_data_t::size() const
-{return m_elem_size;}
+{return /*m_elem_size;*/m_array_size;}
 //---------------------------------------------------------------------------
 #endif

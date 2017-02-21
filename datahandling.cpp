@@ -32,8 +32,13 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_file_name_service(),
   m_name_main_opt_ini_file(a_opt_ini.c_str()),
   m_main_opt_ini_file(),
-  m_log(LogMemo, irst("Log.txt")),
-  m_log_message(&m_log),
+  //m_log(LogMemo, irst("Log.txt")),
+  m_log_message(/*&m_log*/),
+
+  m_stream_buf(100),
+  mp_log_stream(new ofstream("Log.txt", ios::out | ios::app)),
+  mp_memo_buf(new irs::memobuf(LogMemo, m_memobuf_size)),
+
   mp_manager_channel(ap_manager_channel),
   m_value_meas(),
   m_fileid_conf(irst("Конфигурация настроек калибровки.")),
@@ -47,7 +52,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   status_connect_eeprom(sce_off),
 
   m_name_file_options_ini(irst("interpoptions.ini")),
-
+  m_correct_map(),
+  m_correct_map_local(),
   mp_data_map_ref_channel(NULL),
   m_device_chart(10000, 1000,
     irs::chart::builder_chart_window_t::stay_on_top_off),
@@ -186,11 +192,17 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_cur_sub_diapason(0),
   m_on_auto_verify(true)
 {
-  m_log << irst("Старт");
+  m_stream_buf.insert(mp_log_stream->rdbuf());
+  m_stream_buf.insert(mp_memo_buf.get());
+
+  irs::mlog().rdbuf(&m_stream_buf);
+  irs::mlog() << boolalpha;
+
+  DGI_MSG("Старт");
 
   if (m_mode_program == mode_prog_single_channel) {
     // обработчик ошибок
-    irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
+    //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
   } else {
     m_prog_name = a_name.c_str();
     ModeProgramCB->Enabled = false;
@@ -198,6 +210,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
       unset_ref_channel();
     }
   }
+
   // Если папка существует, то определяет, существует ли каталог
   load_config_calibr_to_display();
 
@@ -270,7 +283,7 @@ __fastcall TDataHandlingF::~TDataHandlingF()
 
   if (m_mode_program == mode_prog_single_channel) {
     // обработчик ошибок
-    irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, IRS_NULL);
+    //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, IRS_NULL);
   }
 }
 //загрузка конфигураций калибровки на экран
@@ -332,7 +345,7 @@ String TDataHandlingF::get_selected_config_filename() const
 //загрузка конфигурации калибровки
 void TDataHandlingF::load_config_calibr()
 {
-  m_log << irst("Загрузка конфигурации калибровки.");
+  DGI_MSG("Загрузка конфигурации калибровки.");
   m_conf_calibr_buf.clear();
   m_load_conf_calibr_device_success = false;
   int index_file = ConfigCB->ItemIndex;
@@ -441,7 +454,7 @@ void TDataHandlingF::load_config_calibr()
       TemperatureControlGroupBox->Visible = temperature_ctrl_cft.enabled;   
       m_load_conf_calibr_device_success = true;
       //m_on_reset_functional_bits = true;
-      m_log<<"Загрузка конфигурации калибровки успешно завершена.";
+      DGI_MSG("Загрузка конфигурации калибровки успешно завершена.");
 
       // загрузка конфигурации опорного канала
       if (m_config_calibr.reference_channel.enabled) {
@@ -454,9 +467,9 @@ void TDataHandlingF::load_config_calibr()
       }
 
     }else{
-      m_log << irst("Загрузка конфигурации прервана.");
-      m_log << (irst("Файл \"") + filename_conf + irst("\" отсутствует") +
-        irst("."));
+      DGI_MSG("Загрузка конфигурации прервана.");
+      DGI_MSG(irs::str_conv<irs::string>(
+        irst("Файл \"") + filename_conf + irst("\" отсутствует") + irst(".")));
       MessageDlg(irst("Файл \"") + filename_conf + irst("\" отсутствует") +
         irst("."),
         mtError,
@@ -496,7 +509,7 @@ void TDataHandlingF::set_connect_calibr_device(
         //m_cur_config_device = select_config_device;
         // В этой функции пересоздается устройство
         //load_config_calibr();
-        m_log << irst("Установка соединения с устройством");
+        DGI_MSG("Установка соединения с устройством");
       }
       m_device.enable(m_config_calibr);
       if (m_config_calibr.reference_channel.enabled) {
@@ -934,52 +947,49 @@ void TDataHandlingF::eeprom_tick()
         if(m_on_write_data_eeprom) {
           if(m_bad_cells){
             status_connect_eeprom = sce_reset;
-            m_log << "Произошел сбой при расчете коэффициентов. "
-            "Запись прервана";
+            DGI_MSG("Произошел сбой при расчете коэффициентов. " <<
+              "Запись прервана");
           } else if(
             irs_i32(m_max_size_correct -
               m_need_size_memory) < 0){
             status_connect_eeprom = sce_reset;
-            m_log << "Нехватает памяти для прошивки";
-            m_log << ("Обьем данных "+IntToStr(m_need_size_memory)+" байт");
-            m_log << ("Доступный размер памяти "+
-              IntToStr(m_max_size_correct)+" байт");
+            DGI_MSG("Нехватает памяти для прошивки");
+            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
+            DGI_MSG("Доступный размер памяти "<<
+              m_max_size_correct << " байт");
           } else if (m_need_size_memory > 0) {
-            m_log << "Происходит запись в еепром.";
-            m_log << ("Индек смещения " +
-              IntToStr(m_index_pos_offset_eeprom));
-            m_log << ("Обьем данных "+IntToStr(m_need_size_memory)+" байт");
-            m_log << ("Доступный размер памяти "+
-              IntToStr(m_max_size_correct)+" байт");
+            DGI_MSG("Происходит запись в еепром.");
+            DGI_MSG("Индек смещения " << m_index_pos_offset_eeprom);
+            DGI_MSG("Обьем данных "+ m_need_size_memory << " байт");
+            DGI_MSG("Доступный размер памяти " <<
+              m_max_size_correct << " байт");
             status_connect_eeprom = sce_create_interface_eeprom;
           } else {
-            m_log << "Нет данных для записи.";
+            DGI_MSG("Нет данных для записи.");
             status_connect_eeprom = sce_reset;
           }
         } else if (m_on_verification_data_eeprom) {
           if(m_bad_cells){
             status_connect_eeprom = sce_reset;
-            m_log << "Произошел сбой при расчете коэффициентов. "
-              "Верификация данных прервана";
+            DGI_MSG("Произошел сбой при расчете коэффициентов. " <<
+              "Верификация данных прервана");
           }else if(
             irs_i32(m_max_size_correct -
               m_need_size_memory) < 0){
             status_connect_eeprom = sce_reset;
-            m_log << "Обьем данных превышает"
-            "допустимый обьем памяти.";
-            m_log << ("Обьем данных " + IntToStr(m_need_size_memory) + " байт");
-            m_log << ("Доступный размер памяти " +
-            IntToStr(m_max_size_correct) + " байт");
+            DGI_MSG("Обьем данных превышает допустимый обьем памяти.");
+            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
+            DGI_MSG("Доступный размер памяти " << m_max_size_correct <<
+              " байт");
           }else if (m_need_size_memory > 0) {
-            m_log << "Началась верификация данных.";
-            m_log << ("Индек смещения " +
-              IntToStr(m_index_pos_offset_eeprom));
-            m_log << ("Обьем данных " + IntToStr(m_need_size_memory) + " байт");
-            m_log << ("Доступный размер памяти " +
-            IntToStr(m_max_size_correct) + " байт");
+            DGI_MSG("Началась верификация данных.");
+            DGI_MSG("Индек смещения " << m_index_pos_offset_eeprom);
+            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
+            DGI_MSG("Доступный размер памяти " << m_max_size_correct <<
+              " байт");
             status_connect_eeprom = sce_create_interface_eeprom;
           } else {
-            m_log << "Нет данных для верификации.";
+            DGI_MSG("Нет данных для верификации.");
             status_connect_eeprom = sce_reset;
           }
         }
@@ -996,21 +1006,21 @@ void TDataHandlingF::eeprom_tick()
       } break;
       case sce_wait_connect_eeprom: {
         if (mp_eeprom->connected()) {
-          correct_map.connect(
-            mp_eeprom.get(), 0, m_config_calibr);
+          m_correct_map.connect(
+            mp_eeprom.get(), 0, m_config_calibr, number_of_koef_per_point());
           m_on_connect_eeprom = true;
           status_connect_eeprom = sce_set_param_eeprom;
         }
         mp_eeprom->tick();
       } break;
       case sce_set_param_eeprom: {
-        correct_map.connect(
-          mp_eeprom.get(), 0, m_config_calibr);
-        correct_map.map_id = 1;
-        correct_map.x_count = mv_col_optimal_data.size();
-        correct_map.y_count = mv_row_optimal_data.size();
-        correct_map.connect(
-          mp_eeprom.get(), 0, m_config_calibr);
+        m_correct_map.connect(
+          mp_eeprom.get(), 0, m_config_calibr, number_of_koef_per_point());
+        m_correct_map.map_id = 1;
+        m_correct_map.x_count = mv_col_optimal_data.size();
+        m_correct_map.y_count = mv_row_optimal_data.size();
+        m_correct_map.connect(
+          mp_eeprom.get(), 0, m_config_calibr, number_of_koef_per_point());
         if (m_on_write_data_eeprom) {
           status_connect_eeprom = sce_write_eeprom;
         } else if(m_on_verification_data_eeprom){
@@ -1031,12 +1041,14 @@ void TDataHandlingF::eeprom_tick()
           mp_local_data.reset(
             new irs::local_data_t(m_max_size_correct));
           m_correct_map_local.connect(
-            mp_local_data.get(), 0, m_config_calibr);
+            mp_local_data.get(), 0, m_config_calibr,
+            number_of_koef_per_point());
           m_correct_map_local.map_id = 1;
           m_correct_map_local.x_count = mv_col_optimal_data.size();
           m_correct_map_local.y_count = mv_row_optimal_data.size();
           m_correct_map_local.connect(
-            mp_local_data.get(), 0, m_config_calibr);
+            mp_local_data.get(), 0, m_config_calibr,
+            number_of_koef_per_point());
           int vcol_opt_size = mv_col_optimal_data.size();
           for(int i = 0; i < vcol_opt_size; i++){
             m_correct_map_local.x_points[i] =
@@ -1071,21 +1083,21 @@ void TDataHandlingF::eeprom_tick()
       } break;
       case sce_verification_eeprom: {
         bool data_equal = true;
-        if (correct_map.map_id != m_correct_map_local.map_id) {
+        if (m_correct_map.map_id != m_correct_map_local.map_id) {
           data_equal = false;
-        } else if (correct_map.x_count != m_correct_map_local.x_count) {
+        } else if (m_correct_map.x_count != m_correct_map_local.x_count) {
           data_equal = false;
-        } else if (correct_map.y_count != m_correct_map_local.y_count) {
+        } else if (m_correct_map.y_count != m_correct_map_local.y_count) {
           data_equal = false;
         }
         if (data_equal) {
-          int x_points_cm_size = correct_map.x_points.size();
+          int x_points_cm_size = m_correct_map.x_points.size();
           int x_points_cml_size = m_correct_map_local.x_points.size();
           if (x_points_cm_size != x_points_cml_size) {
             data_equal = false;
           } else {
             for (int i = 0; i < x_points_cm_size; i++) {
-              if (correct_map.x_points[i] !=
+              if (m_correct_map.x_points[i] !=
                 m_correct_map_local.x_points[i]) {
                 data_equal = false;
                 break;
@@ -1094,14 +1106,14 @@ void TDataHandlingF::eeprom_tick()
           }
         }
         if (data_equal) {
-          int y_points_cm_size = correct_map.y_points.size();
+          int y_points_cm_size = m_correct_map.y_points.size();
           int y_points_cml_size = m_correct_map_local.y_points.size();
 
           if (y_points_cm_size != y_points_cml_size) {
             data_equal = false;
           } else {
             for (int i = 0; i < y_points_cm_size; i++) {
-              if (correct_map.y_points[i] !=
+              if (m_correct_map.y_points[i] !=
                 m_correct_map_local.y_points[i]) {
                 data_equal = false;
                 break;
@@ -1110,14 +1122,15 @@ void TDataHandlingF::eeprom_tick()
           }
         }
         if (data_equal) {
-          int koef_array_cm_size = correct_map.koef_array.size();
+          int koef_array_cm_size = m_correct_map.koef_array.size();
           int koef_array_cml_size = m_correct_map_local.koef_array.size();
           if (koef_array_cm_size != koef_array_cml_size) {
             data_equal = false;
           } else {
             for (int i = 0; i < koef_array_cm_size; i++) {
-              if (correct_map.koef_array[i] !=
-                m_correct_map_local.koef_array[i]) {
+              const long double remote_k = m_correct_map.koef_array[i];
+              const long double local_k = m_correct_map_local.koef_array[i];
+              if (remote_k != local_k) {
                 data_equal = false;
                 break;
               }
@@ -1125,11 +1138,11 @@ void TDataHandlingF::eeprom_tick()
           }
         }
         if (data_equal) {
-          m_log << "Верификация данных завершена.";
-          m_log << "Различий не выявлено.";
+          DGI_MSG("Верификация данных завершена.");
+          DGI_MSG("Различий не выявлено.");
         } else {
-          m_log << "Верификация данных завершена.";
-          m_log << "Найдены различия в данных.";
+          DGI_MSG("Верификация данных завершена.");
+          DGI_MSG("Найдены различия в данных!!!");
         }
         status_connect_eeprom = sce_reset;
         //status_connect_eeprom = sce_off;
@@ -1137,17 +1150,17 @@ void TDataHandlingF::eeprom_tick()
       case sce_write_eeprom: {
         int vcol_opt_size = mv_col_optimal_data.size();
         for(int i = 0; i < vcol_opt_size; i++){
-          correct_map.x_points[i] =
+          m_correct_map.x_points[i] =
             mv_col_optimal_data[i]*m_config_calibr.in_parametr1.koef;
         }
         int vrow_opt_size = mv_row_optimal_data.size();
         for(int i = 0; i < vrow_opt_size; i++){
-          correct_map.y_points[i] =
+          m_correct_map.y_points[i] =
             mv_row_optimal_data[i]*m_config_calibr.in_parametr2.koef;
         }
         int vcoef_data_size = mv_coef_data.size();
         for(int i = 0; i < vcoef_data_size; i++)
-          correct_map.koef_array[i] = mv_coef_data[i];
+          m_correct_map.koef_array[i] = mv_coef_data[i];
 
         set_progress_bar_mode_program();
         //m_exec_progress.show();
@@ -1173,7 +1186,7 @@ void TDataHandlingF::eeprom_tick()
           //m_on_write_data_eeprom = false;
           //m_on_verification_data_eeprom = true;
           status_connect_eeprom = sce_reset;
-          m_log << "Прошивка данных завершена.";
+          DGI_MSG("Прошивка данных завершена.");
         }
 
       } break;
@@ -1345,7 +1358,7 @@ void TDataHandlingF::process_volt_meas()
     m_auto_meas_is_running = false;
     //config_button_stop_avto_volt_meas();
     m_status_process_meas = spm_reset;
-    m_log << irst("Стоп.");
+    DGI_MSG("Стоп.");
   }
   if (m_auto_meas_is_running) {
     config_button_start_avto_volt_meas();
@@ -1372,14 +1385,13 @@ void TDataHandlingF::process_volt_meas()
           //m_status_process_meas = spm_jump_next_elem;
           m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
           m_timer_delay_next_cell.set(m_delay_next_cell);
-          m_log << "Сброс ошибки.";
-          m_log << ("Ждем " + FloatToStr(
-            (CNT_TO_DBLTIME(m_delay_next_cell))) +
+          DGI_MSG("Сброс ошибки.");
+          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_next_cell) <<
             " секунд перед продолжением измерений.");
         } else {
           m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
-          m_log << "Прибор не можнет выйти на рабочий режим.";
-          m_log << "Автоматическое измерение завершилось с ошибкой.";
+          DGI_MSG("Прибор не можнет выйти на рабочий режим.");
+          DGI_MSG("Автоматическое измерение завершилось с ошибкой.");
           m_status_process_meas = spm_reset;
         }
       }
@@ -1416,13 +1428,13 @@ void TDataHandlingF::process_volt_meas()
             mp_active_table->get_col_displ(),
             mp_active_table->get_row_displ());
           m_on_process_auto_meas_active_cell = false;
-          m_log << irst("Запуск автоматического измерения с активной ячейки.");
+          DGI_MSG("Запуск автоматического измерения с активной ячейки.");
         } else {
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           mp_active_table->set_col_displ(coord_cur_cell.col);
           mp_active_table->set_row_displ(coord_cur_cell.row);
-          m_log << irst("Запуск автоматического измерения.");
+          DGI_MSG("Запуск автоматического измерения.");
         }
         m_status_process_meas = spb_wait_connect;
         /*if (m_mode_program == mode_prog_single_channel) {
@@ -1469,8 +1481,7 @@ void TDataHandlingF::process_volt_meas()
           m_status_process_meas = spm_set_range;
         } else {
           m_status_process_meas = spm_wait_ext_trig_set_range;
-          m_log <<
-            irst("Ожидание внешнего запуска установки диапазона измерений.");
+          DGI_MSG("Ожидание внешнего запуска установки диапазона измерений.");
         }
       }
     } break;
@@ -1481,9 +1492,9 @@ void TDataHandlingF::process_volt_meas()
         next_elem_successfully = m_manager_traffic_cell.next_cell();
         if (next_elem_successfully == false) {
           m_status_process_meas = spm_reset;
-          m_log << "Автоматическое измерение успешно завершено.";
+          DGI_MSG("Автоматическое измерение успешно завершено.");
         } else {
-          m_log << "Переход к следующей точке измерения.";
+          DGI_MSG("Переход к следующей точке измерения.");
           coord_cell_t coord_cur_cell =
             m_manager_traffic_cell.get_coord_cell();
           mp_active_table->set_col_displ(coord_cur_cell.col);
@@ -1493,7 +1504,7 @@ void TDataHandlingF::process_volt_meas()
           } else {
             m_status_process_meas =
               spm_wait_ext_trig_set_range;
-            m_log << "Ожидание внешнего запуска установки диапазона измерений.";
+            DGI_MSG("Ожидание внешнего запуска установки диапазона измерений.");
           }
         }
       }
@@ -1516,15 +1527,15 @@ void TDataHandlingF::process_volt_meas()
       m_out_param_stability_control.set_diviation(reference*
         m_config_calibr.out_param_control_config.max_relative_difference);
       m_status_process_meas = spm_wait_set_range;
-      ostringstream_type msg;
-      msg << irst("Установка диапазона измерения: ") << range;
-      m_log << irs::str_conv<String>(msg.str());
+      //ostringstream_type msg;
+      //msg << irst("Установка диапазона измерения: ") << range;
+      DGI_MSG("Установка диапазона измерения: " << range);
     } break;
     case spm_wait_set_range: {
       status_range_t status_range = get_status_range();
       if (status_range == range_stat_success) {   
         m_status_process_meas = spm_mode_setting;
-        m_log << irst("Установка диапазона измерения завершена.");
+        DGI_MSG("Установка диапазона измерения завершена.");
       }
     } break;
     case spm_mode_setting: {
@@ -1539,9 +1550,9 @@ void TDataHandlingF::process_volt_meas()
         " секунд перед проверкой рабочего режима.");
       m_timer_delay_control.set(m_delay_start_control_reg);*/
       if (m_config_calibr.temperature_control.enabled) {
-        m_log<<"Ждем установления рабочего режима и температуры.";
+        DGI_MSG("Ждем установления рабочего режима и температуры.");
       } else {
-        m_log<<"Ждем установления рабочего режима.";
+        DGI_MSG("Ждем установления рабочего режима.");
       }
       m_status_process_meas = spm_wait_mode_setting;
     } break;
@@ -1573,16 +1584,15 @@ void TDataHandlingF::process_volt_meas()
           }
           all_ready = all_ready && m_on_reg_ready;
           if (all_ready) {
-            m_log<<"Рабочий режим установлен";
+            DGI_MSG("Рабочий режим установлен");
             if (m_mode_program == mode_prog_single_channel) {
               m_timer_delay_operating_duty.set(m_delay_operating_duty);
-              m_log << ("Ждем " + FloatToStr(
-                CNT_TO_DBLTIME(m_delay_operating_duty)) +
+              DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_operating_duty) <<
                 " секунд.");
               m_status_process_meas = spm_control_wait_mode_setting;
             } else {
-              m_log << "Ожидание внешнего запуска контрольного "
-                "установления рабочего режима.";
+              DGI_MSG("Ожидание внешнего запуска контрольного " <<
+                "установления рабочего режима.");
               m_status_process_meas =
                 spm_wait_ext_trig_control_wait_mode_setting;
             }
@@ -1596,8 +1606,7 @@ void TDataHandlingF::process_volt_meas()
       if (m_on_external) {
         m_on_external = false;
         m_timer_delay_operating_duty.set(m_delay_operating_duty);
-        m_log << ("Ждем " + FloatToStr(
-          (CNT_TO_DBLTIME(m_delay_operating_duty))) +
+        DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_operating_duty) <<
           " секунд.");
         m_status_process_meas = spm_control_wait_mode_setting;
       }
@@ -1609,9 +1618,8 @@ void TDataHandlingF::process_volt_meas()
         if (m_temperature_stability_control.get_stable_state_time() <
           m_temperature_stable_min_time.get()) {
           m_timer_delay_control.set(m_delay_start_control_reg);
-          m_log<<"Температура вышла за допустимые значения.";
-          m_log << ("Ждем " + FloatToStr(
-            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+          DGI_MSG("Температура вышла за допустимые значения.");
+          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
             " секунд перед проверкой рабочего режима.");
           m_status_process_meas = spm_wait_mode_setting;
         }
@@ -1619,9 +1627,8 @@ void TDataHandlingF::process_volt_meas()
       if (m_config_calibr.out_param_control_config.enabled) {
         if (m_out_param_stability_control.get_stable_state_time() <
           m_out_param_stable_min_time.get()) {
-          m_log<<"Значение выходного параметра вышло за допустимые значения.";
-          m_log << ("Ждем " + FloatToStr(
-            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+          DGI_MSG("Значение выходного параметра вышло за допустимые значения.");
+          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
             " секунд перед проверкой рабочего режима.");
           m_timer_delay_control.set(m_delay_start_control_reg);
           m_status_process_meas = spm_wait_mode_setting;
@@ -1630,18 +1637,17 @@ void TDataHandlingF::process_volt_meas()
       if (m_status_process_meas == spm_control_wait_mode_setting) {
         if (m_on_reg_ready) {
           if (m_timer_delay_operating_duty.stopped()) {
-            m_log<<"Рабочий режим подтвержден.";
+            DGI_MSG("Рабочий режим подтвержден.");
             if (m_mode_program == mode_prog_single_channel) {
               m_status_process_meas = sps_start_meas;
             } else {
               m_status_process_meas = spm_wait_external_trig_meas;
-              m_log<<"Ожидание внешнего запуска измерения.";
+              DGI_MSG("Ожидание внешнего запуска измерения.");
             }
           }
         } else {
-          m_log << "Рабочий режим не подтвержден.";
-          m_log << ("Ждем " + FloatToStr(
-            (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
+          DGI_MSG("Рабочий режим не подтвержден.");
+          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
             " секунд перед проверкой рабочего режима.");
           m_timer_delay_control.set(m_delay_start_control_reg);
           m_status_process_meas = spm_wait_mode_setting;
@@ -1688,8 +1694,8 @@ void TDataHandlingF::process_volt_meas()
           m_status_process_meas = spm_processing_data;
         } else if (meas_stat == meas_status_error) {
           m_status_process_meas = spm_reset;
-          m_log << "Ошибка измерения.";
-          m_log << "Автоматическое измерение завершилось с ошибкой.";
+          DGI_MSG("Ошибка измерения.");
+          DGI_MSG("Автоматическое измерение завершилось с ошибкой.");
         }
         m_on_external = false;
       }
@@ -2169,8 +2175,8 @@ double TDataHandlingF::calc_meas_value(
     if (out_param_value != 0) {
       out_value = out_value/out_param_value;
     } else {
-      m_log << "Ошибка. "
-        "Выходное значение с устройства равно нулю и не учитывается";
+      DGI_MSG("Ошибка. " <<
+        "Выходное значение с устройства равно нулю и не учитывается");
     }
     if (m_inf_in_param.type_anchor == PARAMETR1) {
       if (a_param_cell.col_value.init) {
@@ -2879,7 +2885,7 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << irst("Текущая конфигурация успешно сохранена.");
+      DGI_MSG("Текущая конфигурация успешно сохранена.");
     }
   }
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
@@ -2922,7 +2928,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
 
   if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      m_log << irst("Текущая конфигурация успешно сохранена.");
+      DGI_MSG("Текущая конфигурация успешно сохранена.");
     }
   }
 
@@ -3107,7 +3113,7 @@ meas_status_t TDataHandlingF::meas_status()
   if(meas_status == meas_status_success) {
     //m_log << "Измерение успешно завершено!";
   } else if(meas_status == meas_status_error) {
-    m_log << "Измерение завершилось с ошибкой!";
+    DGI_MSG("Измерение завершилось с ошибкой!");
   }
   return meas_status;
 }
@@ -3147,7 +3153,7 @@ void TDataHandlingF::out_param(const param_cur_cell_t& a_param_cur_cell)
       m_param_cur_cell.top_value.value*m_config_calibr.in_parametr3.koef;
   }
   m_on_out_data = true;
-  m_log << "Установка параметров рабочего режима";
+  DGI_MSG("Установка параметров рабочего режима");
   out_message_log_cur_param_cell(a_param_cur_cell);
 
 }
@@ -3182,7 +3188,7 @@ void TDataHandlingF::out_message_log_cur_param_cell(
       m_inf_in_param.type_variable_param1;
     message_param += irst(";");
   }
-  m_log << message_param.c_str();
+  DGI_MSG(irs::str_conv<irs::string>(message_param));
 }
 bool TDataHandlingF::save_unsaved_changes_dialog()
 {
@@ -3358,8 +3364,7 @@ void TDataHandlingF::tick_calibr_data()
     case pcds_get_sub_diapason: {
       int sub_diapason_count = m_config_calibr.v_sub_diapason_calibr.size();
       if (m_cur_sub_diapason < sub_diapason_count) {
-        m_log << ("Обрабатывается диапазон №" +
-          IntToStr(m_cur_sub_diapason + 1));
+        DGI_MSG("Обрабатывается диапазон №" << (m_cur_sub_diapason + 1));
         irs::matrix_t<cell_t> sub_diapason =
           get_sub_diapason_table_data(m_cur_sub_diapason);
         calculation_koef(sub_diapason);
@@ -3374,7 +3379,7 @@ void TDataHandlingF::tick_calibr_data()
         }
       } else {
         m_process_calibr_data_stat = pcds_reset;
-        m_log << "Обработка всех диапазонов завершена";
+        DGI_MSG("Обработка всех диапазонов завершена");
       }
     } break;
     case pcds_write_sub_diapason: {
@@ -3439,7 +3444,7 @@ void TDataHandlingF::set_value_working_extra_params()
         m_config_calibr.v_parametr_ex[i].value_working;
       String message = m_config_calibr.v_parametr_ex[i].name;
       message = message + irst(" установлен в ") + value_working_str.c_str();
-      m_log << message;
+      DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
 }
@@ -3459,7 +3464,7 @@ void TDataHandlingF::set_value_default_extra_params()
         m_config_calibr.v_parametr_ex[i].value_default;
       String message = m_config_calibr.v_parametr_ex[i].name;
       message = message + irst(" установлен в ") + value_default_str.c_str();
-      m_log << message;
+      DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
 }
@@ -3480,7 +3485,7 @@ void TDataHandlingF::set_value_working_extra_bits()
         m_config_calibr.bit_type2_array[i].value_working;
       String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
       message = message + irst(" установлен в ") + value_working_str.c_str();
-      m_log << message;
+      DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
 }
@@ -3501,7 +3506,7 @@ void TDataHandlingF::set_value_default_extra_bits()
         m_config_calibr.bit_type2_array[i].value_def;
       String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
       message = message + irst(" установлен в ") + value_default_str.c_str();
-      m_log << message;
+      DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
 }
@@ -3533,7 +3538,7 @@ void TDataHandlingF::load_main_device()
     load_main_device(config_name);
   } else {
     if (!config_name.IsEmpty()) {
-      m_log << irst("Конфигурация устройства отсутствует");
+      DGI_MSG("Конфигурация устройства отсутствует");
     }
   }
 }
@@ -3545,7 +3550,7 @@ void TDataHandlingF::load_ref_device()
     load_ref_device(config_name);
   } else {
     if (!config_name.IsEmpty()) {
-      m_log << irst("Конфигурация устройства отсутствует");
+      DGI_MSG("Конфигурация устройства отсутствует");
     }
   }
 }
@@ -4028,7 +4033,15 @@ void TDataHandlingF::update_all_graph()
 void TDataHandlingF::clear_all_graph()
 {
   m_chart.clear_chart();
-}     
+}
+
+irs_uarc TDataHandlingF::number_of_koef_per_point() const
+{
+  if (m_inf_in_param.number_in_param == THREE_PARAM) {
+    return 2;
+  }
+  return 1;
+}
 
 void __fastcall TDataHandlingF::AutoUpdateChartActionExecute(
       TObject *Sender)

@@ -141,8 +141,14 @@ private:	// User declarations
   irs::handle_t<TDataHandlingF> mp_channel_6;
   std::vector<irs::handle_t<TDataHandlingF>* > mv_channels;
   static const bool m_block_message = 0;
-  log_t m_log;
+  //log_t m_log;
   log_message_t m_log_message;
+
+  enum { m_memobuf_size = 500 };
+  irs::union_streambuf m_stream_buf;
+  irs::handle_t <ofstream> mp_log_stream;
+  irs::handle_t<irs::memobuf> mp_memo_buf;
+
   bool m_on_change_mode_prog;
   bool m_on_close_subordinate_form;
   int m_num_ref_channel;

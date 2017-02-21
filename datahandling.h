@@ -478,8 +478,14 @@ private:	// User declarations
   irs::ini_file_t m_main_opt_ini_file;
 
   //класс логов
-  log_t m_log;
+  //log_t m_log;
   log_message_t m_log_message;
+
+  enum { m_memobuf_size = 500 };
+  irs::union_streambuf m_stream_buf;
+  irs::handle_t <ofstream> mp_log_stream;
+  irs::handle_t<irs::memobuf> mp_memo_buf;
+
   TForm* mp_manager_channel;
   //идентификатор файла конфигурации процесса калибровки
   const String m_fileid_conf;
@@ -513,7 +519,8 @@ private:	// User declarations
     progress_percent_precision = 6,
     progress_percent_digits = 3
   };
-  correct_map_t correct_map, m_correct_map_local;
+  correct_map_t m_correct_map;
+  correct_map_t m_correct_map_local;
   struct device_t
   {
     string_type type;
@@ -923,6 +930,7 @@ public:		// User declarations
   void update_all_graph();
   void clear_all_graph();
 private:
+  irs_uarc number_of_koef_per_point() const;
   inline void save_cur_config_device();
 public:
   inline void set_inf_in_param(const inf_in_param_t a_inf_in_param);
@@ -1135,13 +1143,13 @@ inline void TDataHandlingF::set_mismatch_state(
     m_on_mismatch_state_previous = a_mismatch_state;
     if(a_mismatch_state) {
       m_device.get_data()->mismatch_state_bit = 1;
-      m_log << irst("mismatch_state_bit = 1");
+      DGI_MSG("mismatch_state_bit = 1");
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->mismatch_state_bit = 1;
       }
     } else {
       m_device.get_data()->mismatch_state_bit = 0;
-      m_log << irst("mismatch_state_bit = 0");
+      DGI_MSG("mismatch_state_bit = 0");
       if (m_config_calibr.reference_channel.enabled) {
         mp_data_map_ref_channel->mismatch_state_bit = 0;
       }

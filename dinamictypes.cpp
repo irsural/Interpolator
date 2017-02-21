@@ -132,7 +132,7 @@ dynamic_conn_data_t::dynamic_conn_data_t():
   m_data(0)
 {
 }
-dynamic_conn_data_t::operator long double()
+dynamic_conn_data_t::operator long double() const
 {
   switch (m_type) {
     case type_irs_bool: {
@@ -258,6 +258,20 @@ long double dynamic_conn_data_t::operator=(long double a_val)
   }
   return a_val;
 }
+
+/*bool dynamic_conn_data_t::operator==(
+const dynamic_conn_data_t& a_dynamic_conn_data) const
+{
+  const long double val_1 = operator long double();
+  const long double val_2 = a_dynamic_conn_data.operator long double();
+  return (m_type == a_dynamic_conn_data.m_type);
+}
+
+bool dynamic_conn_data_t::operator!=(
+  const dynamic_conn_data_t& a_dynamic_conn_data) const
+{
+  return !operator==(a_dynamic_conn_data);
+} */
 
 void dynamic_conn_data_t::connect(lang_type_t a_type, irs::mxdata_t *a_data,
   irs_uarc a_index)

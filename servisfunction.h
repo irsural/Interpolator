@@ -31,6 +31,9 @@
 #include <irsfinal.h>
 
 #define debug_version_digital_interpolator
+
+#define DGI_MSG(msg) IRS_DBG_MSG(msg)
+
 //  Command bits
 //using namespace std;
 //---------------------------------------------------------------------------
@@ -698,13 +701,14 @@ int get_index_row_combo_box_str(
 
 class log_message_t: public irs::cbuilder::log_msg_t
 {
-  log_t* mp_log;
+  //log_t* mp_log;
 public:
-  log_message_t(log_t* ap_log): mp_log(ap_log)
+  log_message_t(/*log_t* ap_log*/)//: mp_log(ap_log)
   {}
   virtual void send_msg(const irs::string& a_msg_str)
   {
-    (*mp_log) << a_msg_str.c_str();
+    irs::mlog() << a_msg_str << endl;
+    //(*mp_log) << a_msg_str.c_str();
   }
 };
 
@@ -1051,7 +1055,8 @@ struct correct_map_t
   bool connect(
     irs::mxdata_t *ap_data,
     irs_uarc a_start_index,
-    config_calibr_t& a_config_calibr);
+    config_calibr_t& a_config_calibr,
+    const irs_uarc a_number_of_koef_per_point);
 };
 
 class param_filter_t

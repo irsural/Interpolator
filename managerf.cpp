@@ -32,8 +32,13 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   mp_channel_4(NULL),
   mp_channel_5(NULL),
   mp_channel_6(NULL),
-  m_log(LogMemo, irst("Log_manager.txt")),
-  m_log_message(&m_log),
+  //m_log(LogMemo, irst("Log_manager.txt")),
+  m_log_message(/*&m_log*/),
+
+  m_stream_buf(100),
+  mp_log_stream(new ofstream("Log_manager.txt", ios::out | ios::app)),
+  mp_memo_buf(new irs::memobuf(LogMemo, m_memobuf_size)),
+
   m_on_change_mode_prog(false),
   m_on_close_subordinate_form(false),
   m_num_ref_channel(0),
@@ -44,7 +49,12 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
   m_filter_phase_norm_begin(0),
   m_filter_phase_norm_end(+360)
 {
-  m_log << String(irst("Старт"));
+  m_stream_buf.insert(mp_log_stream->rdbuf());
+  m_stream_buf.insert(mp_memo_buf.get());
+
+  irs::mlog().rdbuf(&m_stream_buf);
+
+  DGI_MSG("Старт");
 
   irs::fade_data_t fade_data;
   fade_data.x1 = 0;
@@ -153,7 +163,7 @@ __fastcall TManagerDGIF::TManagerDGIF(TComponent* Owner)
     m_filter_phase_norm_end = +360;
   }
 
-  irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
+  //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
 
   // Настройка компонентов формы
   ConstTimerFilterLE->Text = irs::str_conv<String>(
@@ -368,7 +378,7 @@ void __fastcall TManagerDGIF::SingleModeProgramCBClick(TObject *Sender)
     for (int i = 0; i < channel_count; i++) {
       mv_channels[i]->reset(IRS_NULL);
     }
-    irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, NULL);
+    //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, NULL);
     mp_channel_1.reset(new TDataHandlingF(0, ManagerDGIF));
     mp_channel_1->Visible = true;
     //Application->
@@ -399,7 +409,7 @@ void TManagerDGIF::tick()
   if ((m_on_change_mode_prog) && (SingleModeProgramCB->Checked)) {
     m_on_change_mode_prog = false;
     mp_channel_1.reset(IRS_NULL);
-    irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
+    //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
     SingleModeProgramCB->Checked = false;
     bool ref_channel = (m_num_ref_channel == 1);
     if (OnChannel1CB->Checked) {
@@ -530,7 +540,7 @@ void TManagerDGIF::meas_tick()
         } */
         // Предустановка фазы
         if (m_timer_delay_filter_preset.check()) {
-          m_log << "Предустановка фильтра";
+          DGI_MSG("Предустановка фильтра");
           for (int channel = 0; channel < m_channel_count; channel++) {
             if ((*mv_channels[channel]).get() != IRS_NULL) {
               double in_x = (*mv_channels[channel])->get_out_param();
