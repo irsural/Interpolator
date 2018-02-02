@@ -1,6 +1,6 @@
 # Interpolator ignore
-/tmpPrst.tgz
-/.directory
+Log_manager.txt
+Log.txt
 
 # irs global ignore
 *.*~
