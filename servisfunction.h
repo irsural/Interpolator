@@ -16,6 +16,7 @@
 #include <irssysutils.h>
 #include <mxini.h>
 #include <irsalg.h>
+#include <irsrect.h>
 #include <irstable.h>
 #include <tstlan5lib.h>
 #include <json/json.h>
@@ -38,8 +39,24 @@
 //using namespace std;
 //---------------------------------------------------------------------------
 
+extern const double epsilon;
+
 // константа для обозначения "не чисел"
 extern const double not_a_number;
+
+template<class T>
+double get_epsilon(const T& a_t)
+{
+  return pow(10, -1.0 * (irs::get_num_precision_def(a_t) - 1));
+}
+
+template<class T>
+bool is_equals(const T a1, const T a2)
+{
+  return irs::compare_value(a1, a2, get_epsilon(a1)) == irs::equals_value;
+}
+
+
 
 template<class N>
 String num_to_cbstr(const N& a_num, const locale& a_loc = irs::loc().get())
@@ -49,15 +66,76 @@ String num_to_cbstr(const N& a_num, const locale& a_loc = irs::loc().get())
   return irs::str_conv<String>(base_str);
 }
 
+
+template <class T>
+inline std::string num_to_u8(const T& a_num)
+{
+  return irs::encode_utf_8(irs::num_to_str_classic(a_num));
+}
+
+template<class T>
+inline bool jsonv_get_num( const Json::Value& a_value, T* ap_result )
+{
+  if( !a_value.isString() )
+    return false;
+
+  T value = 0;
+  if( irs::str_to_num_classic( a_value.asString(), &value ) ) {
+    *ap_result = value;
+    return true;
+  }
+
+  return false;
+}
+
+
+inline String jsonv_safe_get_cbstr( const Json::Value& a_value, const String& a_default )
+{
+  if( !a_value.isString() )
+    return a_default;
+
+  return irs::decode_utf_8<String>( a_value.asString() );
+}
+
+
+inline bool jsonv_get_cbstr( const Json::Value& a_value, String* ap_result )
+{
+  if( !a_value.isString() )
+    return false;
+
+  *ap_result = irs::decode_utf_8<String>( a_value.asString() );
+
+  return true;
+}
+
+
+inline bool jsonv_get_str( const Json::Value& a_value, irs::string_t* ap_result )
+{
+  if( !a_value.isString() )
+    return false;
+
+  *ap_result = irs::decode_utf_8<irs::string_t>( a_value.asString() );
+
+  return true;
+}
+
+
+/*inline Json::Value jsonv_safe_get_jsonv( const Json::Value& a_value )
+{
+  return a_value.empty() ? Json::Value() : a_value;
+}*/
+
 enum m_copy_data{
   ON_COPY, OFF_COPY
 };
+
 
 enum status_options_t {
   OFF_PROCESSING,
   ON_UPDATE,
   ON_READ
 };
+
 
 struct options_optimize_type_mnk_t
 {
@@ -87,6 +165,7 @@ struct options_optimize_type_correct_t
   String file_name;
 };
 
+
 struct options_calculating_coef_t
 {
   int index;
@@ -113,6 +192,7 @@ struct inf_in_param_t
   {}
 };
 
+
 struct coord_t
 {
   int x;
@@ -120,6 +200,8 @@ struct coord_t
   coord_t():x(0), y(0)
   {}
 };
+
+
 struct coord3d_t
 {
   int x;
@@ -129,14 +211,18 @@ struct coord3d_t
   {}
 };
 
+
 struct param_cur_cell_t
 {
   cell_t col_value;
   cell_t row_value;
   cell_t top_value;
-  param_cur_cell_t():col_value(), row_value(), top_value()
+  int col;
+  int row;
+  param_cur_cell_t():col_value(), row_value(), top_value(), col(0), row(0)
   {}
 };
+
 
 struct displ_cell_t
 {
@@ -154,6 +240,7 @@ struct displ_cell_t
   }
 };
 
+
 class display_table_t
 {
 public:
@@ -163,6 +250,7 @@ public:
     const inf_in_param_t& a_inf_in_param) = 0;
   virtual int col() = 0;
   virtual int row() = 0;
+  virtual irs::rect_t selection() const = 0;
   virtual void set_col(const int a_col) = 0;
   virtual void set_row(const int a_row) = 0;
   virtual void out_display_cell(
@@ -185,6 +273,8 @@ public:
   virtual int col_count() const = 0;
   virtual int row_count() const = 0;
 };
+
+
 class table_string_grid_t:public display_table_t
 { 
   private:
@@ -198,6 +288,7 @@ class table_string_grid_t:public display_table_t
     const inf_in_param_t& a_inf_in_param);
   int col();
   int row();
+  irs::rect_t selection() const;
   void set_col(const int a_col);
   void set_row(const int a_row);
   void out_display_cell(
@@ -220,6 +311,571 @@ class table_string_grid_t:public display_table_t
   int col_count() const;
   int row_count() const;
 };
+
+
+//#define type_log_stream
+class log_t
+{
+private:
+  typedef irs::char_t char_type;
+  typedef irs::string_t string_type;
+  typedef basic_fstream<char_type, char_traits<char_type> > ofstream_type;
+  typedef irs::ostringstream_t ostringstream_type;
+  bool m_error_open_file_log;
+  static const int m_field_width_display_time = 15;
+  static const int m_field_width_file_date_time = 30;
+  #ifdef type_log_stream
+  irs::memobuf m_buflog;
+  ostream m_log_display;
+  #else
+  TMemo* mp_memo;
+  #endif
+  ofstream_type m_outfile;
+  log_t();
+public:
+  void operator<<(String a_str);
+  log_t(TMemo* ap_memo, string_type a_file_name);
+  ~log_t();
+};
+
+
+String extract_short_filename(const String& a_filename);
+
+/*Возвращает индекс строки TComboBox, текст которой равен a_text*/
+int get_index_row_combo_box_str(
+  const TComboBox* const ap_combo_box,
+  const String& a_text);
+
+
+class log_message_t: public irs::cbuilder::log_msg_t
+{
+  //log_t* mp_log;
+public:
+  log_message_t(/*log_t* ap_log*/)//: mp_log(ap_log)
+  {}
+  virtual void send_msg(const irs::string& a_msg_str)
+  {
+    irs::mlog() << a_msg_str << endl;
+    //(*mp_log) << a_msg_str.c_str();
+  }
+};
+
+
+struct parameter1_t
+{
+  String name;
+  lang_type_t type;
+  String unit;
+  bool anchor;
+  irs_i32 index;
+  long double koef;
+  double default_val;
+  parameter1_t():
+    name(),
+    type(type_none),
+    unit(),
+    anchor(false),
+    index(0),
+    koef(1),
+    default_val(0)
+  {}
+  parameter1_t(
+    const String a_name,
+    const lang_type_t a_type,
+    const String a_unit,
+    const bool anchors,
+    const irs_i32 a_index,
+    const long double a_koef,
+    const double a_default_val):
+    name(a_name),
+    type(a_type),
+    unit(a_unit),
+    anchor(anchors),
+    index(a_index),
+    koef(a_koef),
+    default_val(a_default_val)
+  {}
+  void clear()
+  {
+    *this = parameter1_t();
+  }
+
+  bool operator==(const parameter1_t& a_param) const
+  {
+    return name   == a_param.name &&
+      type        == a_param.type &&
+      unit        == a_param.unit &&
+      anchor      == a_param.anchor &&
+      index       == a_param.index &&
+      is_equals(koef, a_param.koef) &&
+      is_equals(default_val, a_param.default_val);
+  }
+};
+
+
+struct parameter2_t
+{
+  String name;
+  lang_type_t type;
+  String unit;
+  irs_i32 index;
+  long double koef;
+  double default_val;
+
+  parameter2_t():
+    name(),
+    type(type_none),
+    unit(),
+    index(0),
+    koef(1),
+    default_val(0)
+  {}
+
+  parameter2_t(
+    const String a_name,
+    const lang_type_t a_type,
+    const String a_unit,
+    const irs_i32 a_index,
+    const long double a_koef,
+    double a_default_val):
+    name(a_name),
+    type(a_type),
+    unit(a_unit),
+    index(a_index),
+    koef(a_koef),
+    default_val(a_default_val)
+  {}
+
+  void clear()
+  {
+    *this = parameter2_t();
+  }
+
+  bool operator==(const parameter2_t& a_param) const
+  {
+    return name   == a_param.name &&
+      type        == a_param.type &&
+      unit        == a_param.unit &&
+      index       == a_param.index &&
+      is_equals(koef, a_param.koef) &&
+      is_equals(default_val, a_param.default_val);
+  }
+};
+
+
+struct parameter3_t
+{
+  String name;
+  lang_type_t type;
+  String unit;
+  irs_i32 index;
+  ///long double koef_shunt; // Только для загрузки из старых ini-файлов
+
+  parameter3_t(
+  ):
+    name(),
+    type(type_none),
+    unit(),
+    index(0)/* ,
+    koef_shunt(1)*/
+  {}
+
+  parameter3_t(
+    const String a_name,
+    const lang_type_t a_type,
+    const String a_unit,
+    const irs_i32 a_index,
+    const long double a_koef_shunt):
+    name(a_name),
+    type(a_type),
+    unit(a_unit),
+    index(a_index)/*,
+    koef_shunt(a_koef_shunt)*/
+  {}
+
+  void clear()
+  {
+    *this = parameter3_t();
+  }
+
+  bool operator==(const parameter3_t& a_param) const
+  {
+    return name   == a_param.name &&
+      type        == a_param.type &&
+      unit        == a_param.unit &&
+      index       == a_param.index/* &&
+      is_equals(koef_shunt, a_param.koef_shunt)*/;
+  }
+};
+
+
+struct parameter_ex_t
+{
+  String name;
+  lang_type_t type;         // тип переменной
+  String unit;              // единицы измерения
+  irs_i32 index;            // индекс байта
+  //double value_working;     // рабочее значение
+  double value_default;     // значение по умолчанию
+  parameter_ex_t():
+    name(),
+    type(type_none),
+    unit(),
+    index(0),
+    //value_working(0.0),
+    value_default(0.0)
+  {}
+  parameter_ex_t(
+    const String a_name,
+    const lang_type_t a_type,
+    const String a_unit,
+    const irs_i32 a_index,
+    //double a_value_working,
+    double a_value_default
+  ):
+    name(a_name),
+    type(a_type),
+    unit(a_unit),
+    index(a_index),
+    //value_working(a_value_working),
+    value_default(a_value_default)
+  {}
+  void clear()
+  {
+    *this = parameter_ex_t();
+  }
+
+  const operator==(const parameter_ex_t& a_param) const
+  {
+    return name     == a_param.name &&
+      type          == a_param.type &&
+      unit          == a_param.unit &&
+      index         == a_param.index &&
+      //is_equals(value_working, a_param.value_working) &&
+      is_equals(value_default, a_param.value_default);
+  }
+};
+
+
+struct bit_type1_pos_t
+{
+  irs_i32 index_byte;
+  irs_i32 index_bit;
+
+  bit_type1_pos_t():
+    index_byte(0),
+    index_bit(0)
+  {}
+
+  bit_type1_pos_t(const irs_i32 a_index_byte, const irs_i32 a_index_bit):
+    index_byte(a_index_byte),
+    index_bit(a_index_bit)
+  {}
+
+  void clear()
+  {
+    *this = bit_type1_pos_t(); 
+  }
+
+  bool operator==(const bit_type1_pos_t& a_bit) const
+  {
+    return index_byte == a_bit.index_byte &&
+      index_bit       == a_bit.index_bit;
+  }
+};
+
+
+struct bit_type2_pos_t
+{
+  typedef irs::string_t string_type;
+  string_type bitname;
+  int index_byte;
+  int index_bit;
+  //bool value_working;
+  bool value_def;
+
+  bit_type2_pos_t(
+  ):
+    bitname(),
+    index_byte(0),
+    index_bit(0),
+    //value_working(false),
+    value_def(false)
+  {}
+
+  bit_type2_pos_t(
+    const string_type a_name_str,
+    const irs_i32 a_index_byte,
+    const irs_i32 a_index_bit,
+    //const bool a_value_working,
+    const bool a_value_def):
+    bitname(a_name_str),
+    index_byte(a_index_byte),
+    index_bit(a_index_bit),
+    //value_working(a_value_working),
+    value_def(a_value_def)
+  {}
+
+  void clear()
+  {
+    *this = bit_type2_pos_t();
+  }
+
+  bool operator==(const bit_type2_pos_t& a_bit) const
+  {
+    return bitname  == a_bit.bitname &&
+      index_byte    == a_bit.index_byte &&
+      index_bit     == a_bit.index_bit &&
+      //value_working == a_bit.value_working &&
+      value_def     == a_bit.value_def;
+  }
+};
+
+
+struct reference_channel_t
+{
+  bool enabled;
+  String ip_adress;
+  irs_u32 port;
+
+  reference_channel_t():
+    enabled(false),
+    ip_adress(),
+    port(5005)
+  {
+  }
+
+  bool operator==(const reference_channel_t& a_channel) const
+  {
+    return enabled  == a_channel.enabled &&
+      ip_adress     == a_channel.ip_adress &&
+      port          == a_channel.port;
+  }
+};
+
+
+enum type_sub_diapason_t{
+  tsd_parameter1,
+  tsd_parameter2
+};
+
+
+struct eeprom_range_t
+{
+  int index_start;
+  int size;
+  double value_begin;
+  double value_end;
+
+  eeprom_range_t(
+  ):
+    index_start(0),
+    size(0),
+    value_begin(0.0),
+    value_end(0.0)
+  {}
+
+  eeprom_range_t(int a_index_start, int a_size, double a_value_begin, double a_value_end
+  ):
+    index_start(a_index_start),
+    size(a_size),
+    value_begin(a_value_begin),
+    value_end(a_value_end)
+  {
+  }
+
+  void clear()
+  {
+    *this = eeprom_range_t();           
+  }
+
+  bool operator==(const eeprom_range_t& a_eeprom) const
+  {
+    return index_start  == a_eeprom.index_start &&
+      size              == a_eeprom.size &&
+      is_equals(value_begin, a_eeprom.value_begin) &&
+      is_equals(value_end, a_eeprom.value_end);
+  }
+};
+
+
+struct out_param_measuring_conf_t
+{
+  bool consider_out_param;
+  bool filter_enabled;
+  double filter_sampling_time;
+  irs_u32 filter_point_count;
+  out_param_measuring_conf_t():
+    consider_out_param(true),
+    filter_enabled(true),
+    filter_sampling_time(0.1),
+    filter_point_count(100)
+  {
+  }
+
+  bool operator==(const out_param_measuring_conf_t& a_conf) const
+  {
+    return consider_out_param == a_conf.consider_out_param &&
+      filter_enabled          == a_conf.filter_enabled &&
+      is_equals(filter_sampling_time, a_conf.filter_sampling_time) &&
+      filter_point_count      == a_conf.filter_point_count;
+  }
+};
+
+
+struct temperature_control_common_cfg_t
+{
+  bool enabled;
+  irs_u32 index;
+  
+  temperature_control_common_cfg_t():
+    enabled(false),
+    index(0)
+  {
+  }
+
+  bool operator==(const temperature_control_common_cfg_t& a_conf) const
+  {
+    return enabled == a_conf.enabled &&
+      index        == a_conf.index;
+  }
+};
+
+
+struct temperature_control_config_t
+{
+  bool enabled;
+  double reference;
+  double difference;
+  temperature_control_config_t():
+    enabled(false),
+    reference(65),
+    difference(0.5)
+  {
+  }
+
+  bool operator==(const temperature_control_config_t& a_conf) const
+  {
+    return enabled == a_conf.enabled &&
+      is_equals(reference, a_conf.reference) &&
+      is_equals(difference, a_conf.difference);
+  }
+};
+
+
+struct out_param_control_conf_t
+{ 
+  bool enabled;
+  double max_relative_difference;
+  double time;
+
+  out_param_control_conf_t():
+    enabled(false),
+    max_relative_difference(0.00003), 
+    time(15)
+  {
+  }
+
+  bool operator==(const out_param_control_conf_t& a_conf) const
+  {
+    return enabled == a_conf.enabled &&
+      is_equals(max_relative_difference, a_conf.max_relative_difference) &&
+      is_equals(time, a_conf.time);
+  }
+};
+
+
+struct cell_config_calibr_t
+{
+  typedef std::size_t size_type;
+
+  double value;               // for header cells
+  bool is_value_initialized;  // for header cells
+
+  long double output_param_coef;
+  vector<double> ex_param_work_values;  // рабочее значение дополнительных переменных
+  vector<bool> ex_bit_work_values;      // рабочее значение дополнительных битов
+
+  String type_meas;
+  bool range_enabled;
+  double range;
+  irs_u32 delay_meas;
+  double meas_interval;
+  irs_u32 count_reset_over_bit;
+
+  out_param_measuring_conf_t out_param_measuring_conf;
+  out_param_control_conf_t out_param_control_config;
+  temperature_control_config_t temperature_control;
+
+  cell_config_calibr_t();
+  void clear();
+  bool operator==(const cell_config_calibr_t& a_config) const;
+  bool operator!=(const cell_config_calibr_t& a_config) const;
+  void load_from_json( const Json::Value& a_data, bool a_is_header_cell );
+  Json::Value save_to_json(bool a_is_header_cell) const;
+};
+
+
+struct config_calibr_t
+{
+  typedef std::size_t size_type;
+  typedef irs::string_t string_type;
+  String device_name;
+  String reference_device_name;
+  String ip_adress;
+  irs_u32 port;
+  parameter1_t in_parameter1;
+  parameter1_t in_parameter2;
+  parameter2_t in_parameter3;
+  parameter3_t out_parameter;
+  vector<parameter_ex_t> v_parameter_ex;
+
+  bit_type1_pos_t bit_pos_mismatch_state;
+  bit_type1_pos_t bit_pos_correct_mode;
+  bit_type1_pos_t bit_pos_operating_duty;
+  bit_type1_pos_t bit_pos_error_bit;
+  bit_type1_pos_t bit_pos_reset_over_bit;
+  bit_type1_pos_t bit_pos_phase_preset_bit;
+  vector<bit_type2_pos_t> bit_type2_array;
+
+  irs_u32 index_work_time;
+  irs_u32 index_pos_eeprom;
+
+  temperature_control_common_cfg_t temperature_ctrl_common_cfg;
+  type_sub_diapason_t type_sub_diapason;
+  std::vector<eeprom_range_t> eeprom_ranges;
+  String active_filename;
+  reference_channel_t reference_channel;
+
+
+  enum{
+    min_col_count = 2,
+    min_row_count = 2,
+    default_col_count = min_col_count,
+    default_row_count = min_row_count,
+  };
+  // Настройки калибровки для каждой ячейки
+  irs::table_t<cell_config_calibr_t> cells_config;
+
+  config_calibr_t();
+  void clear();
+  bool save(const string_type& a_filename);
+  bool load(const string_type& a_filename);
+  bool operator==(const config_calibr_t& a_config);
+  //bool is_equal(const config_calibr_t& a_config);
+  static irs::table_t<cell_config_calibr_t> get_default_cells_config();
+  static void check_config(const config_calibr_t& a_config_calibr);
+  static void check_cells_config(const irs::table_t<cell_config_calibr_t>& a_cells_config);
+  static void save_load_test();
+private:
+  bool save_to_json(std::ostream* ap_ostr);
+  bool load_from_json(std::istream* ap_ostr);
+  bool save_to_ini(const string_type& a_filename);
+  bool load_from_ini( const string_type& a_filename );
+  void add_static_param(irs::ini_file_t* ap_ini_file,
+    cell_config_calibr_t* ap_cell_config_calibr);
+};
+
 
 class table_data_t
 {
@@ -257,6 +913,9 @@ private:
   int m_cur_row;
   int m_cur_table;
   inf_in_param_t m_inf_in_param;
+  irs::table_t<cell_config_calibr_t> m_cells_config;
+  bool m_is_cells_config_read_only;
+
   bool m_table_modifi_stat;
 public:
   inline const std::vector<irs::matrix_t<cell_t> >& read_table() const;
@@ -302,7 +961,8 @@ public:
   void create_subtable();
   void delete_subtable();
 
-  void create_new_table();
+  void create_new_table(const inf_in_param_t& a_inf_in_param,
+    const irs::table_t<cell_config_calibr_t>& a_cells_config);
 
   void save_table_to_json_file(const string_type& a_file_name);
 
@@ -312,7 +972,9 @@ public:
   // для сохранения в М-файл Matlab
   void save_table_to_m_file(const string_type a_file_name) const;
 
-  void load_table_from_file(const string_type& a_file_name);
+  bool load_table_from_file(const string_type& a_file_name,
+    const inf_in_param_t& a_inf_in_param,
+    const irs::table_t<cell_config_calibr_t>& a_cells_config);
   //void load_table_from_json_file(const string_type a_file_name);
   //void load_table_from_ini_file(const string_type& a_file_name);
   // загрузить подтаблицу из файла
@@ -332,14 +994,14 @@ public:
   // поиск выбросов кривой, входной параметр - допустимый перепад
   void search_pip(const double a_limit);
   void clear_coord_special_cells();
-  void set_file_namedir(String a_file_namedir);
+  //void set_file_namedir(String a_file_namedir);
   String get_file_namedir();
   void clear_file_name();
   inline int table_count() const;
   inline int col_count() const;
   inline int row_count() const;
   inline param_cur_cell_t get_param_cell(
-    const int a_col_displ, const int a_row_displ);
+    const int a_col_displ, const int a_row_displ) const;
   //inline int table_count() const;
   // устанавливает номер столбеца активной ячейки
   inline void set_col_table_data(const int a_col);
@@ -355,6 +1017,7 @@ public:
   inline int get_col_displ() const;
   // возвращает номер строки, выбранной в пользовательской таблице
   inline int get_row_displ() const;
+  inline irs::rect_t get_selection_displ() const;
   inline int get_col_count_displ() const;
   inline int get_row_count_displ() const;
   // возвращает координаты ячейки в таблице данных
@@ -404,7 +1067,10 @@ public:
   // в файл
   inline bool have_unsaved_changes() const;
   inline const inf_in_param_t& get_inf_in_param() const;
-  inline void set_inf_in_param(const inf_in_param_t& a_inf_in_param);
+  //inline void set_inf_in_param(const inf_in_param_t& a_inf_in_param);
+  const irs::table_t<cell_config_calibr_t>& table_data_t::get_cells_config() const;
+  bool is_cells_config_read_only() const;
+  //void table_data_t::set_cells_config(const irs::table_t<cell_config_calibr_t>& a_cells_config);
   // Инвертировать значения ячеек таблицы, не являющихся параметрическими
   void inversion_sign_conrent_table();
   // Модифицировать содержимое ячеек таблицы, не являющихся параметрическими
@@ -414,20 +1080,23 @@ public:
   // После выполнения функции непараметрические ячейки таблицы будут содержать
   // данные вида Z = Z + 2+X*Y;
   void modify_content_table(const string_type& a_str);
+
+  void copy_cells_config(const coord_t& a_src_cell, const TRect& a_rect);
+  bool is_cells_config_coord_valid(const coord_t& a_coord) const;
+  bool is_cells_config_range_valid(const TRect& a_rect) const;
 private:
+  static bool displ_table_matches_config_table(
+    const irs::matrix_t<cell_t>& a_table,
+    const irs::table_t<cell_config_calibr_t>& a_cells_config);
+  void set_data_table_to_config(irs::matrix_t<cell_t>* ap_table);
+  void set_config_table_to_data(irs::matrix_t<cell_t>* ap_table);
+
   void save_table_to_ini_file(const string_type a_file_name);
   void save_table_to_json(size_type a_index, Json::Value* ap_parameters);
   void save_points(const cell_t::points_type& a_points,
     Json::Value* ap_points_value) const;
 
-
-
-
-  
-
-
   ///
-
   void concatenate_table_matrix(
     const irs::matrix_t<cell_t>& a_in_table1,
     const irs::matrix_t<cell_t>& a_in_table2,
@@ -444,33 +1113,51 @@ void load_table_from_file(
   const irs::string_t& a_file_name,
   std::vector<irs::matrix_t<cell_t> >& a_table);
 
+
 void load_table_from_json_file(
   number_in_param_t& a_number_in_param,
   const irs::string_t& a_file_name,
   std::vector<irs::matrix_t<cell_t> >& a_table);
+
+
 void load_table_from_json(const Json::Value& a_parameters,
   irs::matrix_t<cell_t>* ap_matrix);
+
+
 void load_points(const Json::Value& a_points_value,
   cell_t::points_type* ap_points);
+
 
 void load_table_from_ini_file(
   number_in_param_t& a_number_in_param,
   const irs::string_t& a_file_name,
   std::vector<irs::matrix_t<cell_t> >& a_table);
 
+
 inline const std::vector<irs::matrix_t<cell_t> >&
   table_data_t::read_table() const
   {return mv_table;}
+
+
 inline unsigned int table_data_t::index() const
   {return m_index;}
+
+
 inline TStringGrid* table_data_t::pointer_table() const
   {/*return mp_table;*/ return IRS_NULL;}
+
+
 inline String table_data_t::name() const
   {return m_name;}
+
+
 inline coord_t table_data_t::coord_special_cell(const int a_n) const
   {return mv_coord_special_cells[a_n];}
+
+
 inline int table_data_t::size_special_cells() const
   {return mv_coord_special_cells.size();}
+
 
 inline table_data_t::string_type
 table_data_t::get_cell_value_str_table_data(
@@ -493,8 +1180,11 @@ table_data_t::get_cell_value_str_table_data(
   return cell_value_str;
 }
 
+
 inline int table_data_t::table_count() const
   {return mv_table.size();}
+
+
 inline int table_data_t::col_count() const
 {
   int col_count = 0;
@@ -504,6 +1194,8 @@ inline int table_data_t::col_count() const
     col_count = 0;
   return col_count;
 }
+
+
 inline int table_data_t::row_count() const
 {
   int row_count = 0;
@@ -513,11 +1205,15 @@ inline int table_data_t::row_count() const
     row_count = 0;
   return row_count;
 }
+
+
 inline param_cur_cell_t table_data_t::get_param_cell(
-  const int a_col_displ, const int a_row_displ)
+  const int a_col_displ, const int a_row_displ) const
 {
   int table_count = mv_table.size();
   param_cur_cell_t param_cur_cell;
+  param_cur_cell.col = a_col_displ;
+  param_cur_cell.row = a_row_displ;
   if(table_count > 0){
     int row_count =  mv_table[0].row_count();
     div_t div_value = div(a_row_displ, row_count);
@@ -529,38 +1225,61 @@ inline param_cur_cell_t table_data_t::get_param_cell(
   }
   return param_cur_cell;
 }
+
+
 /*inline int table_data_t::table_count() const
   {return mv_table.size();}*/
 inline void table_data_t::set_col_table_data(const int a_col)
   {m_cur_col = a_col;}
+
+
 inline void table_data_t::set_row_table_data(const int a_row)
   {m_cur_row = a_row;}
+
+
 inline void table_data_t::set_num_table_data(const int a_table)
   {m_cur_table = a_table;}
+
+
 inline void table_data_t::set_col_displ(const int a_col)
 {
   mp_display_table->set_col(a_col);
 }
+
+
 inline void table_data_t::set_row_displ(const int a_row)
 {
   mp_display_table->set_row(a_row);
 }
+
+
 inline int table_data_t::get_col_displ() const
 {
   return mp_display_table->col();
 }
+
+
 inline int table_data_t::get_row_displ() const
 {
   return mp_display_table->row();
 }
+
+inline irs::rect_t table_data_t::get_selection_displ() const
+{
+  return mp_display_table->selection();
+}
+
 inline int table_data_t::get_col_count_displ() const
 {
   return mp_display_table->col_count();
 }
+
+
 inline int table_data_t::get_row_count_displ() const
 {
   return mp_display_table->row_count();
 }
+
 
 inline coord3d_t table_data_t::get_coord_cell_table(
   const int a_col_displ, const int a_row_displ) const
@@ -576,6 +1295,8 @@ inline coord3d_t table_data_t::get_coord_cell_table(
   }
   return coord_cell;
 }
+
+
 inline coord_t table_data_t::get_coord_cell_table_displ(
   const coord3d_t& a_coord_cell) const
 {
@@ -607,11 +1328,13 @@ inline cell_t table_data_t::get_cell_table(
   return cell;
 }
 
+
 inline void table_data_t::set_cell(
   const cell_t a_cell, const int a_table, const int a_col, const int a_row)
 {
   mv_table[a_table][a_col][a_row] = a_cell;
 }
+
 
 inline void table_data_t::set_cell(
   const cell_t a_cell, const int a_col_displ, const int a_row_displ)
@@ -626,6 +1349,7 @@ inline void table_data_t::set_cell(
   }
 }
 
+
 inline bool table_data_t::get_stat_cell_x(
       const int a_col_displ, const int a_row_displ) const
 {
@@ -634,12 +1358,19 @@ inline bool table_data_t::get_stat_cell_x(
   return select_cell_x;
 }
 
+
 inline void table_data_t::set_edit_mode_table()
   {mp_display_table->set_edit_mode_table();}
+
+
 inline void table_data_t::reset_edit_mode_table()
   {mp_display_table->reset_edit_mode_table();}
+
+
 inline bool table_data_t::get_edit_mode_table()
   {return mp_display_table->get_edit_mode_table();}
+
+
 inline bool table_data_t::have_unsaved_changes() const
 {
   return  (mv_table != mv_saved_table);
@@ -648,14 +1379,36 @@ inline bool table_data_t::have_unsaved_changes() const
   #endif
   return (!m_table_modifi_stat);*/
 }
+
+
 inline const inf_in_param_t& table_data_t::get_inf_in_param() const
 {
   return m_inf_in_param;
 }
-inline void table_data_t::set_inf_in_param(const inf_in_param_t& a_inf_in_param)
+
+
+/*inline void table_data_t::set_inf_in_param(const inf_in_param_t& a_inf_in_param)
 {
   m_inf_in_param = a_inf_in_param;
+}*/
+
+
+inline const irs::table_t<cell_config_calibr_t>& table_data_t::get_cells_config() const
+{
+  return m_cells_config;
 }
+
+inline bool table_data_t::is_cells_config_read_only() const
+{
+  return m_is_cells_config_read_only;
+}
+
+
+/*inline void table_data_t::set_cells_config(const irs::table_t<cell_config_calibr_t>& a_cells_config)
+{
+  m_cells_config = a_cells_config;
+}*/
+
 
 class table_data_size_t: public irs::table_size_read_only_t
 {
@@ -668,365 +1421,6 @@ public:
   virtual size_type get_row_count() const;
 };
 
-//#define type_log_stream
-class log_t
-{
-private:
-  typedef irs::char_t char_type;
-  typedef irs::string_t string_type;
-  typedef basic_fstream<char_type, char_traits<char_type> > ofstream_type;
-  typedef irs::ostringstream_t ostringstream_type;
-  bool m_error_open_file_log;
-  static const int m_field_width_display_time = 15;
-  static const int m_field_width_file_date_time = 30;
-  #ifdef type_log_stream
-  irs::memobuf m_buflog;
-  ostream m_log_display;
-  #else
-  TMemo* mp_memo;
-  #endif
-  ofstream_type m_outfile;
-  log_t();
-public:
-  void operator<<(String a_str);
-  log_t(TMemo* ap_memo, string_type a_file_name);
-  ~log_t();
-};
-
-String extract_short_filename(const String& a_filename);
-/*Возвращает индекс строки TComboBox, текст которой равен a_text*/
-int get_index_row_combo_box_str(
-  const TComboBox* const ap_combo_box,
-  const String& a_text);
-
-class log_message_t: public irs::cbuilder::log_msg_t
-{
-  //log_t* mp_log;
-public:
-  log_message_t(/*log_t* ap_log*/)//: mp_log(ap_log)
-  {}
-  virtual void send_msg(const irs::string& a_msg_str)
-  {
-    irs::mlog() << a_msg_str << endl;
-    //(*mp_log) << a_msg_str.c_str();
-  }
-};
-
-struct parametr1_t
-{
-  String name;
-  lang_type_t unit;
-  String type_variable;
-  bool anchor;
-  irs_i32 index;
-  long double koef;
-  double default_val;
-  parametr1_t():
-    name(),
-    unit(type_none),
-    type_variable(),
-    anchor(false),
-    index(0),
-    koef(1),
-    default_val(0)
-  {}
-  parametr1_t(
-    const String a_name,
-    const lang_type_t a_unit,
-    const String a_type_variable,
-    const bool anchors,
-    const irs_i32 a_index,
-    const long double a_koef,
-    const double a_default_val):
-    name(a_name),
-    unit(a_unit),
-    type_variable(a_type_variable),
-    anchor(anchors),
-    index(a_index),
-    koef(a_koef),
-    default_val(a_default_val)
-  {}
-  void clear()
-  {
-    *this = parametr1_t();
-  }
-};
-struct parametr2_t
-{
-  String name;
-  lang_type_t unit;
-  String type_variable;
-  irs_i32 index;
-  long double koef;
-  double default_val;
-  parametr2_t():
-    name(),
-    unit(type_none),
-    type_variable(),
-    index(0),
-    koef(1),
-    default_val(0)
-  {}
-  parametr2_t(
-    const String a_name,
-    const lang_type_t a_unit,
-    const String a_type_variable,
-    const irs_i32 a_index,
-    const long double a_koef,
-    double a_default_val):
-    name(a_name),
-    unit(a_unit),
-    type_variable(a_type_variable),
-    index(a_index),
-    koef(a_koef),
-    default_val(a_default_val)
-  {}
-  void clear()
-  {
-    *this = parametr2_t();
-  }
-};
-struct parametr3_t
-{
-  String name;
-  lang_type_t unit;
-  String type_variable;
-  irs_i32 index;
-  long double koef_shunt;
-  parametr3_t(
-  ):
-    name(),
-    unit(type_none),
-    type_variable(),
-    index(0),
-    koef_shunt(1)
-  {}
-  parametr3_t(
-    const String a_name,
-    const lang_type_t a_unit,
-    const String a_type_variable,
-    const irs_i32 a_index,
-    const long double a_koef_shunt):
-    name(a_name),
-    unit(a_unit),
-    type_variable(a_type_variable),
-    index(a_index),
-    koef_shunt(a_koef_shunt)
-  {}
-  void clear()
-  {
-    *this = parametr3_t();
-  }
-};
-struct parametr_ex_t
-{
-  String name;
-  lang_type_t unit;          // тип переменной
-  String type_variable; // единицы измерения
-  irs_i32 index;            // индекс байта
-  double value_working;     // рабочее значение
-  double value_default;     // значение по умолчанию
-  parametr_ex_t():
-    name(),
-    unit(type_none),
-    type_variable(),
-    index(0),
-    value_working(0.0),
-    value_default(0.0)
-  {}
-  parametr_ex_t(
-    const String a_name,
-    const lang_type_t a_unit,
-    const String a_type_variable,
-    const irs_i32 a_index,
-    const long double a_koef,
-    double a_value_working,
-    double a_value_default
-  ):
-    name(a_name),
-    unit(a_unit),
-    type_variable(a_type_variable),
-    index(a_index),
-    value_working(a_value_working),
-    value_default(a_value_default)
-  {}
-  void clear()
-  {
-    *this = parametr_ex_t();
-  }
-};
-struct bit_type1_pos_t
-{
-  irs_i32 index_byte;
-  irs_i32 index_bit;
-  bit_type1_pos_t():
-    index_byte(0),
-    index_bit(0)
-  {}
-  bit_type1_pos_t(const irs_i32 a_index_byte, const irs_i32 a_index_bit):
-    index_byte(a_index_byte),
-    index_bit(a_index_bit)
-  {}
-  void clear()
-  {
-    *this = bit_type1_pos_t(); 
-  }
-};
-
-struct bit_type2_pos_t
-{
-  typedef irs::string_t string_type;
-  string_type bitname;
-  int index_byte;
-  int index_bit;
-  bool value_working;
-  bool value_def;
-  bit_type2_pos_t(
-  ):
-    bitname(),
-    index_byte(0),
-    index_bit(0),
-    value_working(false),
-    value_def(false)
-  {}
-  bit_type2_pos_t(
-    const string_type a_name_str,
-    const irs_i32 a_index_byte,
-    const irs_i32 a_index_bit,
-    const bool a_value_working,
-    const bool a_value_def):
-    bitname(a_name_str),
-    index_byte(a_index_byte),
-    index_bit(a_index_bit),
-    value_working(a_value_working),
-    value_def(a_value_def)
-  {}
-  void clear()
-  {
-    *this = bit_type2_pos_t();   
-  }
-};
-
-struct reference_channel_t
-{
-  bool enabled;
-  String ip_adress;
-  irs_u32 port;
-  reference_channel_t():
-    enabled(false),
-    ip_adress(),
-    port(5005)
-  {
-  }
-};
-
-enum type_sub_diapason_t{
-  tsd_parameter1,
-  tsd_parameter2
-};
-
-struct sub_diapason_calibr_t
-{
-  int index_start;
-  int size;
-  double value_begin;
-  double value_end;
-  sub_diapason_calibr_t(
-  ):
-    index_start(0),
-    size(0),
-    value_begin(0.0),
-    value_end(0.0)
-  {}
-  void clear()
-  {
-    *this = sub_diapason_calibr_t();           
-  }
-};
-
-struct out_param_config_for_measurement_t
-{
-  bool consider_out_param;
-  bool out_param_filter_enabled;
-  double filter_sampling_time;
-  irs_u32 filter_point_count;
-  out_param_config_for_measurement_t():
-    consider_out_param(true),
-    out_param_filter_enabled(true),
-    filter_sampling_time(0.1),
-    filter_point_count(100)
-  {
-  }
-};
-
-struct temperature_control_config_t
-{
-  bool enabled;
-  irs_u32 index;
-  double reference;
-  double difference;
-  temperature_control_config_t():
-    enabled(false),
-    index(0),
-    reference(65),
-    difference(0.5)
-  {
-  }
-};
-
-struct out_param_control_config_t
-{ 
-  bool enabled;
-  double max_relative_difference;
-  double time;
-  out_param_control_config_t():
-    enabled(false),
-    max_relative_difference(0.00003), 
-    time(15)
-  {
-  }
-};
-
-struct config_calibr_t
-{
-  typedef irs::string_t string_type;
-  String type_meas;
-  String device_name;
-  String reference_device_name;
-  String ip_adress;
-  irs_u32 port;
-  parametr1_t in_parametr1;
-  parametr1_t in_parametr2;
-  parametr2_t in_parametr3;
-  parametr3_t out_parametr;
-  vector<parametr_ex_t> v_parametr_ex;
-  bit_type1_pos_t bit_pos_mismatch_state;
-  bit_type1_pos_t bit_pos_correct_mode;
-  bit_type1_pos_t bit_pos_operating_duty;
-  bit_type1_pos_t bit_pos_error_bit;
-  bit_type1_pos_t bit_pos_reset_over_bit;
-  bit_type1_pos_t bit_pos_phase_preset_bit;
-  vector<bit_type2_pos_t> bit_type2_array;
-  irs_u32 index_work_time;
-  irs_u32 index_pos_eeprom;
-  out_param_config_for_measurement_t out_param_config_for_measurement;
-  out_param_control_config_t out_param_control_config;
-  temperature_control_config_t temperature_control;
-  type_sub_diapason_t type_sub_diapason;
-  std::vector<sub_diapason_calibr_t> v_sub_diapason_calibr;
-  double meas_range_koef;
-  irs_u32 delay_meas;
-  double meas_interval;
-  irs_u32 count_reset_over_bit;
-  String active_filename;
-  reference_channel_t reference_channel;
-  config_calibr_t();
-  void clear();
-  bool save(const string_type& a_filename);
-  bool load(const string_type& a_filename);
-private:
-  void add_static_param(irs::ini_file_t* ap_ini_file);
-};
 
 struct correct_data_t
 {
@@ -1059,6 +1453,7 @@ struct correct_map_t
     const irs_uarc a_number_of_koef_per_point);
 };
 
+
 class param_filter_t
 {
 public:
@@ -1079,6 +1474,7 @@ private:
   bool m_started;
   double m_last_value;
 };
+
 
 // Универсальная функция перевода чисел в текст
 /*template<class T>
@@ -1104,6 +1500,8 @@ inline bool StrToNumber(const AnsiString& a_str, T& a_number)
   const irs::string_t& a_full_file_name,
   const irs::string_t& a_base);
   */
+
+
 class file_name_service_t
 {
 public:
@@ -1165,6 +1563,7 @@ private:
   const String m_device_options_section;
 };
 
+
 class vars_ini_file_t
 {
 public:
@@ -1183,6 +1582,7 @@ private:
   TEncoding* mp_encoding;
   irs::handle_t<TCustomIniFile> mp_ini_file;
 };
+
 
 class netconn_t
 {
@@ -1257,6 +1657,7 @@ private:
   irs::mxdata_t* mp_data;
 }; //netconn_t
 
+
 template <class T>
 T netconn_t::read_value(size_type a_index) const
 {
@@ -1305,6 +1706,7 @@ T netconn_t::read_value(size_type a_index) const
   }
   return val;
 }
+
 
 template <class T>
 void netconn_t::write_value(size_type a_index, T a_value)
@@ -1357,6 +1759,7 @@ void netconn_t::write_value(size_type a_index, T a_value)
   }
 }
 
+
 struct data_map_t
 {
 private:
@@ -1405,40 +1808,41 @@ public:
   {
     connected = (ap_data != NULL);
     x_in.connect(
-      a_config_calibr.in_parametr1.unit,
+      a_config_calibr.in_parameter1.type,
       ap_data,
-      a_config_calibr.in_parametr1.index);
+      a_config_calibr.in_parameter1.index);
 
     y_in.connect(
-      a_config_calibr.in_parametr2.unit,
+      a_config_calibr.in_parameter2.type,
       ap_data,
-      a_config_calibr.in_parametr2.index);
+      a_config_calibr.in_parameter2.index);
 
-    if(a_config_calibr.in_parametr1.anchor == false
-      && a_config_calibr.in_parametr2.anchor == false){
+    if(a_config_calibr.in_parameter1.anchor == false
+      && a_config_calibr.in_parameter2.anchor == false){
       q_in.connect(
-        a_config_calibr.in_parametr3.unit,
+        a_config_calibr.in_parameter3.type,
         ap_data,
-        a_config_calibr.in_parametr3.index);
+        a_config_calibr.in_parameter3.index);
     }
     y_out.connect(
-      a_config_calibr.out_parametr.unit,
+      a_config_calibr.out_parameter.type,
       ap_data,
-      a_config_calibr.out_parametr.index);
+      a_config_calibr.out_parameter.index);
 
-    int extra_param_count = a_config_calibr.v_parametr_ex.size();
+    int extra_param_count = a_config_calibr.v_parameter_ex.size();
     v_extra_param.resize(extra_param_count);
     for (int i = 0; i < extra_param_count; i++) {
       v_extra_param[i].connect(
-        a_config_calibr.v_parametr_ex[i].unit,
+        a_config_calibr.v_parameter_ex[i].type,
         ap_data,
-        a_config_calibr.v_parametr_ex[i].index);
+        a_config_calibr.v_parameter_ex[i].index);
     }
 
     work_time.connect(ap_data,
       a_config_calibr.index_work_time);
-    if (a_config_calibr.temperature_control.enabled) {
-      temperature.connect(ap_data, a_config_calibr.temperature_control.index);
+    if (a_config_calibr.temperature_ctrl_common_cfg.enabled) {
+      temperature.connect(ap_data,
+      a_config_calibr.temperature_ctrl_common_cfg.index);
     }
     mismatch_state_bit.connect(
       ap_data,
@@ -1480,6 +1884,7 @@ public:
   }
 };
 
+
 struct device_options_t
 {
   typedef irs::string_t string_type;
@@ -1496,6 +1901,7 @@ struct device_options_t
     }
   }
 };
+
 
 class device2_t
 {
@@ -1540,6 +1946,7 @@ private:
   irs::handle_t<TConnectionLogForm> mp_connection_log;
   data_map_t m_data_map;
 };
+
 
 void save_string_grid_to_csv_with_dialog(TStringGrid* ap_string_grid,
   const String& a_file_name_default = String());

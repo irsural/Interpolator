@@ -76,8 +76,11 @@ enum mode_program_t {
 enum status_process_meas_t {
   spm_off_process,
   spb_wait_connect,
+  spb_wait_ext_trig_set_apply_params_and_bits,
   spb_wait_apply_extra_params_and_bits,
   spm_jump_next_elem,
+  spm_wait_ext_trig_off_signal,
+  spm_wait_off_signal,
   spm_wait_ext_trig_set_range,
   spm_set_range,
   spm_wait_set_range,
@@ -93,8 +96,8 @@ enum status_process_meas_t {
   spm_processing_data,
   spm_processing_filter_data,
   spm_wait_ext_trig_process_data_to_next_elem,
-  spm_reset,
-  spm_wait_set_extra_vars
+  spm_reset,                                      // -> spm_wait_set_extra_vars
+  spm_wait_set_extra_vars                         // -> spm_off_process
 };
 
 template <class T>
@@ -207,8 +210,7 @@ __published:	// IDE-managed Components
   TTimer *FormDataHandingTimer;
   TMemo *LogMemo;
   TActionManager *ActionManager1;
-  TImageList *ImageList2;
-  TActionToolBar *ActionToolBar1;
+  TImageList *ActionManagerImageList;
   TFileOpen *FileOpen;
   TFileSaveAs *FileSaveAs;
   TAction *FileSave;
@@ -251,8 +253,6 @@ __published:	// IDE-managed Components
   TAction *SetJumpVerticalForwardAction;
   TAction *SetJumpVerticalBackAction;
   TAction *SetJumpSmoothAction;
-  TActionToolBar *ActionToolBar2;
-  TCoolBar *CoolBar1;
   TMenuItem *TypeMeas;
   TMenuItem *VoltDCMeasM;
   TMenuItem *VoltACMeasM;
@@ -268,7 +268,6 @@ __published:	// IDE-managed Components
   TAction *SetFrequencyMeasAction;
   TMenuItem *CurrentACMeasM;
   TMenuItem *FrequencyMeasM;
-  TActionToolBar *ActionToolBar3;
   TMenuItem *U1;
   TMenuItem *ZX1;
   TMenuItem *ZY1;
@@ -291,7 +290,7 @@ __published:	// IDE-managed Components
   TComboBox *PatternOfMeasuringInstrumentCB;
   TPanel *Panel5;
   TLabeledEdit *CurrentStatusLabeledEdit;
-  TImageList *ImageList1;
+  TImageList *MainMenuImageList;
   TMenuItem *OptionsMeas;
   TMenuItem *CorrectModeM;
   TMenuItem *MismatchModeM;
@@ -313,7 +312,6 @@ __published:	// IDE-managed Components
   TAction *AddTableAction;
   TMenuItem *N8;
   TMenuItem *N10;
-  TActionToolBar *ActionToolBar4;
   TCheckBox *ModeProgramCB;
   TAction *RestructDataType1Action;
   TMenuItem *RestructDataType1M;
@@ -373,6 +371,26 @@ __published:	// IDE-managed Components
   TMenuItem *N21;
   TMenuItem *ComparsionMenuItem;
   TMenuItem *ParametersMenuItem;
+  TAction *SetTableToSettingsAction;
+  TMenuItem *N22;
+  TAction *LockMeasCellsRangeAction;
+  TActionToolBar *ActionToolBar5;
+  TAction *Action2;
+  TAction *AutoSaveMeasAction;
+  TMenuItem *N23;
+  TMenuItem *N25;
+  TAction *CopyCellsConfligAction;
+  TAction *PasteCellsConfigAction;
+  TMenuItem *N24;
+  TMenuItem *N26;
+  TPopupMenu *TablePopupMenu;
+  TMenuItem *N27;
+  TMenuItem *N28;
+  TAction *SelectAllCellsAction;
+  TMenuItem *N29;
+  TMenuItem *N30;
+  TAction *ShowSameCellConfigsAction;
+  TMenuItem *N31;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -462,6 +480,15 @@ __published:	// IDE-managed Components
   void __fastcall ShowMeasPointChartActionExecute(TObject *Sender);
   void __fastcall ComparsionMenuItemClick(TObject *Sender);
   void __fastcall ParametersMenuItemClick(TObject *Sender);
+  void __fastcall RawDataStringGridMouseActivate(TObject *Sender, TMouseButton Button,
+          TShiftState Shift, int X, int Y, int HitTest, TMouseActivate &MouseActivate);
+  void __fastcall LockMeasCellsRangeActionExecute(TObject *Sender);
+  void __fastcall AutoSaveMeasActionExecute(TObject *Sender);
+  void __fastcall CopyCellsConfligActionExecute(TObject *Sender);
+  void __fastcall PasteCellsConfigActionExecute(TObject *Sender);
+  void __fastcall SelectAllCellsActionExecute(TObject *Sender);
+  void __fastcall ShowSameCellConfigsActionExecute(TObject *Sender);
+
 
 
 private:	// User declarations
@@ -551,6 +578,13 @@ private:	// User declarations
   irs::handle_t<irs::mxmultimeter_assembly_t> mp_mxmultimeter_assembly;
 
   table_data_t* mp_active_table;
+  int           m_start_col;
+  int           m_start_row;
+  TRect         m_cells_range;
+  coord_cell_t  m_copied_cell_config;
+  TRect         m_meas_cells_range;
+  coord_cell_t  m_start_cell;
+
   status_connect_t status_connect;
   status_connect_eeprom_t status_connect_eeprom;
   String m_cur_config_device;
@@ -572,6 +606,7 @@ private:	// User declarations
   bool m_on_out_data;
   bool m_on_correct;
   bool m_correct_mode_previous_stat;
+  bool m_is_autosave_meas_enabled;
 
   // необходимый размер в памяти для прошивки
   int m_need_size_memory;
@@ -703,15 +738,10 @@ private:	// User declarations
     unsigned int col;
     unsigned int row;
   };
-  const cur_elem_t m_start_elem;
-  cur_elem_t m_start_inverse_elem;
-  cur_elem_t m_cur_elem;
-  cur_elem_t m_max_cur_elem;
-  cur_elem_t m_min_cur_elem;
 
   stability_control_t<double> m_out_param_stability_control;
   irs::measure_time_t m_out_param_stable_min_time;
-  //bool m_temperature_allowable;
+
   enum { temperature_stability_min_time = 4 };
   stability_control_t<double> m_temperature_stability_control;
   irs::measure_time_t m_temperature_stable_min_time;
@@ -750,6 +780,8 @@ private:	// User declarations
   vector<int> mv_config_table_copy;
   int m_memory_capacity;
   param_cur_cell_t m_param_cur_cell;
+  cell_config_calibr_t m_cur_cell_cfg;
+  cell_config_calibr_t m_prev_cell_cfg;
   inline void reset_stat_stop_process_avto_volt_meas();
   
   //установка типа перехода
@@ -882,7 +914,7 @@ private:	// User declarations
   int m_cur_sub_diapason;
   bool m_on_auto_verify;
 
-public:		// User declarations
+public:// User declarations
   __fastcall TDataHandlingF(
     TComponent* Owner,
     // Параметр импользуется только для многоканального режима
@@ -908,7 +940,7 @@ public:		// User declarations
   void load_config_calibr();
   void set_connect_if_enabled(bool a_forced_connect = false);
   void set_connect_calibr_device(bool a_forced_connect = false);
-  bool set_connect_multimetr();
+  bool set_connect_multimeter(const String& a_type_meas);
   String get_selected_multimeter();
   void reset_connect_calibr_device();
   void reset_connect_multimetr();
@@ -933,11 +965,9 @@ private:
   irs_uarc number_of_koef_per_point() const;
   inline void save_cur_config_device();
 public:
-  inline void set_inf_in_param(const inf_in_param_t a_inf_in_param);
 
   void load_multimeters_list();
 
-  inline void set_deley_volt_meas(const unsigned int a_delay);
   // изменить статус режима редактирования таблицы на противоположный
   inline void edit_mode_table_change_stat();
   // изменить статус режима коррекции на противоположный
@@ -952,7 +982,6 @@ public:
   void meas_execute();
   meas_status_t meas_status();
 
-  void set_type_meas(type_meas_t a_type_meas);
   //особый стиль ячеек
   void special_style_cells(TStringGrid* a_table,
     int a_col,
@@ -961,12 +990,16 @@ public:
   //обработка выделения ячейки StringGrid
   void processing_select_cell(TStringGrid* a_table,
     int a_col, int a_row, bool &a_can_select);
+
   //обработка нажатия клавиши Enter и обработка нажатия горячей комбинации
   //клавиш "Ctrl + Enter"
   void processing_key_return_and_ctrl_down(
     TStringGrid* const a_table,
-    const WORD a_key,
+    WORD& a_key,
     const TShiftState Shift);
+  void on_select_cell(int a_col, int a_row, const TShiftState Shift);
+  void update_buttons_config();
+  void select_cur_meas_cell();
 
   void process_volt_meas();
   void update_point_measurement_progress();
@@ -1025,7 +1058,10 @@ public:
     const status_process_meas_t a_status_process_meas);
   inline int table_displ_col_count();
   inline int table_displ_row_count();
-
+  inline coord_cell_t table_displ_cur_cell() const;
+  inline irs::rect_t table_displ_selection() const;
+  inline irs::rect_t cells_range() const;
+  inline irs::mx_rect_t<double> headers_range() const;
   inline bool is_auto_meas_running() const;
   // Запрос координат текущей ячейки измерения
   inline coord_cell_t get_coord_cur_cell_meas();
@@ -1034,25 +1070,42 @@ public:
   inline void set_col_displ(const int a_col);
   inline void set_row_displ(const int a_row);
   inline void set_phase_preset_bit();
-  inline param_cur_cell_t get_param_cell(const int a_col, const int a_row);
+  inline param_cur_cell_t get_param_cell(const int a_col, const int a_row) const;
+  
+  inline cell_config_calibr_t get_cell_config(const coord_cell_t& a_coord) const;
+  inline cell_config_calibr_t get_cell_config(const int a_col, const int a_row) const;
+  inline cell_config_calibr_t get_cell_config(const param_cur_cell_t& a_param_cur_cell) const;
+  bool has_cells_out_param_ctrl_enabled() const;
+  bool is_cells_range_valid(const TRect& a_rect) const;
+  bool is_meas_cells_range_locked() const;
+  bool try_to_lock_meas_cells_range();
+  bool lock_meas_cells_range_if_need();
+  void set_control_parameters(const cell_config_calibr_t& a_cell_cfg);
   // Выставить параметры прибора
   void out_param(const param_cur_cell_t& a_param_cur_cell);
+  void out_default_param();
   // Вывод сообщения в лог о текущих параметрах выбранной ячейки
   void out_message_log_cur_param_cell(const param_cur_cell_t& a_param_cur_cell);
   // Проверка на изменения и диалог сохранения файла
   // Возвращает false, если пользователь отменил действие
-  bool save_unsaved_changes_dialog();
+  //bool save_unsaved_changes_dialogsold();
+  bool save_unsaved_changes_dialogs();
+  //bool save_unsaved_data_changes_dialog(bool* ap_changes_were_forgotten);
+  bool save_cells_config_dialog();
+  bool save_cells_config_if_need();
+  bool cells_config_is_changed() const;
+  bool data_should_be_saved_dialog() const;
   // Разбиение на блоки
   irs::matrix_t<cell_t> get_sub_diapason_table_data(const int a_sub_diapason);
   void tick_calibr_data();
   void modifi_table_data();
   // Установить рабочее значение доп. параметров
-  void set_value_working_extra_params();
+  void set_value_working_extra_params(const coord_cell_t& a_coord);
   // Установить значение по умолчанию доп. параметров
   void set_value_default_extra_params();
 
   // Установить рабочее значение доп. битов
-  void set_value_working_extra_bits();
+  void set_value_working_extra_bits(const coord_cell_t& a_coord);
   // Установить значение по умолчанию доп. битов
   void set_value_default_extra_bits();
   void show_main_device_options();
@@ -1100,7 +1153,6 @@ public:
   irs::handle_t<irs::mxmultimeter_assembly_t> make_mxmultimeter_assembly(
     const irs::string_t& a_device_name,
     const irs::string_t& a_device_type);
-
 };
 
 inline void TDataHandlingF::set_correct_mode(
@@ -1167,10 +1219,6 @@ inline void TDataHandlingF::reset_stat_stop_process_avto_volt_meas()
   m_on_stop_process_auto_volt_meas = false;
 }
 
-inline void TDataHandlingF::set_deley_volt_meas(const unsigned int a_delay)
-{
-  m_delay_operating_duty = irs::make_cnt_s((int)a_delay);
-}
 inline void TDataHandlingF::edit_mode_table_change_stat()
 {
   bool edit_mode = !mp_active_table->get_edit_mode_table();
@@ -1250,34 +1298,8 @@ inline status_process_meas_t TDataHandlingF::get_status_process_meas()
 inline void TDataHandlingF::exec_ext_trig_process_meas(
   const status_process_meas_t a_status_process_meas)
 {
-  switch (a_status_process_meas) {
-    case spm_set_range: {
-      if (m_status_process_meas == spm_wait_ext_trig_set_range) {
-        m_on_external = true;
-      }
-    } break;
-    case spm_control_wait_mode_setting: {
-      if (m_status_process_meas ==
-        spm_wait_ext_trig_control_wait_mode_setting) {
-        m_on_external = true;
-      }
-    } break;
-    case spm_execute_meas: {
-      if (m_status_process_meas == spm_wait_external_trig_meas) {
-        m_on_external = true;
-      }
-    } break;
-    case spm_processing_data: {
-      if (m_status_process_meas == spm_wait_external_trig_processing_data) {
-        m_on_external = true;
-      }
-    } break;
-    case spm_jump_next_elem: {
-      if (
-      m_status_process_meas == spm_wait_ext_trig_process_data_to_next_elem) {
-        m_on_external = true;
-      }
-    } break;
+  if (m_status_process_meas == a_status_process_meas) {
+    m_on_external = true;
   }
 }
 inline int TDataHandlingF::table_displ_col_count()
@@ -1288,6 +1310,47 @@ inline int TDataHandlingF::table_displ_row_count()
 {
   return mp_active_table->get_row_count_displ();
 }
+inline coord_cell_t TDataHandlingF::table_displ_cur_cell() const
+{
+  coord_cell_t coord;
+  coord.col = mp_active_table->get_col_displ();
+  coord.row = mp_active_table->get_row_displ();
+  return coord;
+}
+
+irs::rect_t TDataHandlingF::table_displ_selection() const
+{
+  return mp_active_table->get_selection_displ();
+}
+
+inline irs::rect_t TDataHandlingF::cells_range() const
+{
+  //irs::rect_t selection = mp_active_table->get_selection_displ();
+  irs::rect_t selection;
+  selection = irs::rect_t( Max(m_cells_range.Left, 1), Max(m_cells_range.Top, 1),
+    Max(m_cells_range.Right, 1), Max(m_cells_range.Bottom, 1) );
+  return selection;
+}
+
+inline irs::mx_rect_t<double> TDataHandlingF::headers_range() const
+{
+  irs::rect_t selection = cells_range();
+
+  param_cur_cell_t left_top = mp_active_table->get_param_cell(
+    selection.left, selection.top);
+
+  param_cur_cell_t right_bottom = mp_active_table->get_param_cell(
+    selection.right, selection.bottom);
+
+  irs::mx_rect_t<double> headers_range;
+  headers_range.left = left_top.col_value.value;
+  headers_range.top = left_top.row_value.value;
+  headers_range.right = right_bottom.col_value.value;
+  headers_range.bottom = right_bottom.row_value.value;
+
+  return headers_range;
+}
+
 inline bool TDataHandlingF::is_auto_meas_running() const
 {
   return m_auto_meas_is_running;
@@ -1316,9 +1379,26 @@ inline void TDataHandlingF::set_phase_preset_bit()
   m_device.get_data()->phase_preset_bit = 1;
 }
 inline param_cur_cell_t TDataHandlingF::get_param_cell(
-  const int a_col, const int a_row)
+  const int a_col, const int a_row) const
 {
   return mp_active_table->get_param_cell(a_col, a_row);
+}
+
+inline cell_config_calibr_t TDataHandlingF::get_cell_config(const coord_cell_t& a_coord) const
+{
+  return m_config_calibr.cells_config.read_cell(a_coord.col, a_coord.row);
+}
+
+inline cell_config_calibr_t TDataHandlingF::get_cell_config(
+  const int a_col, const int a_row) const
+{
+  return m_config_calibr.cells_config.read_cell(a_col, a_row);
+}
+
+inline cell_config_calibr_t TDataHandlingF::get_cell_config(
+  const param_cur_cell_t& a_param_cur_cell) const
+{
+  return get_cell_config(a_param_cur_cell.col, a_param_cur_cell.row);
 }
 
 //---------------------------------------------------------------------------

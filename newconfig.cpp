@@ -48,6 +48,7 @@ __fastcall TNewConfigF::TNewConfigF(TComponent* Owner,
   m_device_options_section(irst("device")),
 
   m_config_calibr(),
+  m_cells_range(),
   //m_fileid_conf(irst("Конфигурация настроек калибровки.")),
   m_name_config(),
   //mp_conf_device_ini_file(0),
@@ -202,11 +203,14 @@ void TNewConfigF::out_parameter_options_components_update()
 void TNewConfigF::temperature_control_components_update()
 {
   TemperatureVariableIndexByteLabeledEdit->Enabled =
-    TemperatureControlCheckBox->Checked;
+    TemperatureControlVariableCheckBox->Checked;
+  TemperatureControlCheckBox->Enabled =
+    TemperatureControlVariableCheckBox->Checked;
+
   ReferenceTemperetureLabeledEdit->Enabled =
-    TemperatureControlCheckBox->Checked;
+    TemperatureControlVariableCheckBox->Checked && TemperatureControlCheckBox->Checked;
   DifferenceTemperatureLabeledEdit->Enabled =
-    TemperatureControlCheckBox->Checked;
+    TemperatureControlVariableCheckBox->Checked && TemperatureControlCheckBox->Checked;
 }
 
 // Выгрузка списка параметров с экрана в структуру
@@ -214,6 +218,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 { 
   std::vector<string_type> messages;
   m_name_config = NameConfigLE->Text;
+
+  cell_config_calibr_t cell_config = m_config_calibr.cells_config.
+    read_cell(m_cells_range.left, m_cells_range.top);
 
   m_config_calibr.device_name = DeviceNameComboBox->Text;
   m_config_calibr.reference_device_name = RefDeviceNameComboBox->Text;
@@ -223,23 +230,25 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     messages.push_back(irst("Неверно указан порт."));
   }*/
 
-  m_config_calibr.type_meas = MeasTypeCB->Text.c_str();
+  cell_config.type_meas = MeasTypeCB->Text.c_str();
+
+  cell_config.range_enabled = RangeCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
-    MeasRangeKoefLabeledEdit->Text,
-    m_config_calibr.meas_range_koef)) {
-    messages.push_back(irst("Неверно указан коэффициент диапазона измерения."));
+    RangeEdit->Text, cell_config.range)) {
+    messages.push_back(irst("Неверно указан диапазон измерения."));
   }
+
   if (!irs::cbuilder::str_to_number(
-    Delay_MeasLE->Text, m_config_calibr.delay_meas)) {
+    Delay_MeasLE->Text, cell_config.delay_meas)) {
     messages.push_back(irst("Неверно указана задержка измерения."));
   }
   if (!irs::cbuilder::str_to_number(
-    MeasIntervalLabeledEdit->Text, m_config_calibr.meas_interval)) {
+    MeasIntervalLabeledEdit->Text, cell_config.meas_interval)) {
     messages.push_back(
       irst("Неверно указано время измерений."));
   }
   if (!irs::cbuilder::str_to_number(
-    CountResetOverBitLE->Text, m_config_calibr.count_reset_over_bit)) {
+    CountResetOverBitLE->Text, cell_config.count_reset_over_bit)) {
     messages.push_back(
       irst("Неверно указано количество перезапусков измерения."));
   }
@@ -252,167 +261,175 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     messages.push_back(irst("Неверно указан индекс \"eeprom\"."));
   }
 
-  m_config_calibr.out_param_config_for_measurement.consider_out_param =
+  cell_config.out_param_measuring_conf.consider_out_param =
     ConsiderOutParameterForMeasurementCheckBox->Checked;
-  m_config_calibr.out_param_config_for_measurement.
-  out_param_filter_enabled =
+  cell_config.out_param_measuring_conf.filter_enabled =
     OutParameterFilterCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
     FilterSamplingTimeEdit->Text,
-    m_config_calibr.out_param_config_for_measurement.filter_sampling_time)) {
+    cell_config.out_param_measuring_conf.filter_sampling_time)) {
     messages.push_back(irst("Неверно указано время дискретизации для фильтра ")
       irst("выходного значения"));
   }
   if (!irs::cbuilder::str_to_number(
     FilterPointCountEdit->Text,
-    m_config_calibr.out_param_config_for_measurement.filter_point_count)) {
+    cell_config.out_param_measuring_conf.filter_point_count)) {
     messages.push_back(irst("Неверно указано время дискретизации для фильтра ")
       irst("выходного значения"));
   }
 
-  m_config_calibr.out_param_control_config.enabled =
+  cell_config.out_param_control_config.enabled =
     OutParameterControlCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
     MaxRelativeDifferenceOutParameterLabeledEdit->Text,
-    m_config_calibr.out_param_control_config.max_relative_difference)) {
+    cell_config.out_param_control_config.max_relative_difference)) {
     messages.push_back(
       irst("Неверно указано допустимое относительное отклонение ")
       irst("выходного параметра"));
   }
   if (!irs::cbuilder::str_to_number(
     TimeCalcDifferenceLabeledEdit->Text,
-    m_config_calibr.out_param_control_config.time)) {
+    cell_config.out_param_control_config.time)) {
     messages.push_back(irst("Неверно указано временное окно"));
   }
 
-  m_config_calibr.temperature_control.enabled =
-    TemperatureControlCheckBox->Checked;
+  m_config_calibr.temperature_ctrl_common_cfg.enabled =
+    TemperatureControlVariableCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
     TemperatureVariableIndexByteLabeledEdit->Text,
-    m_config_calibr.temperature_control.index)) {
+    m_config_calibr.temperature_ctrl_common_cfg.index)) {
     messages.push_back(irst("Неверно указан индекс \"температура\"."));
   }
+  cell_config.temperature_control.enabled = TemperatureControlCheckBox->Checked;
   if (!irs::cbuilder::str_to_number(
     ReferenceTemperetureLabeledEdit->Text,
-    m_config_calibr.temperature_control.reference)) {
+    cell_config.temperature_control.reference)) {
     messages.push_back(irst("Неверно указана уставка температуры"));
   }
   if (!irs::cbuilder::str_to_number(
     DifferenceTemperatureLabeledEdit->Text,
-    m_config_calibr.temperature_control.difference)) {
+    cell_config.temperature_control.difference)) {
     messages.push_back(
       irst("Неверно указано допустимое отклонение температуры"));
   }
 
   // Выгрузка списка параметров
   // Параметр 1
-  m_config_calibr.in_parametr1.name = ListParameterSG->Cells[0][1];
+  m_config_calibr.in_parameter1.name = ListParameterSG->Cells[0][1];
 
-  m_config_calibr.in_parametr1.type_variable = ListParameterSG->Cells[1][1];
+  m_config_calibr.in_parameter1.unit = ListParameterSG->Cells[1][1];
   if (!str_to_lang_type(
-    ListParameterSG->Cells[2][1].c_str(), m_config_calibr.in_parametr1.unit)) {
+    ListParameterSG->Cells[2][1].c_str(), m_config_calibr.in_parameter1.type)) {
     messages.push_back(irst("Неверно указан тип параметра 1."));
   }
 
 
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[3][1], m_config_calibr.in_parametr1.anchor)) {
+    ListParameterSG->Cells[3][1], m_config_calibr.in_parameter1.anchor)) {
     messages.push_back(irst("Неверно указан тип привязки параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[4][1], m_config_calibr.in_parametr1.index)) {
+    ListParameterSG->Cells[4][1], m_config_calibr.in_parameter1.index)) {
     messages.push_back(irst("Неверно указан индекс параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[5][1], m_config_calibr.in_parametr1.koef)) {
+    ListParameterSG->Cells[5][1], m_config_calibr.in_parameter1.koef)) {
     messages.push_back(irst("Неверно указан коэффициент параметра 1."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[7][1], m_config_calibr.in_parametr1.default_val)) {
+    ListParameterSG->Cells[7][1], m_config_calibr.in_parameter1.default_val)) {
     messages.push_back(
       irst("Неверно указано значение по умолчанию параметра 1."));
   }
   // Параметр 2
-  m_config_calibr.in_parametr2.name = ListParameterSG->Cells[0][2];
-  m_config_calibr.in_parametr2.type_variable = ListParameterSG->Cells[1][2];
+  m_config_calibr.in_parameter2.name = ListParameterSG->Cells[0][2];
+  m_config_calibr.in_parameter2.unit = ListParameterSG->Cells[1][2];
   if (!str_to_lang_type(
-    ListParameterSG->Cells[2][2].c_str(), m_config_calibr.in_parametr2.unit)) {
+    ListParameterSG->Cells[2][2].c_str(), m_config_calibr.in_parameter2.type)) {
     messages.push_back(irst("Неверно указан тип параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[3][2], m_config_calibr.in_parametr2.anchor)) {
+    ListParameterSG->Cells[3][2], m_config_calibr.in_parameter2.anchor)) {
     messages.push_back(irst("Неверно указан тип привязки параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[4][2], m_config_calibr.in_parametr2.index)) {
+    ListParameterSG->Cells[4][2], m_config_calibr.in_parameter2.index)) {
     messages.push_back(irst("Неверно указан индекс параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[5][2], m_config_calibr.in_parametr2.koef)) {
+    ListParameterSG->Cells[5][2], m_config_calibr.in_parameter2.koef)) {
     messages.push_back(irst("Неверно указан коэффициент параметра 2."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[7][2], m_config_calibr.in_parametr2.default_val)) {
+    ListParameterSG->Cells[7][2], m_config_calibr.in_parameter2.default_val)) {
     messages.push_back(
       irst("Неверно указано значение по умолчанию параметра 2."));
   }
   // Параметр 3
-  m_config_calibr.in_parametr3.name = ListParameterSG->Cells[0][3];
-  m_config_calibr.in_parametr3.type_variable = ListParameterSG->Cells[1][3];
+  m_config_calibr.in_parameter3.name = ListParameterSG->Cells[0][3];
+  m_config_calibr.in_parameter3.unit = ListParameterSG->Cells[1][3];
   if (!str_to_lang_type(
-    ListParameterSG->Cells[2][3].c_str(), m_config_calibr.in_parametr3.unit)) {
+    ListParameterSG->Cells[2][3].c_str(), m_config_calibr.in_parameter3.type)) {
     messages.push_back(irst("Неверно указан тип параметра 3."));
   }
 
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[4][3], m_config_calibr.in_parametr3.index)) {
+    ListParameterSG->Cells[4][3], m_config_calibr.in_parameter3.index)) {
     messages.push_back(irst("Неверно указан индекс параметра 3."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[5][3], m_config_calibr.in_parametr3.koef)) {
+    ListParameterSG->Cells[5][3], m_config_calibr.in_parameter3.koef)) {
     messages.push_back("Неверно указан коэффицинет параметра 3.");
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[7][3], m_config_calibr.in_parametr3.default_val)) {
+    ListParameterSG->Cells[7][3], m_config_calibr.in_parameter3.default_val)) {
     messages.push_back(
       irst("Неверно указано значение по умолчанию параметра 3."));
   }
 
   // Параметр 4
-  m_config_calibr.out_parametr.name = ListParameterSG->Cells[0][4];
-  m_config_calibr.out_parametr.type_variable = ListParameterSG->Cells[1][4];
+  m_config_calibr.out_parameter.name = ListParameterSG->Cells[0][4];
+  m_config_calibr.out_parameter.unit = ListParameterSG->Cells[1][4];
   if (!str_to_lang_type(
-    ListParameterSG->Cells[2][4].c_str(), m_config_calibr.out_parametr.unit)) {
+    ListParameterSG->Cells[2][4].c_str(), m_config_calibr.out_parameter.type)) {
     messages.push_back(irst("Неверно указан тип параметра 3."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[4][4], m_config_calibr.out_parametr.index)) {
+    ListParameterSG->Cells[4][4], m_config_calibr.out_parameter.index)) {
     messages.push_back(irst("Неверно указан индекс параметра 4."));
   }
   if (!irs::cbuilder::str_to_number(
-    ListParameterSG->Cells[5][4], m_config_calibr.out_parametr.koef_shunt)) {
+    ListParameterSG->Cells[5][4], cell_config.output_param_coef)) {
     messages.push_back(irst("Неверно указан коэффициент параметра 4."));
   }
 
+  if (cell_config.output_param_coef == 0.0) {
+    messages.push_back(irst("Коэффициент параметра 4 не должен быть равен нулю."));
+  }
+
+
+
   // обработка доп.параметров
   int parameter_ex_count = ParamsExCSpinEdit->Value;
-  m_config_calibr.v_parametr_ex.clear();
+  m_config_calibr.v_parameter_ex.clear();
+
+  cell_config.ex_param_work_values.clear();
 
   for (int i = 0; i < parameter_ex_count; i++) {
     int row = i+m_basic_parameter_count+1;
     string_type param_ex_number_str = i;
 
-    parametr_ex_t parametr_ex;
+    parameter_ex_t parameter_ex;
     // название
-    parametr_ex.name = ListParameterSG->Cells[0][row];
+    parameter_ex.name = ListParameterSG->Cells[0][row];
     // единицы измерения
-    parametr_ex.type_variable = ListParameterSG->Cells[1][row];
-    if (!parametr_ex.name.IsEmpty()) {
+    parameter_ex.unit = ListParameterSG->Cells[1][row];
+    if (!parameter_ex.name.IsEmpty()) {
       bool all_str_to_number_success = true;
       // тип переменной
       //if (ListParameterSG->Cells[2][row] != "") {
         if (!str_to_lang_type(
-          ListParameterSG->Cells[2][row].c_str(), parametr_ex.unit)) {
+          ListParameterSG->Cells[2][row].c_str(), parameter_ex.type)) {
           all_str_to_number_success = false;
           string_type message = irst("Неверно указан тип доп. параметра №") +
             param_ex_number_str + irst(".");
@@ -424,7 +441,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
       // индекс
       //if (ListParameterSG->Cells[4][row] != "") {
         if (!irs::cbuilder::str_to_number(
-          ListParameterSG->Cells[4][row], parametr_ex.index))
+          ListParameterSG->Cells[4][row], parameter_ex.index))
         {
           all_str_to_number_success = false;
           string_type message = irst("Неверно указан индекс доп. параметра №") +
@@ -436,8 +453,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
       }*/
       // рабочее значение
       //if (ListParameterSG->Cells[6][row] != "") {
+        double work_value = 0;
         if (!irs::cbuilder::str_to_number(
-          ListParameterSG->Cells[6][row], parametr_ex.value_working))
+          ListParameterSG->Cells[6][row], work_value))
         {
           all_str_to_number_success = false;
           string_type message =
@@ -451,7 +469,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
       // значение по умолчанию
       //f (ListParameterSG->Cells[7][row] != "") {
         if (!irs::cbuilder::str_to_number(
-          ListParameterSG->Cells[7][row], parametr_ex.value_default))
+          ListParameterSG->Cells[7][row], parameter_ex.value_default))
         {
           all_str_to_number_success = false;
           string_type message =
@@ -463,7 +481,8 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
         all_str_to_number_success = false;
       }*/
       if (all_str_to_number_success) {
-        m_config_calibr.v_parametr_ex.push_back(parametr_ex);
+        m_config_calibr.v_parameter_ex.push_back(parameter_ex);
+        cell_config.ex_param_work_values.push_back(work_value);
       }
     }
   }
@@ -547,6 +566,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   // Обработка доп.битов
   int bit_type2_count = BitsExCSpinEdit->Value;
   m_config_calibr.bit_type2_array.clear();
+  cell_config.ex_bit_work_values.clear();
 
   for (int i = 0; i < bit_type2_count; i++) {
     int row = i+m_basic_bit_count+1;
@@ -582,8 +602,9 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
         all_str_to_number_success = false;
       }*/
       //if (ListByteSG->Cells[3][row] != "") {
+        bool work_value = 0;
         if (!irs::cbuilder::str_to_number(
-          ListByteSG->Cells[3][row], bit_type2_pos.value_working))
+          ListByteSG->Cells[3][row], work_value))
         {
           all_str_to_number_success = false;
           string_type message =
@@ -610,6 +631,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
 
       if (all_str_to_number_success) {
         m_config_calibr.bit_type2_array.push_back(bit_type2_pos);
+        cell_config.ex_bit_work_values.push_back(work_value);
       }
     }
   }
@@ -620,10 +642,10 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
     m_config_calibr.type_sub_diapason = tsd_parameter2;
   }
   int sub_diapason = CSpinEdit1->Value;
-  m_config_calibr.v_sub_diapason_calibr.clear();
+  m_config_calibr.eeprom_ranges.clear();
   for (int i = 0; i < sub_diapason; i++) {
     int row = i+1;
-    sub_diapason_calibr_t sub_diapason_calibr;
+    eeprom_range_t sub_diapason_calibr;
     string_type index_start_str = SubDiapasonSG->Cells[1][row].c_str();
     string_type size_str = SubDiapasonSG->Cells[2][row].c_str();
     string_type value_begin_str = SubDiapasonSG->Cells[3][row].c_str();
@@ -633,7 +655,7 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
       if (size_str.to_number(sub_diapason_calibr.size)) {
         if (value_begin_str.to_number(sub_diapason_calibr.value_begin)) {
           if (value_end_str.to_number(sub_diapason_calibr.value_end)) {
-            m_config_calibr.v_sub_diapason_calibr.push_back(
+            m_config_calibr.eeprom_ranges.push_back(
               sub_diapason_calibr);
           }
         }
@@ -645,6 +667,57 @@ void __fastcall TNewConfigF::CreateConfigButtonClick(TObject *Sender)
   //m_config_calibr.reference_channel.ip_adress = IPAdressRefChannelLE->Text;
   /*irs::cbuilder::str_to_number(
     PortRefChannelLE->Text, m_config_calibr.reference_channel.port);*/
+
+  for (size_type col = m_cells_range.left; col < m_cells_range.right + 1; col++) {
+    for (size_type row = m_cells_range.top; row < m_cells_range.bottom + 1; row++) {
+      m_config_calibr.cells_config.write_cell(col, row, cell_config);
+    }
+  }
+
+  // Количество дополнительных параметров и битов должно быть одинаковым во всех ячейках
+  for (size_type col = 1; col < m_config_calibr.cells_config.get_col_count(); col++) {
+    for (size_type row = 1; row < m_config_calibr.cells_config.get_row_count(); row++) {
+      if (!irs::is_in_range(col, m_cells_range.left, m_cells_range.right) ||
+        !irs::is_in_range(row, m_cells_range.top, m_cells_range.bottom)) {
+
+        cell_config_calibr_t cell_cfg = m_config_calibr.cells_config.read_cell(col, row);
+
+        if (cell_cfg.ex_param_work_values.size() > cell_config.ex_param_work_values.size()) {
+          cell_cfg.ex_param_work_values.resize(cell_config.ex_param_work_values.size());
+        } else if(cell_cfg.ex_param_work_values.size() < cell_config.ex_param_work_values.size()) {
+          size_type old_size = cell_cfg.ex_param_work_values.size();
+          cell_cfg.ex_param_work_values.insert(
+            cell_cfg.ex_param_work_values.begin() + old_size,
+            cell_config.ex_param_work_values.begin() + old_size,
+            cell_config.ex_param_work_values.end());
+        }
+
+        if (cell_cfg.ex_bit_work_values.size() > cell_config.ex_bit_work_values.size()) {
+          cell_cfg.ex_bit_work_values.resize(cell_config.ex_bit_work_values.size());
+        } else if(cell_cfg.ex_bit_work_values.size() < cell_config.ex_bit_work_values.size()) {
+          size_type old_size = cell_cfg.ex_bit_work_values.size();
+          cell_cfg.ex_bit_work_values.insert(
+            cell_cfg.ex_bit_work_values.begin() + old_size,
+            cell_config.ex_bit_work_values.begin() + old_size,
+            cell_config.ex_bit_work_values.end());
+        }
+
+        m_config_calibr.cells_config.write_cell(col, row, cell_cfg);
+      }      
+    }
+  }
+
+  // Проверяем, что количество доп.параметров и доп.битов одинаковое во всех ячейках
+  /*IRS_ASSERT(cell_config.ex_param_work_values.size() == m_config_calibr.v_parameter_ex.size());
+  IRS_ASSERT(cell_config.ex_bit_work_values.size() == m_config_calibr.bit_type2_array.size());
+  for (size_type col = 1; col < m_config_calibr.cells_config.get_col_count(); col++) {
+    for (size_type row = 1; row < m_config_calibr.cells_config.get_row_count(); row++) {
+      cell_config_calibr_t cell_cfg = m_config_calibr.cells_config.read_cell(col, row);
+      IRS_ASSERT(m_config_calibr.v_parameter_ex.size() == cell_cfg.ex_param_work_values.size());
+      IRS_ASSERT(m_config_calibr.bit_type2_array.size() == cell_cfg.ex_bit_work_values.size());
+    }
+  }*/
+  config_calibr_t::check_config(m_config_calibr);
 
   if (messages.size() > 0) {
     irs::handle_t<TMessagesForm> display_message(new TMessagesForm(NULL));
@@ -758,6 +831,75 @@ void TNewConfigF::edit_config(const String& a_filename)
     m_config_calibr.load(a_filename.c_str());
     //m_name_config = extract_short_filename(ExtractFileName(a_filename));
     m_name_config = m_file_name_service.get_config_name(a_filename);
+    m_cells_range = mp_data_handing->cells_range();
+
+    /////////////////////////
+    IRS_ASSERT(mp_data_handing->table_displ_col_count() > 0);
+    IRS_ASSERT(mp_data_handing->table_displ_row_count() > 0);
+
+    size_type prev_col_count = m_config_calibr.cells_config.get_col_count();
+    size_type prev_row_count = m_config_calibr.cells_config.get_row_count();
+
+    m_config_calibr.cells_config.set_col_count(
+      mp_data_handing->table_displ_col_count());
+    m_config_calibr.cells_config.set_row_count(
+      mp_data_handing->table_displ_row_count());
+
+    size_type col_count = m_config_calibr.cells_config.get_col_count();
+    size_type row_count = m_config_calibr.cells_config.get_row_count();
+
+    if (col_count > 0 && row_count > 0)
+    {
+      for (size_type col = 0; col < col_count; col++) {
+        cell_t cell = mp_data_handing->get_cell_table(col, 0);
+
+        cell_config_calibr_t header_cell;
+        header_cell.is_value_initialized = cell.init;
+        header_cell.value = cell.value;
+        m_config_calibr.cells_config.write_cell(col, 0, header_cell);
+      }
+
+      for (size_type row = 1; row < row_count; row++) {
+        cell_t cell = mp_data_handing->get_cell_table(0, row);
+
+        cell_config_calibr_t header_cell;
+        header_cell.is_value_initialized = cell.init;
+        header_cell.value = cell.value;
+        m_config_calibr.cells_config.write_cell(0, row, header_cell);
+      }
+    }
+
+    // Если количество столбцов увеличилось, то копируем настройки из
+    // последнего столбца до изменений
+    if (prev_col_count > 1) {
+      for (size_type col = prev_col_count; col < col_count; col++) {
+        for (size_type row = 1; row < min(row_count, prev_row_count); row++) {
+          cell_config_calibr_t src_cell =
+            m_config_calibr.cells_config.read_cell(prev_col_count - 1, row);
+          m_config_calibr.cells_config.write_cell(col, row, src_cell);
+        }
+      }
+    }
+
+    // Если количество строк увеличилось, то копируем настройки из
+    // последней строки до изменений
+    if (prev_row_count > 1) {
+      for (size_type col = 1; col < col_count; col++) {
+        for (size_type row = prev_row_count; row < row_count; row++) {
+          cell_config_calibr_t src_cell =
+            m_config_calibr.cells_config.read_cell(col, prev_row_count - 1);
+          m_config_calibr.cells_config.write_cell(col, row, src_cell);
+        }
+      }
+    }
+    /////////////////////////
+    /*IRS_ASSERT(m_config_calibr.cells_config.get_col_count() ==
+      mp_data_handing->table_displ_col_count());
+    IRS_ASSERT(m_config_calibr.cells_config.get_row_count() ==
+      mp_data_handing->table_displ_row_count());*/
+
+    //irs::mx_rect_t<double> headers_range = mp_data_handing->headers_range();
+
     NameConfigLE->Text = m_name_config;
 
     const String device_name = mp_data_handing->get_device_name();
@@ -785,41 +927,41 @@ void TNewConfigF::set_config_def()
   config_calibr_t config_calibr_def;
   config_calibr_def.ip_adress = irst("192.168.0.200");
   config_calibr_def.port = 5005;
-  config_calibr_def.in_parametr1.name = irst("Частота");
-  config_calibr_def.in_parametr1.type_variable = irst("Гц");
-  config_calibr_def.in_parametr1.unit = type_irs_u32;
-  config_calibr_def.in_parametr1.anchor = false;
-  config_calibr_def.in_parametr1.index = 0;
-  config_calibr_def.in_parametr1.koef = 1;
+  config_calibr_def.in_parameter1.name = irst("Частота");
+  config_calibr_def.in_parameter1.unit = irst("Гц");
+  config_calibr_def.in_parameter1.type = type_irs_u32;
+  config_calibr_def.in_parameter1.anchor = false;
+  config_calibr_def.in_parameter1.index = 0;
+  config_calibr_def.in_parameter1.koef = 1;
 
-  config_calibr_def.in_parametr2.name = irst("Напряжение");
-  config_calibr_def.in_parametr2.type_variable = irst("В");
-  config_calibr_def.in_parametr2.unit = type_irs_u32;
-  config_calibr_def.in_parametr2.anchor = true;
-  config_calibr_def.in_parametr2.index = 0;
-  config_calibr_def.in_parametr2.koef = 1;
+  config_calibr_def.in_parameter2.name = irst("Напряжение");
+  config_calibr_def.in_parameter2.unit = irst("В");
+  config_calibr_def.in_parameter2.type = type_irs_u32;
+  config_calibr_def.in_parameter2.anchor = true;
+  config_calibr_def.in_parameter2.index = 0;
+  config_calibr_def.in_parameter2.koef = 1;
 
-  config_calibr_def.in_parametr3.name = irst("Фаза");
-  config_calibr_def.in_parametr3.type_variable = irst("градус");
-  config_calibr_def.in_parametr3.unit = type_irs_u32;
-  config_calibr_def.in_parametr3.index = 0;
-  config_calibr_def.in_parametr3.koef = 1;
+  config_calibr_def.in_parameter3.name = irst("Фаза");
+  config_calibr_def.in_parameter3.unit = irst("градус");
+  config_calibr_def.in_parameter3.type = type_irs_u32;
+  config_calibr_def.in_parameter3.index = 0;
+  config_calibr_def.in_parameter3.koef = 1;
 
-  config_calibr_def.out_parametr.name = irst("Напряжение");
-  config_calibr_def.out_parametr.type_variable = irst("В");
-  config_calibr_def.out_parametr.unit = type_irs_u32;
-  config_calibr_def.out_parametr.index = 0;
-  config_calibr_def.out_parametr.koef_shunt = 1;
+  config_calibr_def.out_parameter.name = irst("Напряжение");
+  config_calibr_def.out_parameter.unit = irst("В");
+  config_calibr_def.out_parameter.type = type_irs_u32;
+  config_calibr_def.out_parameter.index = 0;
+  //config_calibr_def.out_parameter.koef_shunt = 1;
 
   config_calibr_def.index_work_time = 1;
   config_calibr_def.index_pos_eeprom = 1;
-  config_calibr_def.out_param_control_config.enabled = false;
-  config_calibr_def.out_param_control_config.max_relative_difference = 0.00003;
-  config_calibr_def.out_param_control_config.time = 15;
-  config_calibr_def.temperature_control.enabled = false;
-  config_calibr_def.temperature_control.index = 0;
-  config_calibr_def.temperature_control.reference = 65;
-  config_calibr_def.temperature_control.difference = 0.5;
+  //config_calibr_def.out_param_control_config.enabled = false;
+  //config_calibr_def.out_param_control_config.max_relative_difference = 0.00003;
+  //config_calibr_def.out_param_control_config.time = 15;
+  config_calibr_def.temperature_ctrl_common_cfg.enabled = false;
+  config_calibr_def.temperature_ctrl_common_cfg.index = 0;
+  //config_calibr_def.temperature_control.reference = 65;
+  //config_calibr_def.temperature_control.difference = 0.5;
   //config_calibr_def.index_pos_offset_eeprom = 1;
   //config_calibr_def.max_size_correct = 4096;
 
@@ -836,6 +978,8 @@ void TNewConfigF::set_config_def()
   config_calibr_def.bit_pos_phase_preset_bit.index_byte = 0;
   config_calibr_def.bit_pos_phase_preset_bit.index_bit = 0;
 
+  config_calibr_def.cells_config = config_calibr_t::get_default_cells_config();
+
   TypeSubDiapasonParam2RB->Checked = true;
   CSpinEdit1->Value = 1;
   SubDiapasonSG->RowCount = CSpinEdit1->Value+1;
@@ -845,12 +989,11 @@ void TNewConfigF::set_config_def()
   SubDiapasonSG->Cells[3][1] = String();
   SubDiapasonSG->Cells[4][1] = String();
 
-  config_calibr_def.type_meas = irst("Постоянное напряжение");
+  //config_calibr_def.type_meas = irst("Постоянное напряжение");
   //config_calibr_def.mismatch_mode = true;
-  config_calibr_def.meas_range_koef = 1.;
-  config_calibr_def.delay_meas = 10;
-  config_calibr_def.meas_interval = 0;
-  config_calibr_def.count_reset_over_bit = 3;
+  //config_calibr_def.delay_meas = 10;
+  //config_calibr_def.meas_interval = 0;
+  //config_calibr_def.count_reset_over_bit = 3;
   config_calibr_def.active_filename = String();
 
   //String name_config = irst("NewConfig");
@@ -879,6 +1022,9 @@ void TNewConfigF::set_config_def()
   }
   mp_data_handing->reset_device(device_cfg_file_name.c_str(), device_options);
   */
+
+  m_config_calibr.cells_config = config_calibr_def.cells_config;
+  m_cells_range = irs::rect_t(1, 1, 1, 1);
 
   config_calibr_out_displ(config_calibr_def);
 }
@@ -948,123 +1094,135 @@ void TNewConfigF::config_calibr_out_displ(
   //IPAdressLE->Text = a_config_calibr.ip_adress;
   //PortLE->Text = num_to_cbstr(a_config_calibr.port);
 
-  String type_meas_str = a_config_calibr.type_meas;
-  MeasTypeCB->ItemIndex =
-    get_index_row_combo_box_str(MeasTypeCB,type_meas_str);
+  irs::stringstream_t ostr;
+  ostr << irst("Диапазон - ") << m_cells_range.left << irst(":") <<
+    m_cells_range.top << irst(" - ") << m_cells_range.right << irst(":") <<
+    m_cells_range.bottom;
+  CellsRangeLabel->Caption = irs::str_conv<String>(ostr.str());
 
-  MeasRangeKoefLabeledEdit->Text =
-    num_to_cbstr(a_config_calibr.meas_range_koef);
-  Delay_MeasLE->Text = num_to_cbstr(a_config_calibr.delay_meas);
-  MeasIntervalLabeledEdit->Text = num_to_cbstr(a_config_calibr.meas_interval);
+  const cell_config_calibr_t cell_config = a_config_calibr.cells_config.
+    read_cell(m_cells_range.left, m_cells_range.top);
 
-  CountResetOverBitLE->Text = num_to_cbstr(
-    a_config_calibr.count_reset_over_bit);
+  String type_meas_str = cell_config.type_meas;
+  MeasTypeCB->ItemIndex = get_index_row_combo_box_str(MeasTypeCB,type_meas_str);
+
+  RangeCheckBox->Checked = cell_config.range_enabled;
+  RangeEdit->Text = num_to_cbstr(cell_config.range);
+  RangeEdit->Enabled = RangeCheckBox->Checked;
+
+  Delay_MeasLE->Text = num_to_cbstr(cell_config.delay_meas);
+  MeasIntervalLabeledEdit->Text = num_to_cbstr(cell_config.meas_interval);
+
+  CountResetOverBitLE->Text = num_to_cbstr(cell_config.count_reset_over_bit);
+
   IndexWorkTimeEdit->Text = num_to_cbstr(a_config_calibr.index_work_time);
   ValueIndexEEPROMEdit->Text = num_to_cbstr(a_config_calibr.index_pos_eeprom);
 
   ConsiderOutParameterForMeasurementCheckBox->Checked =
-    m_config_calibr.out_param_config_for_measurement.
-    consider_out_param;
+    cell_config.out_param_measuring_conf.consider_out_param;
   OutParameterFilterCheckBox->Checked =
-    m_config_calibr.out_param_config_for_measurement.
-    out_param_filter_enabled;
+    cell_config.out_param_measuring_conf.filter_enabled;
   FilterSamplingTimeEdit->Text = num_to_cbstr(
-    m_config_calibr.out_param_config_for_measurement.filter_sampling_time);
+    cell_config.out_param_measuring_conf.filter_sampling_time);
   FilterPointCountEdit->Text = num_to_cbstr(
-    m_config_calibr.out_param_config_for_measurement.filter_point_count);
+    cell_config.out_param_measuring_conf.filter_point_count);
 
   OutParameterControlCheckBox->Checked =
-    m_config_calibr.out_param_control_config.enabled;
-  MaxRelativeDifferenceOutParameterLabeledEdit->Text =
-    num_to_cbstr(
-    a_config_calibr.out_param_control_config.max_relative_difference);
+    cell_config.out_param_control_config.enabled;
+  MaxRelativeDifferenceOutParameterLabeledEdit->Text = num_to_cbstr(
+    cell_config.out_param_control_config.max_relative_difference);
   TimeCalcDifferenceLabeledEdit->Text = num_to_cbstr(
-    a_config_calibr.out_param_control_config.time);
+    cell_config.out_param_control_config.time);
 
-  TemperatureControlCheckBox->Checked =
-    a_config_calibr.temperature_control.enabled;
+  TemperatureControlVariableCheckBox->Checked =
+    a_config_calibr.temperature_ctrl_common_cfg.enabled;
   TemperatureVariableIndexByteLabeledEdit->Text = num_to_cbstr(
-    a_config_calibr.temperature_control.index);
+    a_config_calibr.temperature_ctrl_common_cfg.index);
+  TemperatureControlCheckBox->Checked =
+    cell_config.temperature_control.enabled;
   ReferenceTemperetureLabeledEdit->Text = num_to_cbstr(
-    a_config_calibr.temperature_control.reference);
+    cell_config.temperature_control.reference);
   DifferenceTemperatureLabeledEdit->Text = num_to_cbstr(
-    a_config_calibr.temperature_control.difference);  
+    cell_config.temperature_control.difference);
   temperature_control_components_update();
   // Загрузка списка параметров
   // Параметр 1
-  ListParameterSG->Cells[0][1] = m_config_calibr.in_parametr1.name;
-  ListParameterSG->Cells[1][1] = m_config_calibr.in_parametr1.type_variable;
+  ListParameterSG->Cells[0][1] = m_config_calibr.in_parameter1.name;
+  ListParameterSG->Cells[1][1] = m_config_calibr.in_parameter1.unit;
   ListParameterSG->Cells[2][1] =
-    lang_type_to_str(m_config_calibr.in_parametr1.unit).c_str();
+    lang_type_to_str(m_config_calibr.in_parameter1.type).c_str();
   ListParameterSG->Cells[3][1] =
-    num_to_cbstr(m_config_calibr.in_parametr1.anchor);
+    num_to_cbstr(m_config_calibr.in_parameter1.anchor);
 
   ListParameterSG->Cells[4][1] =
-    num_to_cbstr(m_config_calibr.in_parametr1.index);
-  ListParameterSG->Cells[5][1] =
-    num_to_cbstr(m_config_calibr.in_parametr1.koef);
+    num_to_cbstr(m_config_calibr.in_parameter1.index);
+  //ListParameterSG->Cells[5][1] =
+    //num_to_cbstr(m_config_calibr.in_parameter1.koef);
+  ListParameterSG->Cells[5][1] = num_to_cbstr(m_config_calibr.in_parameter1.koef);
   ListParameterSG->Cells[7][1] =
-    num_to_cbstr(m_config_calibr.in_parametr1.default_val);
+    num_to_cbstr(m_config_calibr.in_parameter1.default_val);
   // Параметр 2
-  ListParameterSG->Cells[0][2] = m_config_calibr.in_parametr2.name;
-  ListParameterSG->Cells[1][2] = m_config_calibr.in_parametr2.type_variable;
+  ListParameterSG->Cells[0][2] = m_config_calibr.in_parameter2.name;
+  ListParameterSG->Cells[1][2] = m_config_calibr.in_parameter2.unit;
   ListParameterSG->Cells[2][2] =
-    lang_type_to_str(m_config_calibr.in_parametr2.unit).c_str();
+    lang_type_to_str(m_config_calibr.in_parameter2.type).c_str();
   ListParameterSG->Cells[3][2] =
-    num_to_cbstr(m_config_calibr.in_parametr2.anchor);
+    num_to_cbstr(m_config_calibr.in_parameter2.anchor);
   ListParameterSG->Cells[4][2] =
-    num_to_cbstr(m_config_calibr.in_parametr2.index);
-  ListParameterSG->Cells[5][2] =
-    num_to_cbstr(m_config_calibr.in_parametr2.koef);
+    num_to_cbstr(m_config_calibr.in_parameter2.index);
+  ListParameterSG->Cells[5][2] = num_to_cbstr(m_config_calibr.in_parameter2.koef);
+    //num_to_cbstr(m_config_calibr.in_parameter2.koef);
   ListParameterSG->Cells[7][2] =
-    num_to_cbstr(m_config_calibr.in_parametr2.default_val);
+    num_to_cbstr(m_config_calibr.in_parameter2.default_val);
   // Параметр 3
-  ListParameterSG->Cells[0][3] = m_config_calibr.in_parametr3.name;
-  ListParameterSG->Cells[1][3] = m_config_calibr.in_parametr3.type_variable;
+  ListParameterSG->Cells[0][3] = m_config_calibr.in_parameter3.name;
+  ListParameterSG->Cells[1][3] = m_config_calibr.in_parameter3.unit;
   ListParameterSG->Cells[2][3] =
-    lang_type_to_str(m_config_calibr.in_parametr3.unit).c_str();
+    lang_type_to_str(m_config_calibr.in_parameter3.type).c_str();
   ListParameterSG->Cells[4][3] =
-    num_to_cbstr(m_config_calibr.in_parametr3.index);
-  ListParameterSG->Cells[5][3] =
-    num_to_cbstr(m_config_calibr.in_parametr3.koef);
+    num_to_cbstr(m_config_calibr.in_parameter3.index);
+  ListParameterSG->Cells[5][3] = num_to_cbstr(m_config_calibr.in_parameter3.koef);
+    //num_to_cbstr(m_config_calibr.in_parameter3.koef);
   ListParameterSG->Cells[7][3] =
-    num_to_cbstr(m_config_calibr.in_parametr3.default_val);
+    num_to_cbstr(m_config_calibr.in_parameter3.default_val);
 
   // Параметр 4
-  ListParameterSG->Cells[0][4] = m_config_calibr.out_parametr.name;
-  ListParameterSG->Cells[1][4] = m_config_calibr.out_parametr.type_variable;
+  ListParameterSG->Cells[0][4] = m_config_calibr.out_parameter.name;
+  ListParameterSG->Cells[1][4] = m_config_calibr.out_parameter.unit;
   ListParameterSG->Cells[2][4] =
-    lang_type_to_str(m_config_calibr.out_parametr.unit).c_str();
+    lang_type_to_str(m_config_calibr.out_parameter.type).c_str();
   ListParameterSG->Cells[4][4] =
-    num_to_cbstr(m_config_calibr.out_parametr.index);
-  ListParameterSG->Cells[5][4] =
-    num_to_cbstr(m_config_calibr.out_parametr.koef_shunt);
+    num_to_cbstr(m_config_calibr.out_parameter.index);
+  ListParameterSG->Cells[5][4] = num_to_cbstr(cell_config.output_param_coef);
+    //num_to_cbstr(m_config_calibr.out_parameter.koef_shunt);
 
   // Обработка доп.параметров
-  int parameter_ex_count = m_config_calibr.v_parametr_ex.size();
-  if (parameter_ex_count > 0) {
-    ParamsExCSpinEdit->Value = parameter_ex_count;
+  size_type extra_param_count = m_config_calibr.v_parameter_ex.size();
+  IRS_ASSERT(extra_param_count == cell_config.ex_param_work_values.size());
+  if (extra_param_count > 0) {
+    ParamsExCSpinEdit->Value = extra_param_count;
     ListParameterSG->RowCount =
       ParamsExCSpinEdit->Value+m_basic_parameter_count+1;
-    for (int i  = 0; i < parameter_ex_count; i++) {
+    for (size_type i = 0; i < extra_param_count; i++) {
       int row = i+m_basic_parameter_count+1;
       // название
-      ListParameterSG->Cells[0][row] = m_config_calibr.v_parametr_ex[i].name;
+      ListParameterSG->Cells[0][row] = m_config_calibr.v_parameter_ex[i].name;
       // единицы измерения
       ListParameterSG->Cells[1][row] =
-        m_config_calibr.v_parametr_ex[i].type_variable;
+        m_config_calibr.v_parameter_ex[i].unit;
       // тип переменной
       ListParameterSG->Cells[2][row] =
-        lang_type_to_str(m_config_calibr.v_parametr_ex[i].unit).c_str();
+        lang_type_to_str(m_config_calibr.v_parameter_ex[i].type).c_str();
       // индекс, байт
       ListParameterSG->Cells[4][row] =
-        num_to_cbstr(m_config_calibr.v_parametr_ex[i].index);
+        num_to_cbstr(m_config_calibr.v_parameter_ex[i].index);
       // рабочее значение
-      ListParameterSG->Cells[6][row] = num_to_cbstr(
-        m_config_calibr.v_parametr_ex[i].value_working);
+      ListParameterSG->Cells[6][row] =
+        num_to_cbstr(cell_config.ex_param_work_values[i]);
+        //m_config_calibr.v_parameter_ex[i].value_working);
       // значение по умолчанию
       ListParameterSG->Cells[7][row] = num_to_cbstr(
-        m_config_calibr.v_parametr_ex[i].value_default);
+        m_config_calibr.v_parameter_ex[i].value_default);
     }
   } else {
     ParamsExCSpinEdit->Value = 1;
@@ -1119,12 +1277,13 @@ void TNewConfigF::config_calibr_out_displ(
     a_config_calibr.bit_pos_phase_preset_bit.index_bit);
 
   // обработка доп.битов
-  int bit_type2_count = m_config_calibr.bit_type2_array.size();
+  size_type bit_type2_count = m_config_calibr.bit_type2_array.size();
+  IRS_ASSERT(bit_type2_count == cell_config.ex_bit_work_values.size());
 
   if (bit_type2_count > 0) {
     BitsExCSpinEdit->Value = bit_type2_count;
     ListByteSG->RowCount = BitsExCSpinEdit->Value+m_basic_bit_count+1;
-    for (int i = 0; i < bit_type2_count; i++) {
+    for (size_type i = 0; i < bit_type2_count; i++) {
       int row = i+m_basic_bit_count+1;
       ListByteSG->Cells[0][row] =
         m_config_calibr.bit_type2_array[i].bitname.c_str();
@@ -1133,7 +1292,7 @@ void TNewConfigF::config_calibr_out_displ(
       ListByteSG->Cells[2][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].index_bit);
       ListByteSG->Cells[3][row] = num_to_cbstr(
-        m_config_calibr.bit_type2_array[i].value_working);
+        cell_config.ex_bit_work_values[i]);
       ListByteSG->Cells[4][row] = num_to_cbstr(
         m_config_calibr.bit_type2_array[i].value_def);
     }
@@ -1153,7 +1312,7 @@ void TNewConfigF::config_calibr_out_displ(
   } else {
     TypeSubDiapasonParam2RB->Checked = true;
   }
-  int sub_diapason = m_config_calibr.v_sub_diapason_calibr.size();
+  int sub_diapason = m_config_calibr.eeprom_ranges.size();
   if (sub_diapason > 0) {
     CSpinEdit1->Value = sub_diapason;
     SubDiapasonSG->RowCount = CSpinEdit1->Value+1;
@@ -1161,13 +1320,13 @@ void TNewConfigF::config_calibr_out_displ(
       int row = i+1;
       SubDiapasonSG->Cells[0][row] = num_to_cbstr(i+1);
       SubDiapasonSG->Cells[1][row] = num_to_cbstr(
-        m_config_calibr.v_sub_diapason_calibr[i].index_start);
+        m_config_calibr.eeprom_ranges[i].index_start);
       SubDiapasonSG->Cells[2][row] = num_to_cbstr(
-        m_config_calibr.v_sub_diapason_calibr[i].size);
+        m_config_calibr.eeprom_ranges[i].size);
       SubDiapasonSG->Cells[3][row] = num_to_cbstr(
-        m_config_calibr.v_sub_diapason_calibr[i].value_begin);
+        m_config_calibr.eeprom_ranges[i].value_begin);
       SubDiapasonSG->Cells[4][row] = num_to_cbstr(
-        m_config_calibr.v_sub_diapason_calibr[i].value_end);
+        m_config_calibr.eeprom_ranges[i].value_end);
     }
   } else {
     CSpinEdit1->Value = 1;
@@ -1321,7 +1480,7 @@ void __fastcall TNewConfigF::ListParameterSGSelectCell(TObject *Sender,
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TNewConfigF::TemperatureControlCheckBoxClick(
+void __fastcall TNewConfigF::TemperatureControlVariableCheckBoxClick(
       TObject *Sender)
 {
   temperature_control_components_update();
@@ -1443,4 +1602,16 @@ void __fastcall TNewConfigF::RefDeviceComboBoxChange(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+
+void __fastcall TNewConfigF::TemperatureControlCheckBoxClick(TObject *Sender)
+{
+  temperature_control_components_update();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TNewConfigF::RangeCheckBoxClick(TObject *Sender)
+{
+  RangeEdit->Enabled = RangeCheckBox->Checked;
+}
+//---------------------------------------------------------------------------
 

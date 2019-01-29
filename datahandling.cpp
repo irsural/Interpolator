@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+п»ї//---------------------------------------------------------------------------
 
 #include <vcl.h>
 #pragma hdrstop
@@ -8,6 +8,7 @@
 #include <tstlan5lib.h>
 #include <irsalg.h>
 #include "newconfig.h"
+#include "configtableconflict.h"
 
 
 #include <irsfinal.h>
@@ -32,7 +33,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_file_name_service(),
   m_name_main_opt_ini_file(a_opt_ini.c_str()),
   m_main_opt_ini_file(),
-  //m_log(LogMemo, irst("Log.txt")),
   m_log_message(/*&m_log*/),
 
   m_stream_buf(100),
@@ -41,7 +41,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
 
   mp_manager_channel(ap_manager_channel),
   m_value_meas(),
-  m_fileid_conf(irst("Конфигурация настроек калибровки.")),
+  m_fileid_conf(irst("РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РЅР°СЃС‚СЂРѕРµРє РєР°Р»РёР±СЂРѕРІРєРё.")),
   m_config_calibr(),
   m_conf_calibr_buf(),
   m_config_calibr_ref_channel(),
@@ -64,7 +64,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   mp_mxnet_ref_channel(NULL),
   mp_mxnet_data_ref_channel(NULL),
 
-  //обращение к массиву в памяти контроллера
+  //РѕР±СЂР°С‰РµРЅРёРµ Рє РјР°СЃСЃРёРІСѓ РІ РїР°РјСЏС‚Рё РєРѕРЅС‚СЂРѕР»Р»РµСЂР°
   mp_eeprom(IRS_NULL),
   mp_local_data(IRS_NULL),
   mp_mxmultimeter_assembly(),
@@ -82,6 +82,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
 
   m_on_correct(false),
   m_correct_mode_previous_stat(false),
+
+  m_is_autosave_meas_enabled(false),
 
   m_need_size_memory(0),
   m_on_mismatch_state(false),
@@ -121,12 +123,6 @@ __fastcall TDataHandlingF::TDataHandlingF(
 
   m_type_meas(tm_volt_dc),
 
-  m_start_elem(1,1),
-  m_start_inverse_elem(m_start_elem),
-  m_cur_elem(m_start_elem),
-  m_max_cur_elem(m_start_elem),
-  m_min_cur_elem(m_start_elem),
-
   m_out_param_stability_control(0, 0, 0),
   m_out_param_stable_min_time(),
   m_temperature_stability_control(0, 0, temperature_stability_min_time),
@@ -151,13 +147,21 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_previous_time_meas_sec(0.0),
   m_status_copy_table(OFF_COPY),
   table_string_grid1(RawDataStringGrid),
-  m_table_raw_data(&table_string_grid1, irst("Таблица исходных значений")),
+  m_table_raw_data(&table_string_grid1, irst("РўР°Р±Р»РёС†Р° РёСЃС…РѕРґРЅС‹С… Р·РЅР°С‡РµРЅРёР№")),
   m_table_data_size(&m_table_raw_data),
   m_manager_traffic_cell(&m_table_data_size),
   mp_active_table(&m_table_raw_data),
+  m_start_col(1),
+  m_start_row(1),
+  m_cells_range(1, 1, 1, 1),
+  m_copied_cell_config(),
+  m_meas_cells_range(1, 1, 1, 1),
+  m_start_cell(),
   mv_config_table_copy(0),
   m_memory_capacity(128),      // max 4080
   m_param_cur_cell(),
+  m_cur_cell_cfg(),
+  m_prev_cell_cfg(),
   m_select_col(0),
   m_select_row(0),
   m_start_num_col(0),
@@ -198,10 +202,10 @@ __fastcall TDataHandlingF::TDataHandlingF(
   irs::mlog().rdbuf(&m_stream_buf);
   irs::mlog() << boolalpha;
 
-  DGI_MSG("Старт");
+  DGI_MSG("РЎС‚Р°СЂС‚");
 
   if (m_mode_program == mode_prog_single_channel) {
-    // обработчик ошибок
+    // РѕР±СЂР°Р±РѕС‚С‡РёРє РѕС€РёР±РѕРє
     //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, &m_log_message);
   } else {
     m_prog_name = a_name.c_str();
@@ -211,27 +215,29 @@ __fastcall TDataHandlingF::TDataHandlingF(
     }
   }
 
-  // Если папка существует, то определяет, существует ли каталог
+  // Р•СЃР»Рё РїР°РїРєР° СЃСѓС‰РµСЃС‚РІСѓРµС‚, С‚Рѕ РѕРїСЂРµРґРµР»СЏРµС‚, СЃСѓС‰РµСЃС‚РІСѓРµС‚ Р»Рё РєР°С‚Р°Р»РѕРі
   load_config_calibr_to_display();
 
   load_multimeters_list();
 
-  //устанавливаем имя файла настроек программы
+  //СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РёРјСЏ С„Р°Р№Р»Р° РЅР°СЃС‚СЂРѕРµРє РїСЂРѕРіСЂР°РјРјС‹
   m_main_opt_ini_file.set_ini_name(m_name_main_opt_ini_file);
-  m_main_opt_ini_file.set_section("Опции");
+  m_main_opt_ini_file.set_section("РћРїС†РёРё");
 
-  m_main_opt_ini_file.add(String(irst("Текущая конфигурация")), ConfigCB);
+  m_main_opt_ini_file.add(String(irst("РўРµРєСѓС‰Р°СЏ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ")), ConfigCB);
   m_main_opt_ini_file.add(
-    String(irst("Текущий мультиметр")),
+    String(irst("РўРµРєСѓС‰РёР№ РјСѓР»СЊС‚РёРјРµС‚СЂ")),
     PatternOfMeasuringInstrumentCB);
   m_main_opt_ini_file.add(
-    String(irst("Режим коррекции")), &m_on_correct);
+    String(irst("Р РµР¶РёРј РєРѕСЂСЂРµРєС†РёРё")), &m_on_correct);
   m_main_opt_ini_file.add(
-    String(irst("Режим расстройки")), &m_on_mismatch_state);
+    String(irst("Р РµР¶РёРј СЂР°СЃСЃС‚СЂРѕР№РєРё")), &m_on_mismatch_state);
   m_main_opt_ini_file.add(
-    String(irst("Стиль движения")), &m_str_type_jump_next_elem);
+    String(irst("РЎС‚РёР»СЊ РґРІРёР¶РµРЅРёСЏ")), &m_str_type_jump_next_elem);
   m_main_opt_ini_file.add(
-    String(irst("Автообновление графиков")), &m_chart.on_auto_update);
+    String(irst("РђРІС‚РѕРѕР±РЅРѕРІР»РµРЅРёРµ РіСЂР°С„РёРєРѕРІ")), &m_chart.on_auto_update);
+  m_main_opt_ini_file.add(
+    String(irst("РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ СЃРѕС…СЂР°РЅРµРЅРёРµ РёР·РјРµСЂРµРЅРёР№")), &m_is_autosave_meas_enabled);
 
   m_main_opt_ini_file.load();
   reset_mxmultimeter_assembly();
@@ -239,6 +245,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   mismatch_mode_change_stat(m_on_mismatch_state);
   set_setting_for_type_jump_next_cell(m_str_type_jump_next_elem);
   AutoUpdateChartAction->Checked = m_chart.on_auto_update;
+  AutoSaveMeasAction->Checked = m_is_autosave_meas_enabled;
 
   load_config_calibr();
   set_connect_if_enabled();
@@ -247,7 +254,8 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_timer_chart_auto_update.start();
   m_exec_progress.hide();
   m_exec_progress.clear();
-  FileOpen->Enabled;
+
+  config_calibr_t::save_load_test();
 }
 
 
@@ -282,11 +290,11 @@ __fastcall TDataHandlingF::~TDataHandlingF()
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
 
   if (m_mode_program == mode_prog_single_channel) {
-    // обработчик ошибок
+    // РѕР±СЂР°Р±РѕС‚С‡РёРє РѕС€РёР±РѕРє
     //irs::cbuilder::set_error_handler(irs::cbuilder::ht_log, IRS_NULL);
   }
 }
-//загрузка конфигураций калибровки на экран
+//Р·Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёР№ РєР°Р»РёР±СЂРѕРІРєРё РЅР° СЌРєСЂР°РЅ
 void TDataHandlingF::load_config_calibr_to_display()
 {
   String dir = m_file_name_service.get_config_dir();
@@ -342,16 +350,16 @@ String TDataHandlingF::get_selected_config_filename() const
   return String();
 }
 
-//загрузка конфигурации калибровки
+//Р·Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё РєР°Р»РёР±СЂРѕРІРєРё
 void TDataHandlingF::load_config_calibr()
 {
-  DGI_MSG("Загрузка конфигурации калибровки.");
+  DGI_MSG("Р—Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё РєР°Р»РёР±СЂРѕРІРєРё.");
   m_conf_calibr_buf.clear();
   m_load_conf_calibr_device_success = false;
   int index_file = ConfigCB->ItemIndex;
-  // если выбран файл
+  // РµСЃР»Рё РІС‹Р±СЂР°РЅ С„Р°Р№Р»
   if (index_file >= 0) {
-    // если файл существует
+    // РµСЃР»Рё С„Р°Р№Р» СЃСѓС‰РµСЃС‚РІСѓРµС‚
     String filename_conf = mv_list_config_calibr[index_file];
     if (FileExists(filename_conf)) {
       m_cur_index_conf_calibr = index_file;
@@ -360,15 +368,15 @@ void TDataHandlingF::load_config_calibr()
       m_config_calibr = m_conf_calibr_buf;
 
       m_inf_in_param.type_variable_param1 =
-        m_config_calibr.in_parametr1.type_variable.c_str();
+        m_config_calibr.in_parameter1.unit.c_str();
       m_inf_in_param.type_variable_param2 =
-        m_config_calibr.in_parametr2.type_variable.c_str();
+        m_config_calibr.in_parameter2.unit.c_str();
       m_inf_in_param.type_variable_param3 =
-        m_config_calibr.in_parametr3.type_variable.c_str();
-      if (m_config_calibr.in_parametr1.anchor == true) {
+        m_config_calibr.in_parameter3.unit.c_str();
+      if (m_config_calibr.in_parameter1.anchor == true) {
         m_inf_in_param.type_anchor = PARAMETR1;
         m_inf_in_param.number_in_param = TWO_PARAM;
-      } else if(m_config_calibr.in_parametr2.anchor == true) {
+      } else if(m_config_calibr.in_parameter2.anchor == true) {
         m_inf_in_param.type_anchor = PARAMETR2;
         m_inf_in_param.number_in_param = TWO_PARAM;
       } else {
@@ -378,85 +386,48 @@ void TDataHandlingF::load_config_calibr()
 
       load_devices();
 
-      type_meas_t type_meas = tm_volt_dc;
-      IRS_ASSERT(
-        str_to_type_meas(m_config_calibr.type_meas.c_str(), type_meas));
-      set_type_meas(type_meas);
-
-      set_deley_volt_meas(m_config_calibr.delay_meas);
-
-      m_meas_value_filter_timer.set(
-        irs::make_cnt_s(m_config_calibr.meas_interval));
-
       m_default_param_cur_cell.col_value.value =
-        m_config_calibr.in_parametr1.default_val;
+        m_config_calibr.in_parameter1.default_val;
 
       m_default_param_cur_cell.col_value.init = true;
 
       m_default_param_cur_cell.row_value.value =
-        m_config_calibr.in_parametr2.default_val;
+        m_config_calibr.in_parameter2.default_val;
 
       m_default_param_cur_cell.row_value.init = true;
 
       m_default_param_cur_cell.top_value.value =
-        m_config_calibr.in_parametr3.default_val;
+        m_config_calibr.in_parameter3.default_val;
 
       m_default_param_cur_cell.top_value.init = true;
 
-      //m_on_mismatch_state = m_config_calibr.mismatch_mode;
-      //mismatch_mode_change_stat(m_on_mismatch_state);
-
-
-      mp_active_table->set_inf_in_param(m_inf_in_param);
-
-      // Загрузка последнего активного файла
+      // Р—Р°РіСЂСѓР·РєР° РїРѕСЃР»РµРґРЅРµРіРѕ Р°РєС‚РёРІРЅРѕРіРѕ С„Р°Р№Р»Р°
       const String file_namedir = m_file_name_service.make_absolute_path(
         m_config_calibr.active_filename);
 
       if (FileExists(file_namedir)) {
         const String cur_file_name = mp_active_table->get_file_namedir();
-        if (cur_file_name != file_namedir) {
-          mp_active_table->set_file_namedir(file_namedir);
-          mp_active_table->load_table_from_file(file_namedir.c_str());
-        }
+        // Р’СЃРµРіРґР° РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј Р°РєС‚РёРІРЅС‹Р№ С„Р°Р№Р», С‚Р°Рє РєР°Рє РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ СЏС‡РµРµРє РјРѕРіР»Р°
+        // Р±С‹С‚СЊ РёР·РјРµРЅРµРЅР° Рё РЅР°Рј РЅР°РґРѕ РѕР±РЅРѕРІРёС‚СЊ РµРµ РІ mp_active_table
+        bool load_result = mp_active_table->load_table_from_file(file_namedir.c_str(),
+          m_inf_in_param, m_config_calibr.cells_config);
       } else {
         mp_active_table->clear_file_name();
-        mp_active_table->create_new_table();
+        mp_active_table->create_new_table(m_inf_in_param,
+          m_config_calibr.cells_config);
       }
       Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 
-      out_param_config_for_measurement_t out_param_cfg_for_measurement =
-        m_config_calibr.out_param_config_for_measurement;
-
-      m_y_out_filter.set_sampling_time(
-        out_param_cfg_for_measurement.filter_sampling_time);
-      m_y_out_filter.resize(out_param_cfg_for_measurement.filter_point_count);
-
-      out_param_control_config_t out_param_ctrl_cfg =
-        m_config_calibr.out_param_control_config;
-      if (out_param_ctrl_cfg.enabled) {
-        m_out_param_stability_control.set_stability_min_time(
-          out_param_ctrl_cfg.time);
-      }
-      OutParamControlGroupBox->Visible = out_param_ctrl_cfg.enabled;
-      temperature_control_config_t temperature_ctrl_cft =
-        m_config_calibr.temperature_control;
-      if (temperature_ctrl_cft.enabled) {
-        m_temperature_stability_control.set_reference(
-          temperature_ctrl_cft.reference);
-        m_temperature_stability_control.set_diviation(
-          temperature_ctrl_cft.difference);      
-        ReferenceTemperatureLabeledEdit->Text =
-          FloatToStr(temperature_ctrl_cft.reference);
-        DifferenceTemperatureLabeledEdit->Text =
-          FloatToStr(temperature_ctrl_cft.difference);
-      }
-      TemperatureControlGroupBox->Visible = temperature_ctrl_cft.enabled;   
+      OutParamControlGroupBox->Visible = has_cells_out_param_ctrl_enabled();
+      temperature_control_common_cfg_t temperature_cfg =
+        m_config_calibr.temperature_ctrl_common_cfg;
+      
+      TemperatureControlGroupBox->Visible = temperature_cfg.enabled;   
       m_load_conf_calibr_device_success = true;
-      //m_on_reset_functional_bits = true;
-      DGI_MSG("Загрузка конфигурации калибровки успешно завершена.");
 
-      // загрузка конфигурации опорного канала
+      DGI_MSG("Р—Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё РєР°Р»РёР±СЂРѕРІРєРё СѓСЃРїРµС€РЅРѕ Р·Р°РІРµСЂС€РµРЅР°.");
+
+      // Р·Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕРїРѕСЂРЅРѕРіРѕ РєР°РЅР°Р»Р°
       if (m_config_calibr.reference_channel.enabled) {
         m_config_calibr_ref_channel = m_config_calibr;
         m_config_calibr_ref_channel.ip_adress =
@@ -467,10 +438,10 @@ void TDataHandlingF::load_config_calibr()
       }
 
     }else{
-      DGI_MSG("Загрузка конфигурации прервана.");
+      DGI_MSG("Р—Р°РіСЂСѓР·РєР° РєРѕРЅС„РёРіСѓСЂР°С†РёРё РїСЂРµСЂРІР°РЅР°.");
       DGI_MSG(irs::str_conv<irs::string>(
-        irst("Файл \"") + filename_conf + irst("\" отсутствует") + irst(".")));
-      MessageDlg(irst("Файл \"") + filename_conf + irst("\" отсутствует") +
+        irst("Р¤Р°Р№Р» \"") + filename_conf + irst("\" РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚") + irst(".")));
+      MessageDlg(irst("Р¤Р°Р№Р» \"") + filename_conf + irst("\" РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚") +
         irst("."),
         mtError,
         TMsgDlgButtons()<<mbOK,
@@ -507,9 +478,9 @@ void TDataHandlingF::set_connect_calibr_device(
       if (reset_connect) {
         load_devices();
         //m_cur_config_device = select_config_device;
-        // В этой функции пересоздается устройство
+        // Р’ СЌС‚РѕР№ С„СѓРЅРєС†РёРё РїРµСЂРµСЃРѕР·РґР°РµС‚СЃСЏ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ
         //load_config_calibr();
-        DGI_MSG("Установка соединения с устройством");
+        DGI_MSG("РЈСЃС‚Р°РЅРѕРІРєР° СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ СѓСЃС‚СЂРѕР№СЃС‚РІРѕРј");
       }
       m_device.enable(m_config_calibr);
       if (m_config_calibr.reference_channel.enabled) {
@@ -520,14 +491,17 @@ void TDataHandlingF::set_connect_calibr_device(
   }
 }
 
-bool TDataHandlingF::set_connect_multimetr()
+bool TDataHandlingF::set_connect_multimeter(const String& a_type_meas)
 {
+  type_meas_t type_meas = tm_volt_dc;
+  IRS_ASSERT(str_to_type_meas(a_type_meas.c_str(), type_meas));
+  m_type_meas = type_meas;
   /*String cur_multimetr = get_selected_multimeter();
   multimeter_mode_type_t mode = mul_mode_type_active;
   if (m_type_meas == tm_value) {
     mode = mul_mode_type_passive;
   }
-  m_value_meas.set_connect_multimetr(
+  m_value_meas.set_connect_multimeter(
     str_to_type_multimeter(cur_multimetr.c_str()), mode);*/
   if (!mp_mxmultimeter_assembly.is_empty()) {
     multimeter_mode_type_t mode = mul_mode_type_active;
@@ -535,9 +509,9 @@ bool TDataHandlingF::set_connect_multimetr()
       mode = mul_mode_type_passive;
     }
     //try {
-      mp_mxmultimeter_assembly->enable(mode);
-      m_value_meas.set_connect_multimetr(
-        mp_mxmultimeter_assembly->mxmultimeter());
+    mp_mxmultimeter_assembly->enable(mode);
+    m_value_meas.set_connect_multimeter(
+      mp_mxmultimeter_assembly->mxmultimeter());
     /*} catch (Exception& e) {
       Application->ShowException(&e);
       m_value_meas.disconnect_multimetr();
@@ -566,7 +540,7 @@ void TDataHandlingF::reset_connect_calibr_device()
 void TDataHandlingF::reset_connect_multimetr()
 {
   m_cur_config_multimetr = irst("");
-  m_value_meas.disconnect_multimetr();
+  m_value_meas.disconnect_multimeter();
   PatternOfMeasuringInstrumentCB->Enabled = true;
 }
 
@@ -575,9 +549,9 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
   const int size_of_ident = sizeof(irs_u32);
   const int size_of_size_x = sizeof(irs_u32);
   const int size_of_size_y = sizeof(irs_u32);
-  lang_type_t x_elem_type = m_config_calibr.in_parametr1.unit;
-  lang_type_t y_elem_type = m_config_calibr.in_parametr2.unit;
-  lang_type_t z_elem_type = m_config_calibr.out_parametr.unit;
+  lang_type_t x_elem_type = m_config_calibr.in_parameter1.type;
+  lang_type_t y_elem_type = m_config_calibr.in_parameter2.type;
+  lang_type_t z_elem_type = m_config_calibr.out_parameter.type;
 
 
   mv_col_optimal_data.clear();
@@ -620,9 +594,9 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
       }
     }
   }
-  // если два параметра
+  // РµСЃР»Рё РґРІР° РїР°СЂР°РјРµС‚СЂР°
   if(m_inf_in_param.number_in_param == TWO_PARAM){
-    // если привязка к первому параметру
+    // РµСЃР»Рё РїСЂРёРІСЏР·РєР° Рє РїРµСЂРІРѕРјСѓ РїР°СЂР°РјРµС‚СЂСѓ
     if(m_inf_in_param.type_anchor == PARAMETR1){
       for(int y = 1; y < row_count; y++){
         if(m_bad_cells)
@@ -662,7 +636,7 @@ void TDataHandlingF::calculation_koef(irs::matrix_t<cell_t> a_matrix)
     //int table_count = v_table.size();
     std::vector<irs::matrix_t<cell_t> > v_table;
     v_table.push_back(a_matrix);
-    // Достраиваем вторую таблицу
+    // Р”РѕСЃС‚СЂР°РёРІР°РµРј РІС‚РѕСЂСѓСЋ С‚Р°Р±Р»РёС†Сѓ
     irs::matrix_t<cell_t> sub_table;
     sub_table = a_matrix;
     const double phase_value = 180;
@@ -764,16 +738,15 @@ void TDataHandlingF::tick()
       //return;
       const irs_u32 work_time = m_device.get_data()->work_time;
       WorkTimeDeviceLE->Text = num_to_cbstr(work_time);
-      if (m_config_calibr.out_param_control_config.enabled) {
+      if (m_cur_cell_cfg.out_param_control_config.enabled) {
         if (m_auto_meas_is_running) {
           double out_param = m_device.get_data()->y_out;
-          coord_cell_t coord_cur_cell =
-            m_manager_traffic_cell.get_coord_cell();
+          coord_cell_t coord_cur_cell = m_manager_traffic_cell.get_coord_cell();
           param_cur_cell_t param_cur_cell =
             mp_active_table->get_param_cell(
             coord_cur_cell.col, coord_cur_cell.row);
           double difference = get_anchor_in_param(param_cur_cell)*
-            m_config_calibr.out_param_control_config.max_relative_difference;
+            m_cur_cell_cfg.out_param_control_config.max_relative_difference;
           bool out_param_allowable =
             fabs(out_param - get_anchor_in_param(param_cur_cell)) <= difference;
           m_out_param_stability_control.set_current(out_param);
@@ -788,23 +761,29 @@ void TDataHandlingF::tick()
           AbsoluteDiffOutParamLabeledEdit->Text = FloatToStr(difference);
 
           double remaining_time = max(0.,
-            m_config_calibr.out_param_control_config.time -
+            m_cur_cell_cfg.out_param_control_config.time -
             m_out_param_stability_control.get_stable_state_time());
           RemainingTimeForStableState->Text =
             IntToStr(static_cast<int>(remaining_time));
         }
       }
-      if (m_config_calibr.temperature_control.enabled) {
-        double temperature = m_device.get_data()->temperature;
-        bool temperature_allowable = fabs(temperature -
-          m_config_calibr.temperature_control.reference) <=
-          m_config_calibr.temperature_control.difference;
-        m_temperature_stability_control.set_current(temperature);
+      if (m_config_calibr.temperature_ctrl_common_cfg.enabled) {
+        const double temperature = m_device.get_data()->temperature;
         CurrentTemperatureLabeledEdit->Text = FloatToStr(temperature);
-        if (temperature_allowable) {
-          CurrentTemperatureLabeledEdit->Font->Color = clBlue;
+        if (m_cur_cell_cfg.temperature_control.enabled) {
+
+          bool temperature_allowable = fabs(temperature -
+            m_cur_cell_cfg.temperature_control.reference) <=
+            m_cur_cell_cfg.temperature_control.difference;
+          m_temperature_stability_control.set_current(temperature);
+          
+          if (temperature_allowable) {
+            CurrentTemperatureLabeledEdit->Font->Color = clBlue;
+          } else {
+            CurrentTemperatureLabeledEdit->Font->Color = clRed;
+          }
         } else {
-          CurrentTemperatureLabeledEdit->Font->Color = clRed;
+          CurrentTemperatureLabeledEdit->Font->Color = clBlack;
         }
       }
       if (m_device.get_data()->operating_duty_bit == 1) {
@@ -814,7 +793,7 @@ void TDataHandlingF::tick()
       }
 
       CurrentStatusLabeledEdit->Font->Color = clBlue;
-      CurrentStatusLabeledEdit->Text = "Соединение установлено!";
+      CurrentStatusLabeledEdit->Text = "РЎРѕРµРґРёРЅРµРЅРёРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ!";
       bool forcibly_set_mismatch_state = false;
       bool forcibly_set_correct_mode = false;
       if (m_on_reset_functional_bits){
@@ -829,11 +808,11 @@ void TDataHandlingF::tick()
       set_correct_mode(m_on_correct, forcibly_set_correct_mode);
     }else{
       CurrentStatusLabeledEdit->Font->Color=clRed;
-      CurrentStatusLabeledEdit->Text = "Соединение разорвано!";
+      CurrentStatusLabeledEdit->Text = "РЎРѕРµРґРёРЅРµРЅРёРµ СЂР°Р·РѕСЂРІР°РЅРѕ!";
     }
     switch(status_connect)
     {
-      case WAIT_CONNECT:      //ожидание коннекта
+      case WAIT_CONNECT:      //РѕР¶РёРґР°РЅРёРµ РєРѕРЅРЅРµРєС‚Р°
         //if(m_device.mxdata_assembly->mxdata()->connected()){
         if(m_device.connected()){
           status_connect = CONNECT;
@@ -846,7 +825,7 @@ void TDataHandlingF::tick()
           }
         }
         break;
-      case CONNECT:{         //устойчивое состояние: считывание данных
+      case CONNECT:{         //СѓСЃС‚РѕР№С‡РёРІРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ: СЃС‡РёС‚С‹РІР°РЅРёРµ РґР°РЅРЅС‹С…
         //if(!m_device.mxdata_assembly->mxdata()->connected())
         if(!m_device.connected())
         {
@@ -896,7 +875,7 @@ void TDataHandlingF::tick()
         m_options_mnk = mp_options_form->read_options_mnk();
         m_options_correct = mp_options_form->read_options_correct();
         m_options_coef = mp_options_form->read_options_coef();
-        //сохранение в файл
+        //СЃРѕС…СЂР°РЅРµРЅРёРµ РІ С„Р°Р№Р»
         //...
         mp_options_form->reset_status_options();
         m_status_options = OFF_PROCESSING;
@@ -912,7 +891,7 @@ void TDataHandlingF::tick()
   }//if(m_load_conf_calibr_device_success)
   else {
     CurrentStatusLabeledEdit->Font->Color = clBlack;
-    CurrentStatusLabeledEdit->Text = irst("Соединение выключено!");
+    CurrentStatusLabeledEdit->Text = irst("РЎРѕРµРґРёРЅРµРЅРёРµ РІС‹РєР»СЋС‡РµРЅРѕ!");
   }
 
   eeprom_tick();
@@ -930,8 +909,8 @@ void TDataHandlingF::tick()
   tick_calibr_data();
 
   if (ShowMeasPointChartAction->Checked) {
-    // Если пользователь закрыл окно, удаляем объект графика и
-    // сбрасываем галочку в меню
+    // Р•СЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°РєСЂС‹Р» РѕРєРЅРѕ, СѓРґР°Р»СЏРµРј РѕР±СЉРµРєС‚ РіСЂР°С„РёРєР° Рё
+    // СЃР±СЂР°СЃС‹РІР°РµРј РіР°Р»РѕС‡РєСѓ РІ РјРµРЅСЋ
     if (!mp_meas_point_chart->visible()) {
       mp_meas_point_chart.reset();
       ShowMeasPointChartAction->Checked = false;
@@ -947,49 +926,49 @@ void TDataHandlingF::eeprom_tick()
         if(m_on_write_data_eeprom) {
           if(m_bad_cells){
             status_connect_eeprom = sce_reset;
-            DGI_MSG("Произошел сбой при расчете коэффициентов. " <<
-              "Запись прервана");
+            DGI_MSG("РџСЂРѕРёР·РѕС€РµР» СЃР±РѕР№ РїСЂРё СЂР°СЃС‡РµС‚Рµ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ. " <<
+              "Р—Р°РїРёСЃСЊ РїСЂРµСЂРІР°РЅР°");
           } else if(
             irs_i32(m_max_size_correct -
               m_need_size_memory) < 0){
             status_connect_eeprom = sce_reset;
-            DGI_MSG("Нехватает памяти для прошивки");
-            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
-            DGI_MSG("Доступный размер памяти "<<
-              m_max_size_correct << " байт");
+            DGI_MSG("РќРµС…РІР°С‚Р°РµС‚ РїР°РјСЏС‚Рё РґР»СЏ РїСЂРѕС€РёРІРєРё");
+            DGI_MSG("РћР±СЊРµРј РґР°РЅРЅС‹С… " << m_need_size_memory << " Р±Р°Р№С‚");
+            DGI_MSG("Р”РѕСЃС‚СѓРїРЅС‹Р№ СЂР°Р·РјРµСЂ РїР°РјСЏС‚Рё "<<
+              m_max_size_correct << " Р±Р°Р№С‚");
           } else if (m_need_size_memory > 0) {
-            DGI_MSG("Происходит запись в еепром.");
-            DGI_MSG("Индек смещения " << m_index_pos_offset_eeprom);
-            DGI_MSG("Обьем данных "+ m_need_size_memory << " байт");
-            DGI_MSG("Доступный размер памяти " <<
-              m_max_size_correct << " байт");
+            DGI_MSG("РџСЂРѕРёСЃС…РѕРґРёС‚ Р·Р°РїРёСЃСЊ РІ РµРµРїСЂРѕРј.");
+            DGI_MSG("РРЅРґРµРє СЃРјРµС‰РµРЅРёСЏ " << m_index_pos_offset_eeprom);
+            DGI_MSG("РћР±СЊРµРј РґР°РЅРЅС‹С… "+ m_need_size_memory << " Р±Р°Р№С‚");
+            DGI_MSG("Р”РѕСЃС‚СѓРїРЅС‹Р№ СЂР°Р·РјРµСЂ РїР°РјСЏС‚Рё " <<
+              m_max_size_correct << " Р±Р°Р№С‚");
             status_connect_eeprom = sce_create_interface_eeprom;
           } else {
-            DGI_MSG("Нет данных для записи.");
+            DGI_MSG("РќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ Р·Р°РїРёСЃРё.");
             status_connect_eeprom = sce_reset;
           }
         } else if (m_on_verification_data_eeprom) {
           if(m_bad_cells){
             status_connect_eeprom = sce_reset;
-            DGI_MSG("Произошел сбой при расчете коэффициентов. " <<
-              "Верификация данных прервана");
+            DGI_MSG("РџСЂРѕРёР·РѕС€РµР» СЃР±РѕР№ РїСЂРё СЂР°СЃС‡РµС‚Рµ РєРѕСЌС„С„РёС†РёРµРЅС‚РѕРІ. " <<
+              "Р’РµСЂРёС„РёРєР°С†РёСЏ РґР°РЅРЅС‹С… РїСЂРµСЂРІР°РЅР°");
           }else if(
             irs_i32(m_max_size_correct -
               m_need_size_memory) < 0){
             status_connect_eeprom = sce_reset;
-            DGI_MSG("Обьем данных превышает допустимый обьем памяти.");
-            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
-            DGI_MSG("Доступный размер памяти " << m_max_size_correct <<
-              " байт");
+            DGI_MSG("РћР±СЊРµРј РґР°РЅРЅС‹С… РїСЂРµРІС‹С€Р°РµС‚ РґРѕРїСѓСЃС‚РёРјС‹Р№ РѕР±СЊРµРј РїР°РјСЏС‚Рё.");
+            DGI_MSG("РћР±СЊРµРј РґР°РЅРЅС‹С… " << m_need_size_memory << " Р±Р°Р№С‚");
+            DGI_MSG("Р”РѕСЃС‚СѓРїРЅС‹Р№ СЂР°Р·РјРµСЂ РїР°РјСЏС‚Рё " << m_max_size_correct <<
+              " Р±Р°Р№С‚");
           }else if (m_need_size_memory > 0) {
-            DGI_MSG("Началась верификация данных.");
-            DGI_MSG("Индек смещения " << m_index_pos_offset_eeprom);
-            DGI_MSG("Обьем данных " << m_need_size_memory << " байт");
-            DGI_MSG("Доступный размер памяти " << m_max_size_correct <<
-              " байт");
+            DGI_MSG("РќР°С‡Р°Р»Р°СЃСЊ РІРµСЂРёС„РёРєР°С†РёСЏ РґР°РЅРЅС‹С….");
+            DGI_MSG("РРЅРґРµРє СЃРјРµС‰РµРЅРёСЏ " << m_index_pos_offset_eeprom);
+            DGI_MSG("РћР±СЊРµРј РґР°РЅРЅС‹С… " << m_need_size_memory << " Р±Р°Р№С‚");
+            DGI_MSG("Р”РѕСЃС‚СѓРїРЅС‹Р№ СЂР°Р·РјРµСЂ РїР°РјСЏС‚Рё " << m_max_size_correct <<
+              " Р±Р°Р№С‚");
             status_connect_eeprom = sce_create_interface_eeprom;
           } else {
-            DGI_MSG("Нет данных для верификации.");
+            DGI_MSG("РќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РІРµСЂРёС„РёРєР°С†РёРё.");
             status_connect_eeprom = sce_reset;
           }
         }
@@ -1027,7 +1006,7 @@ void TDataHandlingF::eeprom_tick()
           mp_eeprom->reset_stat_read_complete();
           set_progress_bar_mode_verification();
           //m_exec_progress.show();
-          //m_exec_progress.p_comment->Caption = "Процесс верификации данных.";
+          //m_exec_progress.p_comment->Caption = "РџСЂРѕС†РµСЃСЃ РІРµСЂРёС„РёРєР°С†РёРё РґР°РЅРЅС‹С….";
           //m_exec_progress.p_percent_progress->Caption = "0%";
           //m_exec_progress.p_progress_bar->Position = 0;
           //set_progress_bar_value(0);
@@ -1052,12 +1031,12 @@ void TDataHandlingF::eeprom_tick()
           int vcol_opt_size = mv_col_optimal_data.size();
           for(int i = 0; i < vcol_opt_size; i++){
             m_correct_map_local.x_points[i] =
-              mv_col_optimal_data[i]*m_config_calibr.in_parametr1.koef;
+              mv_col_optimal_data[i]*m_config_calibr.in_parameter1.koef;
           }
           int vrow_opt_size = mv_row_optimal_data.size();
           for(int i = 0; i < vrow_opt_size; i++){
             m_correct_map_local.y_points[i] =
-              mv_row_optimal_data[i]*m_config_calibr.in_parametr2.koef;
+              mv_row_optimal_data[i]*m_config_calibr.in_parameter2.koef;
           }
           int vcoef_data_size = mv_coef_data.size();
           for(int i =  0; i < vcoef_data_size; i++)
@@ -1138,11 +1117,11 @@ void TDataHandlingF::eeprom_tick()
           }
         }
         if (data_equal) {
-          DGI_MSG("Верификация данных завершена.");
-          DGI_MSG("Различий не выявлено.");
+          DGI_MSG("Р’РµСЂРёС„РёРєР°С†РёСЏ РґР°РЅРЅС‹С… Р·Р°РІРµСЂС€РµРЅР°.");
+          DGI_MSG("Р Р°Р·Р»РёС‡РёР№ РЅРµ РІС‹СЏРІР»РµРЅРѕ.");
         } else {
-          DGI_MSG("Верификация данных завершена.");
-          DGI_MSG("Найдены различия в данных!!!");
+          DGI_MSG("Р’РµСЂРёС„РёРєР°С†РёСЏ РґР°РЅРЅС‹С… Р·Р°РІРµСЂС€РµРЅР°.");
+          DGI_MSG("РќР°Р№РґРµРЅС‹ СЂР°Р·Р»РёС‡РёСЏ РІ РґР°РЅРЅС‹С…!!!");
         }
         status_connect_eeprom = sce_reset;
         //status_connect_eeprom = sce_off;
@@ -1151,12 +1130,12 @@ void TDataHandlingF::eeprom_tick()
         int vcol_opt_size = mv_col_optimal_data.size();
         for(int i = 0; i < vcol_opt_size; i++){
           m_correct_map.x_points[i] =
-            mv_col_optimal_data[i]*m_config_calibr.in_parametr1.koef;
+            mv_col_optimal_data[i]*m_config_calibr.in_parameter1.koef;
         }
         int vrow_opt_size = mv_row_optimal_data.size();
         for(int i = 0; i < vrow_opt_size; i++){
           m_correct_map.y_points[i] =
-            mv_row_optimal_data[i]*m_config_calibr.in_parametr2.koef;
+            mv_row_optimal_data[i]*m_config_calibr.in_parameter2.koef;
         }
         int vcoef_data_size = mv_coef_data.size();
         for(int i = 0; i < vcoef_data_size; i++)
@@ -1164,7 +1143,7 @@ void TDataHandlingF::eeprom_tick()
 
         set_progress_bar_mode_program();
         //m_exec_progress.show();
-        //m_exec_progress.p_comment->Caption = "Процесс прошивки.";
+        //m_exec_progress.p_comment->Caption = "РџСЂРѕС†РµСЃСЃ РїСЂРѕС€РёРІРєРё.";
         //m_exec_progress.p_percent_progress->Caption = "0%";
         //m_exec_progress.p_progress_bar->Position = 0;
         //set_progress_bar_value(0);
@@ -1186,7 +1165,7 @@ void TDataHandlingF::eeprom_tick()
           //m_on_write_data_eeprom = false;
           //m_on_verification_data_eeprom = true;
           status_connect_eeprom = sce_reset;
-          DGI_MSG("Прошивка данных завершена.");
+          DGI_MSG("РџСЂРѕС€РёРІРєР° РґР°РЅРЅС‹С… Р·Р°РІРµСЂС€РµРЅР°.");
         }
 
       } break;
@@ -1263,9 +1242,9 @@ void TDataHandlingF::processing_select_cell(TStringGrid* a_table,
 //--------------------------------------------------------------------------
 void TDataHandlingF::processing_key_return_and_ctrl_down(
   TStringGrid* const a_table,
-  const WORD a_key,
+  WORD& a_key,
   const TShiftState Shift)
-{ 
+{
   if (a_key == VK_RETURN) {
     if (m_cur_cell_table1.init){
       string_type latest_entry_previous_cell_str =
@@ -1277,17 +1256,17 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
       }
       m_cur_cell_table1.init = false;
 
-      if(a_table->Row == 0)//если находимся в нулевой строке
+      if(a_table->Row == 0)//РµСЃР»Рё РЅР°С…РѕРґРёРјСЃСЏ РІ РЅСѓР»РµРІРѕР№ СЃС‚СЂРѕРєРµ
       {
         if(a_table->Col < a_table->ColCount-1)
-          a_table->Col++;  //сдвигаемся вправо
+          a_table->Col++;  //СЃРґРІРёРіР°РµРјСЃСЏ РІРїСЂР°РІРѕ
         else
         {
           a_table->Row++;
           a_table->Col = 0;
         }
       }
-      else if(a_table->Col == 0)//если находимся в нулевом столбце
+      else if(a_table->Col == 0)//РµСЃР»Рё РЅР°С…РѕРґРёРјСЃСЏ РІ РЅСѓР»РµРІРѕРј СЃС‚РѕР»Р±С†Рµ
       {
         if(a_table->Row < a_table->RowCount-1)
         {
@@ -1299,14 +1278,14 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
             int table_count = mp_active_table->table_count();
             if(num_table < table_count-1){
               int row_count = mp_active_table->row_count();
-              a_table->Row+=row_count;  //сдвигаемся вниз
+              a_table->Row+=row_count;  //СЃРґРІРёРіР°РµРјСЃСЏ РІРЅРёР·
             }else{
               a_table->Row = 1;
               a_table->Col = 1;
             }
 
           }else{
-            a_table->Row++;  //сдвигаемся вниз
+            a_table->Row++;  //СЃРґРІРёРіР°РµРјСЃСЏ РІРЅРёР·
           }
         }
         else
@@ -1317,7 +1296,7 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
       }
       else if(a_table->Col < a_table->ColCount-1)
       {
-        a_table->Col++; //cдвигаемся вправо
+        a_table->Col++; //cРґРІРёРіР°РµРјСЃСЏ РІРїСЂР°РІРѕ
       }
       else if(a_table->Col >= a_table->ColCount-1)
       {
@@ -1335,10 +1314,120 @@ void TDataHandlingF::processing_key_return_and_ctrl_down(
 
         }
       }
+      on_select_cell(a_table->Col, a_table->Row, Shift);
     }
-  }
+  } else if (a_key == VK_LEFT && !m_cur_cell_table1.init) {
+    if(a_table->Col > 0) {
+      a_table->Col--;
+    }
+    a_key = 0;
+    on_select_cell(a_table->Col, a_table->Row, Shift);
+  } else if (a_key == VK_RIGHT && !m_cur_cell_table1.init) {
+    if(a_table->Col < a_table->ColCount - 1) {
+      a_table->Col++;
+    }
+    a_key = 0;
+    on_select_cell(a_table->Col, a_table->Row, Shift);
+  } else if (a_key == VK_UP && !m_cur_cell_table1.init) {
+    if(a_table->Row > 0) {
+      a_table->Row--;
+    }
+    a_key = 0;
+    on_select_cell(a_table->Col, a_table->Row, Shift);
+  } else if (a_key == VK_DOWN && !m_cur_cell_table1.init) {
+    if(a_table->Row < a_table->RowCount - 1) {
+      a_table->Row++;
+    }
+    a_key = 0;
+    on_select_cell(a_table->Col, a_table->Row, Shift);
+  }/* else if (a_key == 'A' && Shift.Contains(ssCtrl)) {
+    m_start_col = 1;
+    m_start_row = 1;
+    m_cells_range = TRect(1, 1, a_table->ColCount - 1, a_table->RowCount - 1);
+    RawDataStringGrid->Invalidate();
+    update_buttons_config();
+  }*/
 }
 //---------------------------------------------------------------------------
+
+void TDataHandlingF::on_select_cell(int a_col, int a_row, const TShiftState Shift)
+{
+  // Р”РёР°РїР°Р·РѕРЅС‹ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј С‚РѕР»СЊРєРѕ РІ С‚РѕРј СЃР»СѓС‡Р°Рµ, РµСЃР»Рё РІС‹Р±СЂР°РЅР° РЅРµ СЏС‡РµР№РєР° С€Р°РїРєРё
+
+  if(Shift.Contains(ssShift) && a_col > 0 && a_row > 0 &&
+      m_start_col > 0 && m_start_row > 0) {
+
+    m_cells_range.Left = std::min(m_start_col, a_col);
+    m_cells_range.Top = std::min(m_start_row, a_row);
+    m_cells_range.Right = std::max(m_start_col, a_col);
+    m_cells_range.Bottom = std::max(m_start_row, a_row);
+  } else if(a_col > 0 && a_row > 0) {
+    m_start_col = a_col;
+    m_start_row = a_row;
+    m_cells_range.Left = a_col;
+    m_cells_range.Top = a_row;
+    m_cells_range.Right = a_col;
+    m_cells_range.Bottom = a_row;
+  } else {
+    m_start_col = -1;
+    m_start_row = -1;
+    m_cells_range.Left = -1;
+    m_cells_range.Top = -1;
+    m_cells_range.Right = -1;
+    m_cells_range.Bottom = -1;
+  }
+
+  RawDataStringGrid->Invalidate();
+
+  update_buttons_config();
+
+  // РєРЅРѕРїРєРё РґР»СЏ СЃС‚Р°СЂС‚Р° РёР·РјРµСЂРµРЅРёСЏ РЅРµ Р±Р»РѕРєРёСЂСѓРµРј, С‚Р°Рє РєР°Рє РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РЅРµРїРѕРЅСЏС‚РЅРѕ,
+  // РїРѕС‡РµРјСѓ РѕРЅРё Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅС‹. РџСЂРё РЅР°Р¶Р°С‚РёРё РєРЅРѕРїРѕРє РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ РґРёР°РїР°Р·РѕРЅ Рё
+  // РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ РѕС‚РѕР±СЂР°Р·РёС‚СЃСЏ РѕРєРЅРѕ СЃ РѕС€РёР±РєРѕР№, РµСЃР»Рё РґРёР°РїР°Р·РѕРЅ РЅРµ РІС‹РґРµР»РµРЅ
+  //
+  /*if (!m_auto_meas_is_running) {
+    StartAutoVoltMeasAction->Enabled = is_meas_cells_range_locked() ||
+      is_cells_range_valid(m_cells_range);
+    StartAutoVoltMeasActiveCellsAction->Enabled =
+      StartAutoVoltMeasAction->Enabled;
+  }*/
+}
+
+
+
+void TDataHandlingF::update_buttons_config()
+{
+  bool is_range_valid = is_cells_range_valid(m_cells_range);
+  if (!LockMeasCellsRangeAction->Checked) {
+    LockMeasCellsRangeAction->Enabled = is_range_valid;
+  }
+
+  coord_t coord;
+  coord.x = m_copied_cell_config.col;
+  coord.y = m_copied_cell_config.row;
+  CopyCellsConfligAction->Enabled = is_range_valid;
+  PasteCellsConfigAction->Enabled = is_range_valid &&
+    mp_active_table->is_cells_config_coord_valid(coord);
+}
+
+
+
+void TDataHandlingF::select_cur_meas_cell()
+{
+  coord_cell_t coord_cur_cell = m_manager_traffic_cell.get_coord_cell();
+  mp_active_table->set_col_displ(coord_cur_cell.col);
+  mp_active_table->set_row_displ(coord_cur_cell.row);
+
+  // РїРѕРґСЃРІРµС‚РёС‚СЊ С‚РµРєСѓС‰СѓСЋ РёР·РјРµСЂСЏРµРјСѓСЋ СЏС‡РµР№РєСѓ
+  m_start_col = coord_cur_cell.col;
+  m_start_row = coord_cur_cell.row;
+  m_cells_range.Left = m_start_col;
+  m_cells_range.Right = m_start_col;
+  m_cells_range.Top = m_start_row;
+  m_cells_range.Bottom = m_start_row;
+}
+
+
 
 void TDataHandlingF::process_volt_meas()
 {
@@ -1358,7 +1447,7 @@ void TDataHandlingF::process_volt_meas()
     m_auto_meas_is_running = false;
     //config_button_stop_avto_volt_meas();
     m_status_process_meas = spm_reset;
-    DGI_MSG("Стоп.");
+    DGI_MSG("РЎС‚РѕРї.");
   }
   if (m_auto_meas_is_running) {
     config_button_start_avto_volt_meas();
@@ -1366,7 +1455,7 @@ void TDataHandlingF::process_volt_meas()
     if (m_device.connected()) {
       if ((m_device.get_data()->error_bit == 1) &&
         m_timer_delay_control_error_bit.stopped()) {
-        if (m_cur_count_reset_over_bit < m_config_calibr.count_reset_over_bit) {
+        if (m_cur_count_reset_over_bit < m_cur_cell_cfg.count_reset_over_bit) {
           m_cur_count_reset_over_bit++;
           m_device.get_data()->reset_over_bit = 1;
           //m_on_start_new_auto_meas = true;
@@ -1380,18 +1469,18 @@ void TDataHandlingF::process_volt_meas()
           } else {
             m_status_process_meas =
               spm_wait_ext_trig_set_range;
-            m_log << "Ожидание внешнего запуска установки диапазона измерений.";
+            m_log << "РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СѓСЃС‚Р°РЅРѕРІРєРё РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёР№.";
           } */
           //m_status_process_meas = spm_jump_next_elem;
           m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
           m_timer_delay_next_cell.set(m_delay_next_cell);
-          DGI_MSG("Сброс ошибки.");
-          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_next_cell) <<
-            " секунд перед продолжением измерений.");
+          DGI_MSG("РЎР±СЂРѕСЃ РѕС€РёР±РєРё.");
+          DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_next_cell) <<
+            " СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїСЂРѕРґРѕР»Р¶РµРЅРёРµРј РёР·РјРµСЂРµРЅРёР№.");
         } else {
           m_timer_delay_control_error_bit.set(m_delay_control_error_bit);
-          DGI_MSG("Прибор не можнет выйти на рабочий режим.");
-          DGI_MSG("Автоматическое измерение завершилось с ошибкой.");
+          DGI_MSG("РџСЂРёР±РѕСЂ РЅРµ РјРѕР¶РЅРµС‚ РІС‹Р№С‚Рё РЅР° СЂР°Р±РѕС‡РёР№ СЂРµР¶РёРј.");
+          DGI_MSG("РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ РёР·РјРµСЂРµРЅРёРµ Р·Р°РІРµСЂС€РёР»РѕСЃСЊ СЃ РѕС€РёР±РєРѕР№.");
           m_status_process_meas = spm_reset;
         }
       }
@@ -1404,38 +1493,59 @@ void TDataHandlingF::process_volt_meas()
         m_count_point_meas = 0;
         m_previous_count_point_meas = 0;
         set_connect_calibr_device();
-        set_connect_multimetr();
         m_on_start_new_auto_meas = false;
         m_auto_meas_is_running = true;
-        m_manager_traffic_cell.set_min_col(1);
-        m_manager_traffic_cell.set_min_row(1);
+
+        IRS_ASSERT(!mp_active_table->is_cells_config_read_only() &&
+          m_config_calibr.cells_config == mp_active_table->get_cells_config());
+        IRS_ASSERT(is_cells_range_valid(m_meas_cells_range));
+
+        m_manager_traffic_cell.set_min_col(m_meas_cells_range.Left);
+        m_manager_traffic_cell.set_min_row(m_meas_cells_range.Top);
+        m_manager_traffic_cell.set_max_col(m_meas_cells_range.Right);
+        m_manager_traffic_cell.set_max_row(m_meas_cells_range.Bottom);
+
         illegal_cells_t illegal_cells =
           mp_active_table->get_illegal_cells();
         m_manager_traffic_cell.set_illegal_cell(illegal_cells);
         m_cur_count_reset_over_bit = 0;
-        if (m_type_jump_next_elem == HORIZONTAL_DOWN ||
+        m_cur_cell_cfg.clear();
+        m_prev_cell_cfg.clear();
+
+       
+        // Р’СЃРµРіРґР° РЅР°С‡РёРЅР°РµРј СЃ Р»РµРІРѕР№ РІРµСЂС…РЅРµР№ СЏС‡РµР№РєРё?
+        m_manager_traffic_cell.set_current_cell(
+          m_meas_cells_range.Left, m_meas_cells_range.Top); 
+        /*if (m_type_jump_next_elem == HORIZONTAL_DOWN ||
           m_type_jump_next_elem == HORIZONTAL_DOWN_SMOOTH ||
           m_type_jump_next_elem == VERTICAL_FORWARD ||
           m_type_jump_next_elem == VERTICAL_FORWARD_SMOOTH){
           m_manager_traffic_cell.set_current_cell(
-            m_start_elem.col, m_start_elem.row);
+            m_meas_cells_range.Left, m_meas_cells_range.Top);
         } else {
           m_manager_traffic_cell.set_current_cell(
-            m_start_inverse_elem.col, m_start_inverse_elem.row);
-        }
+            m_meas_cells_range.Right, m_meas_cells_range.Bottom);
+        }*/
         if (m_on_process_auto_meas_active_cell) {
-          m_manager_traffic_cell.set_current_cell(
-            mp_active_table->get_col_displ(),
-            mp_active_table->get_row_displ());
+          int col = m_start_cell.col;
+          int row = m_start_cell.row;
+          col = irs::bound<int>(col, m_meas_cells_range.Left, m_meas_cells_range.Right);
+          row = irs::bound<int>(row, m_meas_cells_range.Top, m_meas_cells_range.Bottom);
+
+          m_manager_traffic_cell.set_current_cell(col, row);
           m_on_process_auto_meas_active_cell = false;
-          DGI_MSG("Запуск автоматического измерения с активной ячейки.");
+          DGI_MSG("Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РёР·РјРµСЂРµРЅРёСЏ СЃ Р°РєС‚РёРІРЅРѕР№ СЏС‡РµР№РєРё.");
         } else {
-          coord_cell_t coord_cur_cell =
-            m_manager_traffic_cell.get_coord_cell();
-          mp_active_table->set_col_displ(coord_cur_cell.col);
-          mp_active_table->set_row_displ(coord_cur_cell.row);
-          DGI_MSG("Запуск автоматического измерения.");
+          DGI_MSG("Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ РёР·РјРµСЂРµРЅРёСЏ.");
         }
+
+        select_cur_meas_cell();
+
+        m_cur_cell_cfg = get_cell_config(m_manager_traffic_cell.get_coord_cell());
+        m_prev_cell_cfg = m_cur_cell_cfg;
+        set_connect_multimeter(m_cur_cell_cfg.type_meas);
+        set_control_parameters(m_cur_cell_cfg);
+
         m_status_process_meas = spb_wait_connect;
         /*if (m_mode_program == mode_prog_single_channel) {
           m_status_process_meas = spm_set_range;
@@ -1443,7 +1553,7 @@ void TDataHandlingF::process_volt_meas()
           m_status_process_meas =
             spm_wait_ext_trig_set_range;
           m_log <<
-            irst("Ожидание внешнего запуска установки диапазона измерений.");
+            irst("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СѓСЃС‚Р°РЅРѕРІРєРё РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёР№.");
         }*/
         m_cell_count_end = m_manager_traffic_cell.get_cell_count_end();
         m_cell_count_end++;
@@ -1451,17 +1561,18 @@ void TDataHandlingF::process_volt_meas()
         set_progress_bar_mode_calibration();
       }
     } break;
+
     case spb_wait_connect: {
       if (m_device.connected()) {
         if (m_timer_delay_control_error_bit.stopped()) {
-          set_value_working_extra_params();
-          set_value_working_extra_bits();
+          set_value_working_extra_params(m_manager_traffic_cell.get_coord_cell());
+          set_value_working_extra_bits(m_manager_traffic_cell.get_coord_cell());
           /*if (m_mode_program == mode_prog_single_channel) {
             m_status_process_meas = spm_set_range;
           } else {
             m_status_process_meas = spm_wait_ext_trig_set_range;
             m_log <<
-              irst("Ожидание внешнего запуска установки диапазона измерений.");
+              irst("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СѓСЃС‚Р°РЅРѕРІРєРё РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёР№.");
           } */
           m_timer_waiting_set_extra_vars.start();
 
@@ -1470,10 +1581,22 @@ void TDataHandlingF::process_volt_meas()
             m_reset_time_meas = false;
           }
 
-          m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+          if (m_mode_program == mode_prog_single_channel) {
+            m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+          } else {
+            m_status_process_meas = spb_wait_ext_trig_set_apply_params_and_bits;
+          }
         }
       }
     } break;
+
+    case spb_wait_ext_trig_set_apply_params_and_bits: {
+      if (m_on_external) {
+        m_on_external = false;
+        m_status_process_meas = spb_wait_apply_extra_params_and_bits;
+      }
+    } break;
+
     case spb_wait_apply_extra_params_and_bits: {
       m_timer_waiting_set_extra_vars.check();
       if (m_timer_waiting_set_extra_vars.stopped()) {
@@ -1481,34 +1604,81 @@ void TDataHandlingF::process_volt_meas()
           m_status_process_meas = spm_set_range;
         } else {
           m_status_process_meas = spm_wait_ext_trig_set_range;
-          DGI_MSG("Ожидание внешнего запуска установки диапазона измерений.");
+          DGI_MSG("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СѓСЃС‚Р°РЅРѕРІРєРё РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёР№.");
         }
       }
     } break;
+
     case spm_jump_next_elem:{
       m_timer_delay_next_cell.check();
       if(m_timer_delay_next_cell.stopped()){
         bool next_elem_successfully = false;
         next_elem_successfully = m_manager_traffic_cell.next_cell();
+
         if (next_elem_successfully == false) {
           m_status_process_meas = spm_reset;
-          DGI_MSG("Автоматическое измерение успешно завершено.");
+          DGI_MSG("РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ РёР·РјРµСЂРµРЅРёРµ СѓСЃРїРµС€РЅРѕ Р·Р°РІРµСЂС€РµРЅРѕ.");
         } else {
-          DGI_MSG("Переход к следующей точке измерения.");
-          coord_cell_t coord_cur_cell =
-            m_manager_traffic_cell.get_coord_cell();
-          mp_active_table->set_col_displ(coord_cur_cell.col);
-          mp_active_table->set_row_displ(coord_cur_cell.row);
+          DGI_MSG("РџРµСЂРµС…РѕРґ Рє СЃР»РµРґСѓСЋС‰РµР№ С‚РѕС‡РєРµ РёР·РјРµСЂРµРЅРёСЏ.");
+          select_cur_meas_cell();
+
+          m_cur_cell_cfg = get_cell_config(m_manager_traffic_cell.get_coord_cell());
+
+          bool need_to_update_work_values = 
+            m_cur_cell_cfg.ex_param_work_values != m_prev_cell_cfg.ex_param_work_values ||
+            m_cur_cell_cfg.ex_bit_work_values != m_prev_cell_cfg.ex_bit_work_values;
+
+          bool need_to_recreate_multimeter = m_cur_cell_cfg.type_meas != m_type_meas;
+
+          m_prev_cell_cfg = m_cur_cell_cfg;
+          set_control_parameters(m_cur_cell_cfg);
+
+          if (need_to_recreate_multimeter) {
+            DGI_MSG("РќРµРѕР±С…РѕРґРёРјРѕ РїРµСЂРµРЅР°СЃС‚СЂРѕРёС‚СЊ РјСѓР»СЊС‚РёРјРµС‚СЂ. Р’С‹РєР»СЋС‡Р°РµРј СЃРёРіРЅР°Р»");
+            set_value_default_extra_params();
+            set_value_default_extra_bits();
+            //m_value_meas.disconnect_multimetr();
+            out_default_param();
+            m_timer_waiting_set_extra_vars.start();
+            if (m_mode_program == mode_prog_single_channel) {
+              m_status_process_meas = spm_wait_off_signal;
+            } else {
+              m_status_process_meas = spm_wait_ext_trig_off_signal;
+            }
+            break;
+          }
+          if (need_to_update_work_values) {
+            m_status_process_meas = spb_wait_connect;
+            break;
+          }
+
           if (m_mode_program == mode_prog_single_channel) {
             m_status_process_meas = spm_set_range;
           } else {
-            m_status_process_meas =
-              spm_wait_ext_trig_set_range;
-            DGI_MSG("Ожидание внешнего запуска установки диапазона измерений.");
+            m_status_process_meas = spm_wait_ext_trig_set_range;
+            DGI_MSG("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СѓСЃС‚Р°РЅРѕРІРєРё РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёР№.");
           }
         }
       }
     } break;
+
+    case spm_wait_ext_trig_off_signal: {
+      if (m_on_external) {
+        m_on_external = false;
+        m_status_process_meas = spm_wait_off_signal;
+      }
+    } break;
+
+    case spm_wait_off_signal: {
+      m_timer_waiting_set_extra_vars.check();
+      if (m_timer_waiting_set_extra_vars.stopped()) {
+        m_value_meas.disconnect_multimeter();
+        set_connect_multimeter(m_cur_cell_cfg.type_meas);
+        m_status_process_meas = spb_wait_connect;
+        //m_status_process_meas = spm_wait_set_extra_vars;
+      }      
+    } break;
+
     case spm_wait_ext_trig_set_range: {
       if (m_on_external) {
         m_on_external = false;
@@ -1516,28 +1686,38 @@ void TDataHandlingF::process_volt_meas()
       }
     } break;
     case spm_set_range: {
-      coord_cell_t coord_cur_cell =
-        m_manager_traffic_cell.get_coord_cell();
-      param_cur_cell_t param_cur_cell =
-        mp_active_table->get_param_cell(
+      coord_cell_t coord_cur_cell = m_manager_traffic_cell.get_coord_cell();
+      param_cur_cell_t param_cur_cell = mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
-      const double range = set_range(param_cur_cell);
+      double range = 0;
+
+      try {
+        range = set_range(param_cur_cell);
+      } catch (std::logic_error &ex) {
+        DGI_MSG(ex.what());
+        DGI_MSG("РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ РёР·РјРµСЂРµРЅРёРµ Р·Р°РІРµСЂС€РёР»РѕСЃСЊ СЃ РѕС€РёР±РєРѕР№.");
+        m_status_process_meas = spm_reset;
+        break;
+      }
+
       const double reference = get_anchor_in_param(param_cur_cell);
       m_out_param_stability_control.set_reference(reference);
       m_out_param_stability_control.set_diviation(reference*
-        m_config_calibr.out_param_control_config.max_relative_difference);
+        m_cur_cell_cfg.out_param_control_config.max_relative_difference);
       m_status_process_meas = spm_wait_set_range;
       //ostringstream_type msg;
-      //msg << irst("Установка диапазона измерения: ") << range;
-      DGI_MSG("Установка диапазона измерения: " << range);
+      //msg << irst("РЈСЃС‚Р°РЅРѕРІРєР° РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёСЏ: ") << range;
+      DGI_MSG("РЈСЃС‚Р°РЅРѕРІРєР° РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёСЏ: " << range);      
     } break;
+
     case spm_wait_set_range: {
       status_range_t status_range = get_status_range();
       if (status_range == range_stat_success) {   
         m_status_process_meas = spm_mode_setting;
-        DGI_MSG("Установка диапазона измерения завершена.");
+        DGI_MSG("РЈСЃС‚Р°РЅРѕРІРєР° РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂРµРЅРёСЏ Р·Р°РІРµСЂС€РµРЅР°.");
       }
     } break;
+
     case spm_mode_setting: {
       coord_cell_t coord_cur_cell =
         m_manager_traffic_cell.get_coord_cell();
@@ -1545,54 +1725,58 @@ void TDataHandlingF::process_volt_meas()
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
       out_param(param_cur_cell);
-      /*m_log << (irst("Ждем ") + FloatToStr(
+      /*m_log << (irst("Р–РґРµРј ") + FloatToStr(
         (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
-        " секунд перед проверкой рабочего режима.");
+        " СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
       m_timer_delay_control.set(m_delay_start_control_reg);*/
-      if (m_config_calibr.temperature_control.enabled) {
-        DGI_MSG("Ждем установления рабочего режима и температуры.");
+      if (m_config_calibr.temperature_ctrl_common_cfg.enabled &&
+          m_cur_cell_cfg.temperature_control.enabled) {
+        DGI_MSG("Р–РґРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР° Рё С‚РµРјРїРµСЂР°С‚СѓСЂС‹.");
       } else {
-        DGI_MSG("Ждем установления рабочего режима.");
+        DGI_MSG("Р–РґРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
       }
       m_status_process_meas = spm_wait_mode_setting;
     } break;
-    //установка режима
+
+    //СѓСЃС‚Р°РЅРѕРІРєР° СЂРµР¶РёРјР°
     case spm_wait_mode_setting: {
       #ifdef debug_datahanding
         m_on_reg_ready = true;
       #endif
       /*if (m_timer_delay_control.check()) {
         if (m_config_calibr.out_param_control_config.enabled) {
-          m_log<<"Ждем установления рабочего режима и температуры.";
+          m_log<<"Р–РґРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР° Рё С‚РµРјРїРµСЂР°С‚СѓСЂС‹.";
         } else {
-          m_log<<"Ждем установления рабочего режима.";
+          m_log<<"Р–РґРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.";
         }
       } */
       m_timer_delay_control.check();
       if ((m_timer_delay_control.stopped() == true)) {
         if (m_on_out_data == false) {
           bool all_ready = true;
-          if (m_config_calibr.temperature_control.enabled) {
+          if (m_config_calibr.temperature_ctrl_common_cfg.enabled &&
+              m_cur_cell_cfg.temperature_control.enabled) {
             all_ready = all_ready &&
               m_temperature_stability_control.stable_state();
             m_temperature_stable_min_time.start();
           }
-          if (m_config_calibr.out_param_control_config.enabled) {
+          if (m_cur_cell_cfg.out_param_control_config.enabled) {
             all_ready = all_ready &&
               m_out_param_stability_control.stable_state();
             m_out_param_stable_min_time.start();
           }
           all_ready = all_ready && m_on_reg_ready;
           if (all_ready) {
-            DGI_MSG("Рабочий режим установлен");
+            DGI_MSG("Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј СѓСЃС‚Р°РЅРѕРІР»РµРЅ");
+
             if (m_mode_program == mode_prog_single_channel) {
+              m_delay_operating_duty = irs::make_cnt_s((int)m_cur_cell_cfg.delay_meas);
               m_timer_delay_operating_duty.set(m_delay_operating_duty);
-              DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_operating_duty) <<
-                " секунд.");
+              DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_operating_duty) << " СЃРµРєСѓРЅРґ.");
               m_status_process_meas = spm_control_wait_mode_setting;
             } else {
-              DGI_MSG("Ожидание внешнего запуска контрольного " <<
-                "установления рабочего режима.");
+              DGI_MSG("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° РєРѕРЅС‚СЂРѕР»СЊРЅРѕРіРѕ " <<
+                "СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
               m_status_process_meas =
                 spm_wait_ext_trig_control_wait_mode_setting;
             }
@@ -1601,35 +1785,39 @@ void TDataHandlingF::process_volt_meas()
         }
       }
     } break;
-    // режим ожидания внешнего запуска режима контрольного ожидания
+
+    // СЂРµР¶РёРј РѕР¶РёРґР°РЅРёСЏ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° СЂРµР¶РёРјР° РєРѕРЅС‚СЂРѕР»СЊРЅРѕРіРѕ РѕР¶РёРґР°РЅРёСЏ
     case spm_wait_ext_trig_control_wait_mode_setting: {
       if (m_on_external) {
         m_on_external = false;
+        m_delay_operating_duty = irs::make_cnt_s((int)m_cur_cell_cfg.delay_meas);
         m_timer_delay_operating_duty.set(m_delay_operating_duty);
-        DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_operating_duty) <<
-          " секунд.");
+        DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_operating_duty) <<
+          " СЃРµРєСѓРЅРґ.");
         m_status_process_meas = spm_control_wait_mode_setting;
       }
     } break;
-    // режим контрольного ожидания установления рабочего режима
+
+    // СЂРµР¶РёРј РєРѕРЅС‚СЂРѕР»СЊРЅРѕРіРѕ РѕР¶РёРґР°РЅРёСЏ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°
     case spm_control_wait_mode_setting: {
       m_timer_delay_operating_duty.check();
-      if (m_config_calibr.temperature_control.enabled) {
+      if (m_config_calibr.temperature_ctrl_common_cfg.enabled &&
+          m_cur_cell_cfg.temperature_control.enabled) {
         if (m_temperature_stability_control.get_stable_state_time() <
           m_temperature_stable_min_time.get()) {
           m_timer_delay_control.set(m_delay_start_control_reg);
-          DGI_MSG("Температура вышла за допустимые значения.");
-          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
-            " секунд перед проверкой рабочего режима.");
+          DGI_MSG("РўРµРјРїРµСЂР°С‚СѓСЂР° РІС‹С€Р»Р° Р·Р° РґРѕРїСѓСЃС‚РёРјС‹Рµ Р·РЅР°С‡РµРЅРёСЏ.");
+          DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
+            " СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
           m_status_process_meas = spm_wait_mode_setting;
         }
       }
-      if (m_config_calibr.out_param_control_config.enabled) {
+      if (m_cur_cell_cfg.out_param_control_config.enabled) {
         if (m_out_param_stability_control.get_stable_state_time() <
           m_out_param_stable_min_time.get()) {
-          DGI_MSG("Значение выходного параметра вышло за допустимые значения.");
-          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
-            " секунд перед проверкой рабочего режима.");
+          DGI_MSG("Р—РЅР°С‡РµРЅРёРµ РІС‹С…РѕРґРЅРѕРіРѕ РїР°СЂР°РјРµС‚СЂР° РІС‹С€Р»Рѕ Р·Р° РґРѕРїСѓСЃС‚РёРјС‹Рµ Р·РЅР°С‡РµРЅРёСЏ.");
+          DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
+            " СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
           m_timer_delay_control.set(m_delay_start_control_reg);
           m_status_process_meas = spm_wait_mode_setting;
         }
@@ -1637,24 +1825,24 @@ void TDataHandlingF::process_volt_meas()
       if (m_status_process_meas == spm_control_wait_mode_setting) {
         if (m_on_reg_ready) {
           if (m_timer_delay_operating_duty.stopped()) {
-            DGI_MSG("Рабочий режим подтвержден.");
+            DGI_MSG("Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј РїРѕРґС‚РІРµСЂР¶РґРµРЅ.");
             if (m_mode_program == mode_prog_single_channel) {
               m_status_process_meas = sps_start_meas;
             } else {
               m_status_process_meas = spm_wait_external_trig_meas;
-              DGI_MSG("Ожидание внешнего запуска измерения.");
+              DGI_MSG("РћР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° РёР·РјРµСЂРµРЅРёСЏ.");
             }
           }
         } else {
-          DGI_MSG("Рабочий режим не подтвержден.");
-          DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
-            " секунд перед проверкой рабочего режима.");
+          DGI_MSG("Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј РЅРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅ.");
+          DGI_MSG("Р–РґРµРј " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
+            " СЃРµРєСѓРЅРґ РїРµСЂРµРґ РїСЂРѕРІРµСЂРєРѕР№ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.");
           m_timer_delay_control.set(m_delay_start_control_reg);
           m_status_process_meas = spm_wait_mode_setting;
         }
       }
     } break;
-    // ожидание внешнего внешнего запуска измерения
+    // РѕР¶РёРґР°РЅРёРµ РІРЅРµС€РЅРµРіРѕ РІРЅРµС€РЅРµРіРѕ Р·Р°РїСѓСЃРєР° РёР·РјРµСЂРµРЅРёСЏ
     case spm_wait_external_trig_meas: {
       if (m_on_external) {
         m_status_process_meas = sps_start_meas;
@@ -1664,6 +1852,7 @@ void TDataHandlingF::process_volt_meas()
     case sps_start_meas: {
       m_points.clear();
       m_meas_value_filter.clear();
+      m_meas_value_filter_timer.set(irs::make_cnt_s(m_cur_cell_cfg.meas_interval));
       m_meas_value_filter_timer.start();
       m_meas_value_filter_elapsed_time.start();
       m_status_process_meas = spm_execute_meas;
@@ -1694,8 +1883,8 @@ void TDataHandlingF::process_volt_meas()
           m_status_process_meas = spm_processing_data;
         } else if (meas_stat == meas_status_error) {
           m_status_process_meas = spm_reset;
-          DGI_MSG("Ошибка измерения.");
-          DGI_MSG("Автоматическое измерение завершилось с ошибкой.");
+          DGI_MSG("РћС€РёР±РєР° РёР·РјРµСЂРµРЅРёСЏ.");
+          DGI_MSG("РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРµ РёР·РјРµСЂРµРЅРёРµ Р·Р°РІРµСЂС€РёР»РѕСЃСЊ СЃ РѕС€РёР±РєРѕР№.");
         }
         m_on_external = false;
       }
@@ -1705,8 +1894,7 @@ void TDataHandlingF::process_volt_meas()
       if (!mp_mxmultimeter_assembly.is_empty()) {
         m_y_out_filter.stop();
         double y_out = 0;
-        if (m_config_calibr.out_param_config_for_measurement.
-          out_param_filter_enabled) {
+        if (m_cur_cell_cfg.out_param_measuring_conf.filter_enabled) {
           y_out = m_y_out_filter.get_value();
         } else {
           y_out = m_y_out;
@@ -1720,7 +1908,7 @@ void TDataHandlingF::process_volt_meas()
         m_points.push_back(point);
       }
       update_point_measurement_progress();
-      //m_log << "Обновление значения.";
+      //m_log << "РћР±РЅРѕРІР»РµРЅРёРµ Р·РЅР°С‡РµРЅРёСЏ.";
       //--------------------------------------
       update_result();
       if (!mp_meas_point_chart.is_empty()) {
@@ -1760,11 +1948,13 @@ void TDataHandlingF::process_volt_meas()
     case spm_reset: {
       set_value_default_extra_params();
       set_value_default_extra_bits();
-      m_value_meas.disconnect_multimetr();
+      m_value_meas.disconnect_multimeter();
       /*if (!ConnectAction->Checked) {
         reset_connect_calibr_device();
       } */
       m_param_cur_cell = m_default_param_cur_cell;
+      m_cur_cell_cfg.clear();
+      m_prev_cell_cfg.clear();
       m_on_out_data = true;
       m_auto_meas_is_running = false;
       m_on_process_auto_meas_active_cell = false;
@@ -1804,16 +1994,16 @@ void TDataHandlingF::process_volt_meas()
         cur_cell_count_end++;
         if (m_cell_count_end > cur_cell_count_end) {
           m_previous_time_meas_sec = time_meas_sec;
-          // Запоминаем
+          // Р—Р°РїРѕРјРёРЅР°РµРј
           m_previous_count_point_meas = m_count_point_meas;
-          // Скорость: ячеек в секунду
+          // РЎРєРѕСЂРѕСЃС‚СЊ: СЏС‡РµРµРє РІ СЃРµРєСѓРЅРґСѓ
           m_cell_per_sec = m_count_point_meas/time_meas_sec;
-          // Оставшееся количество ячеек до конца таблицы
+          // РћСЃС‚Р°РІС€РµРµСЃСЏ РєРѕР»РёС‡РµСЃС‚РІРѕ СЏС‡РµРµРє РґРѕ РєРѕРЅС†Р° С‚Р°Р±Р»РёС†С‹
           m_cell_count_end = cur_cell_count_end;
-          // Оставшееся время до конца измерений
+          // РћСЃС‚Р°РІС€РµРµСЃСЏ РІСЂРµРјСЏ РґРѕ РєРѕРЅС†Р° РёР·РјРµСЂРµРЅРёР№
           time_interval_end_meas_sec = m_cell_count_end/m_cell_per_sec;
           update_measurement_progress();
-          // Процент выполнения калибровки
+          // РџСЂРѕС†РµРЅС‚ РІС‹РїРѕР»РЅРµРЅРёСЏ РєР°Р»РёР±СЂРѕРІРєРё
           /*int percent = 100*m_count_point_meas/
             (m_cell_count_end+m_count_point_meas);
           m_exec_progress.p_percent_progress->Caption = IntToStr(percent) + "%";
@@ -1843,10 +2033,10 @@ void TDataHandlingF::update_point_measurement_progress()
 {
   const double one_point_progress = 1./(m_cell_count_end + m_count_point_meas);
 
-  // Процент выполнения калибровки
+  // РџСЂРѕС†РµРЅС‚ РІС‹РїРѕР»РЅРµРЅРёСЏ РєР°Р»РёР±СЂРѕРІРєРё
   double progress = m_count_point_meas*one_point_progress;
 
-  // Прогресс измерения одной точки
+  // РџСЂРѕРіСЂРµСЃСЃ РёР·РјРµСЂРµРЅРёСЏ РѕРґРЅРѕР№ С‚РѕС‡РєРё
   double point_percent = 1;
   const double period = CNT_TO_DBLTIME(m_meas_value_filter_timer.get());
   if (period != 0) {
@@ -1871,7 +2061,7 @@ void TDataHandlingF::update_point_measurement_progress()
 void TDataHandlingF::update_measurement_progress()
 {
   const double one_point_progress = 1./(m_cell_count_end + m_count_point_meas);
-  // Процент выполнения калибровки
+  // РџСЂРѕС†РµРЅС‚ РІС‹РїРѕР»РЅРµРЅРёСЏ РєР°Р»РёР±СЂРѕРІРєРё
   double percent = 100.*m_count_point_meas*one_point_progress;
 
   m_exec_progress.p_percent_progress->Caption =
@@ -1885,7 +2075,7 @@ void TDataHandlingF::update_measurement_progress()
 void TDataHandlingF::set_progress_bar_mode_calibration()
 {
   m_exec_progress.show();
-  m_exec_progress.p_comment->Caption = irst("Процесс калибровки.");
+  m_exec_progress.p_comment->Caption = irst("РџСЂРѕС†РµСЃСЃ РєР°Р»РёР±СЂРѕРІРєРё.");
   m_exec_progress.p_percent_progress->Caption = irst("0%");
   set_progress_bar_value(0);
 }
@@ -1893,7 +2083,7 @@ void TDataHandlingF::set_progress_bar_mode_calibration()
 void TDataHandlingF::set_progress_bar_mode_program()
 {
   m_exec_progress.show();
-  m_exec_progress.p_comment->Caption = "Процесс прошивки.";
+  m_exec_progress.p_comment->Caption = "РџСЂРѕС†РµСЃСЃ РїСЂРѕС€РёРІРєРё.";
   m_exec_progress.p_percent_progress->Caption = "0%";
   set_progress_bar_value(0);
 }
@@ -1901,7 +2091,7 @@ void TDataHandlingF::set_progress_bar_mode_program()
 void TDataHandlingF::set_progress_bar_mode_verification()
 {
   m_exec_progress.show();
-  m_exec_progress.p_comment->Caption = "Процесс верификации данных.";
+  m_exec_progress.p_comment->Caption = "РџСЂРѕС†РµСЃСЃ РІРµСЂРёС„РёРєР°С†РёРё РґР°РЅРЅС‹С….";
   m_exec_progress.p_percent_progress->Caption = "0%";
   set_progress_bar_value(0);
 }
@@ -1912,14 +2102,17 @@ void TDataHandlingF::set_progress_bar_value(double a_percent)
     a_percent*1000, 0., 100000.);
 }
 
+
 //---------------------------------------------------------------------------
 void TDataHandlingF::config_button_start_avto_volt_meas()
 {
-  //кнопка "Старт" автоизмерения напряжения
+  // РєРЅРѕРїРєР° "Р‘Р»РѕРєРёСЂРѕРІРєР° РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂСЏРµРјС‹С… СЏС‡РµРµРє"
+  LockMeasCellsRangeAction->Enabled = false;
+  //РєРЅРѕРїРєР° "РЎС‚Р°СЂС‚" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StartAutoVoltMeasAction->Enabled = false;
-  //кнопка начать/продолжить с активной ячейки
+  //РєРЅРѕРїРєР° РЅР°С‡Р°С‚СЊ/РїСЂРѕРґРѕР»Р¶РёС‚СЊ СЃ Р°РєС‚РёРІРЅРѕР№ СЏС‡РµР№РєРё
   StartAutoVoltMeasActiveCellsAction->Enabled = false;
-  //кнопка "Стоп" автоизмерения напряжения
+  //РєРЅРѕРїРєР° "РЎС‚РѕРї" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StopVoltMeasAction->Enabled = true;
   ConfigCB->Enabled = false;
   PatternOfMeasuringInstrumentCB->Enabled = false;
@@ -1951,14 +2144,21 @@ void TDataHandlingF::config_button_start_avto_volt_meas()
   ShowMultimeterOptionsButton->Enabled = false;
 
   ConnectAction->Enabled = false;
+
+  ShowSameCellConfigsAction->Checked = false;
 }
+
+
+
 void TDataHandlingF::config_button_stop_avto_volt_meas()
 {
-  //кнопка "Старт" автоизмерения напряжения
+  // РєРЅРѕРїРєР° "Р‘Р»РѕРєРёСЂРѕРІРєР° РґРёР°РїР°Р·РѕРЅР° РёР·РјРµСЂСЏРµРјС‹С… СЏС‡РµРµРє"
+  LockMeasCellsRangeAction->Enabled = true;
+  //РєРЅРѕРїРєР° "РЎС‚Р°СЂС‚" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StartAutoVoltMeasAction->Enabled = true;
-  //кнопка начать/продолжить с активной ячейки
+  //РєРЅРѕРїРєР° РЅР°С‡Р°С‚СЊ/РїСЂРѕРґРѕР»Р¶РёС‚СЊ СЃ Р°РєС‚РёРІРЅРѕР№ СЏС‡РµР№РєРё
   StartAutoVoltMeasActiveCellsAction->Enabled = true;
-  //кнопка "Стоп" автоизмерения напряжения
+  //РєРЅРѕРїРєР° "РЎС‚РѕРї" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StopVoltMeasAction->Enabled = false;
   ConfigCB->Enabled = true;
   PatternOfMeasuringInstrumentCB->Enabled = true;
@@ -2019,12 +2219,14 @@ void __fastcall TDataHandlingF::RawDataStringGridKeyDown(TObject *Sender,
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
 {
-  //настройка компонента RawDataStringGrid
+  //РЅР°СЃС‚СЂРѕР№РєР° РєРѕРјРїРѕРЅРµРЅС‚Р° RawDataStringGrid
   RawDataStringGrid->Col = 1;
   RawDataStringGrid->Row = 1;
+  on_select_cell(RawDataStringGrid->Col, RawDataStringGrid->Row, TShiftState());
+
   
-  //настройка меню
-  //меню файл
+  //РЅР°СЃС‚СЂРѕР№РєР° РјРµРЅСЋ
+  //РјРµРЅСЋ С„Р°Р№Р»
   
   FileOpen->Visible = true;
   FileOpen->Enabled = true;
@@ -2035,7 +2237,7 @@ void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
   FileSaveAs->Visible = true;
   FileSaveAs->Enabled = true;
 
-  //меню Правка
+  //РјРµРЅСЋ РџСЂР°РІРєР°
   CreateColAction->Visible = true;
   CreateColAction->Enabled = true;
   DeleteColAction->Visible = true;
@@ -2047,14 +2249,14 @@ void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
   AddGroupCellsAction->Visible = true;
   AddGroupCellsAction->Enabled = true;
 
-  //меню Автоизмерение
-  //кнопка "Старт" автоизмерения напряжения
+  //РјРµРЅСЋ РђРІС‚РѕРёР·РјРµСЂРµРЅРёРµ
+  //РєРЅРѕРїРєР° "РЎС‚Р°СЂС‚" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StartAutoVoltMeasAction->Visible = true;
   StartAutoVoltMeasAction->Enabled = true;
-  //кнопка "Стоп" автоизмерения напряжения
+  //РєРЅРѕРїРєР° "РЎС‚РѕРї" Р°РІС‚РѕРёР·РјРµСЂРµРЅРёСЏ РЅР°РїСЂСЏР¶РµРЅРёСЏ
   StopVoltMeasAction->Visible = true;
   StopVoltMeasAction->Enabled = false;
-  //кнопка начать/продолжить с активной ячейки
+  //РєРЅРѕРїРєР° РЅР°С‡Р°С‚СЊ/РїСЂРѕРґРѕР»Р¶РёС‚СЊ СЃ Р°РєС‚РёРІРЅРѕР№ СЏС‡РµР№РєРё
   StartAutoVoltMeasActiveCellsAction->Visible = true;
   StartAutoVoltMeasActiveCellsAction->Enabled = true;
 }
@@ -2062,7 +2264,9 @@ void __fastcall TDataHandlingF::FormCreate(TObject *Sender)
 //---------------------------------------------------------------------------
 void TDataHandlingF::tick2()
 {
-  m_status_copy_table = CopyTableForm->read_status_copy_data();
+  if (CopyTableForm)
+    m_status_copy_table = CopyTableForm->read_status_copy_data();
+
   m_value_meas.tick();
   if(m_add_col_or_row_successfuly == true){
     int col_max = mp_active_table->col_count()-1;
@@ -2169,14 +2373,14 @@ double TDataHandlingF::calc_meas_value(
   const double out_param_value,
   const param_cur_cell_t& a_param_cell)
 {
-  double out_value = a_value_meas*m_config_calibr.out_parametr.koef_shunt;
-  if (m_config_calibr.out_param_config_for_measurement.
-    consider_out_param) {
+  double shunt_coef = get_cell_config(a_param_cell).output_param_coef;
+  double out_value = a_value_meas*shunt_coef;
+  if (m_cur_cell_cfg.out_param_measuring_conf.consider_out_param) {
     if (out_param_value != 0) {
       out_value = out_value/out_param_value;
     } else {
-      DGI_MSG("Ошибка. " <<
-        "Выходное значение с устройства равно нулю и не учитывается");
+      DGI_MSG("РћС€РёР±РєР°. " <<
+        "Р’С‹С…РѕРґРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ СЃ СѓСЃС‚СЂРѕР№СЃС‚РІР° СЂР°РІРЅРѕ РЅСѓР»СЋ Рё РЅРµ СѓС‡РёС‚С‹РІР°РµС‚СЃСЏ");
     }
     if (m_inf_in_param.type_anchor == PARAMETR1) {
       if (a_param_cell.col_value.init) {
@@ -2203,6 +2407,15 @@ void TDataHandlingF::update_result()
   mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
   mp_active_table->cell_out_display(
     coord_cur_cell.col, coord_cur_cell.row);
+
+  if (m_is_autosave_meas_enabled) {
+    String file_namedir = mp_active_table->get_file_namedir();
+    if (!file_namedir.IsEmpty()) {
+      mp_active_table->save_table_to_file(file_namedir.c_str());
+    } else {
+      DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РґР°РЅРЅС‹Рµ, С‚Р°Рє РєР°Рє РёРјСЏ С„Р°Р№Р»Р° РЅРµ Р·Р°РґР°РЅРѕ.");
+    }
+  }
 }
 
 cell_t TDataHandlingF::process_measured_points()
@@ -2247,7 +2460,7 @@ cell_t TDataHandlingF::process_measured_points()
       values.end(), level_of_significance);
 
 
-    //m_log << (String(irst("Удалено выбросов: ")) +
+    //m_log << (String(irst("РЈРґР°Р»РµРЅРѕ РІС‹Р±СЂРѕСЃРѕРІ: ")) +
       //IntToStr(distance(it, values.end())));
     values.erase(it, values.end());
 
@@ -2267,7 +2480,7 @@ cell_t TDataHandlingF::process_measured_points()
           n++;
         }
       }
-      // Уточненное среднее
+      // РЈС‚РѕС‡РЅРµРЅРЅРѕРµ СЃСЂРµРґРЅРµРµ
       const double N_2 = values.size()*values.size();
       const double result = average + ((p - n)*d_total)/N_2;
       cell.value = result;
@@ -2280,7 +2493,7 @@ cell_t TDataHandlingF::process_measured_points()
 void TDataHandlingF::reset_chart(
   const int a_col_displ, const int a_row_displ)
 {
-  // Обработка графика
+  // РћР±СЂР°Р±РѕС‚РєР° РіСЂР°С„РёРєР°
   if (!mp_meas_point_chart.is_empty()) {
     mp_meas_point_chart->clear_param();
     param_cur_cell_t param = mp_active_table->get_param_cell(a_col_displ,
@@ -2289,8 +2502,8 @@ void TDataHandlingF::reset_chart(
       irs::num_to_str(param.col_value.value) +
       irst("; ") +
       irs::num_to_str(param.row_value.value);
-    const string_type points_chart = name + irst(" точки");
-    const string_type result_chart = name + irst(" значение");
+    const string_type points_chart = name + irst(" С‚РѕС‡РєРё");
+    const string_type result_chart = name + irst(" Р·РЅР°С‡РµРЅРёРµ");
     mp_meas_point_chart->add_param(points_chart);
     mp_meas_point_chart->add_param(result_chart);
     mp_meas_point_chart->group_all();
@@ -2300,7 +2513,7 @@ void TDataHandlingF::reset_chart(
 
 void TDataHandlingF::update_chart(const int a_col_displ, const int a_row_displ)
 {
-  // Обработка графика
+  // РћР±СЂР°Р±РѕС‚РєР° РіСЂР°С„РёРєР°
   if (!mp_meas_point_chart.is_empty()) {
     //mp_meas_point_chart->clear_param();
     param_cur_cell_t param = mp_active_table->get_param_cell(a_col_displ,
@@ -2310,7 +2523,7 @@ void TDataHandlingF::update_chart(const int a_col_displ, const int a_row_displ)
       irst("; ") +
       irs::num_to_str(param.row_value.value);
 
-    const string_type points_chart = name + irst(" точки");
+    const string_type points_chart = name + irst(" С‚РѕС‡РєРё");
     //mp_meas_point_chart->add_param(points_chart);
     const cell_t cell = mp_active_table->get_cell_table(a_col_displ,
       a_row_displ);
@@ -2328,7 +2541,7 @@ void TDataHandlingF::update_chart(const int a_col_displ, const int a_row_displ)
 
 
 
-    const string_type result_chart = name + irst(" значение");
+    const string_type result_chart = name + irst(" Р·РЅР°С‡РµРЅРёРµ");
     //mp_meas_point_chart->add_param(result_chart);
     x_array.clear();
     y_array.clear();
@@ -2349,8 +2562,19 @@ void TDataHandlingF::update_chart(const int a_col_displ, const int a_row_displ)
 
 double TDataHandlingF::set_range(const param_cur_cell_t& a_param_cur_cell)
 {
-  const double koef = m_config_calibr.meas_range_koef;
-  double range = get_anchor_in_param(a_param_cur_cell)*koef;
+  const cell_config_calibr_t cell_config = get_cell_config(a_param_cur_cell);
+
+  double range = 0;
+  if (cell_config.range_enabled) {
+    range = cell_config.range;
+  } else {
+    double coef =  get_cell_config(a_param_cur_cell).output_param_coef;
+    if (coef == 0) {
+      throw logic_error("РљРѕСЌС„С„РёС†РёРµРЅС‚ РІС‹С…РѕРґРЅРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ РЅРµ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СЂР°РІРµРЅ РЅСѓР»СЋ.");
+    }
+    range = get_anchor_in_param(a_param_cur_cell)/coef;
+  }
+  
   m_value_meas.set_range(m_type_meas, range);
   /*if (m_inf_in_param.type_anchor == PARAMETR1) {
     range = a_param_cur_cell.col_value.value*koef;
@@ -2403,7 +2627,7 @@ bool TDataHandlingF::get_on_close_form_stat()
   return on_close_form_stat;
 }
 //---------------------------------------------------------------------------
-void TDataHandlingF::set_type_meas(type_meas_t a_type_meas)
+/*void TDataHandlingF::set_type_meas(type_meas_t a_type_meas)
 {
   m_type_meas = a_type_meas;
   switch(m_type_meas){
@@ -2452,7 +2676,7 @@ void TDataHandlingF::set_type_meas(type_meas_t a_type_meas)
         TimeIntervalAverageMeasM->Checked = true;
     } break;
   }
-}
+}     */
 //---------------------------------------------------------------------------
 void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   int a_col,
@@ -2462,41 +2686,94 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
   TStringGrid* table = a_table;
   coord3d_t coord_cell =
     mp_active_table->get_coord_cell_table(a_col, a_row);
-  int row_table = coord_cell.y;
   int col_table = coord_cell.x;
+  int row_table = coord_cell.y;  
   bool select_cell_in_x = (col_table > 0) && (row_table == 0);
   bool select_cell_in_y = (col_table == 0) && (row_table > 0);
   bool select_cell_in_z = (col_table == 0) && (row_table == 0);
   String value = mp_active_table->get_cell_display_variable_precision(
     a_col, a_row).c_str();
-  if((!select_cell_in_x) && (!select_cell_in_y) && (!select_cell_in_z)) {
-    if((a_col == table->Col) && (a_row == table->Row)){
-      //цвет фона
-      table->Canvas->Brush->Color = clMoneyGreen;
-      //цвет текста
+
+  if (select_cell_in_x || select_cell_in_y || select_cell_in_z) {
+    //С†РІРµС‚ С„РѕРЅР°
+    table->Canvas->Brush->Color = clBtnFace;
+    //С†РІРµС‚ С‚РµРєСЃС‚Р°
+    table->Canvas->Font->Color = clBlack;
+    //Р·Р°Р»РёРІР°РµРј С„РѕРЅ
+    table->Canvas->FillRect(a_rect);
+    //РєСЂР°СЃРёРј С‚РµРєСЃС‚
+    table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
+  } else {
+
+    bool is_same_config = false;
+    const irs::table_t<cell_config_calibr_t>& cells_config = mp_active_table->get_cells_config();
+    if (ShowSameCellConfigsAction->Checked &&
+      irs::is_in_range<int>(m_start_col, 0, cells_config.get_col_count()) &&
+      irs::is_in_range<int>(m_start_row, 0, cells_config.get_row_count()) &&
+      irs::is_in_range<int>(col_table, 0, cells_config.get_col_count()) &&
+      irs::is_in_range<int>(row_table, 0, cells_config.get_row_count())) {
+
+      is_same_config = cells_config.read_cell(m_start_col, m_start_row) ==
+        cells_config.read_cell(col_table, row_table);
+    }
+
+    if (is_same_config ) {
+      //С†РІРµС‚ С„РѕРЅР°
+      table->Canvas->Brush->Color = clLime;
+      //С†РІРµС‚ С‚РµРєСЃС‚Р°
       table->Canvas->Font->Color = clBlack;
-      //cтиль текста (жирный)
-      //RawDataStringGrid->Canvas->Font->Style << fsBold;
-      //заливаем фон
+      //Р·Р°Р»РёРІР°РµРј С„РѕРЅ
       table->Canvas->FillRect(a_rect);
-      //красим текст
-      table->Canvas->TextOutW(
-        a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
+      //РєСЂР°СЃРёРј С‚РµРєСЃС‚
+      table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
+    } else if (a_col >= m_cells_range.Left && a_col <= m_cells_range.Right &&
+      a_row >= m_cells_range.Top && a_row <= m_cells_range.Bottom) {
+
+      //С†РІРµС‚ С„РѕРЅР°
+      table->Canvas->Brush->Color = clMoneyGreen;
+      //С†РІРµС‚ С‚РµРєСЃС‚Р°
+      table->Canvas->Font->Color = clBlack;
+      //cС‚РёР»СЊ С‚РµРєСЃС‚Р° (Р¶РёСЂРЅС‹Р№)
+      //RawDataStringGrid->Canvas->Font->Style << fsBold;
+      //Р·Р°Р»РёРІР°РµРј С„РѕРЅ
+      table->Canvas->FillRect(a_rect);
+      //РєСЂР°СЃРёРј С‚РµРєСЃС‚
+      table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
+    } else if(is_meas_cells_range_locked() &&
+      a_col >= m_meas_cells_range.Left &&
+      a_col <= m_meas_cells_range.Right &&
+      a_row >= m_meas_cells_range.Top &&
+      a_row <= m_meas_cells_range.Bottom) {
+
+      //С†РІРµС‚ С„РѕРЅР°
+      table->Canvas->Brush->Color = clYellow;
+      //С†РІРµС‚ С‚РµРєСЃС‚Р°
+      table->Canvas->Font->Color = clBlack;
+      //cС‚РёР»СЊ С‚РµРєСЃС‚Р° (Р¶РёСЂРЅС‹Р№)
+      //RawDataStringGrid->Canvas->Font->Style << fsBold;
+      //Р·Р°Р»РёРІР°РµРј С„РѕРЅ
+      table->Canvas->FillRect(a_rect);
+      //РєСЂР°СЃРёРј С‚РµРєСЃС‚
+      table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
     } else {
       //table->Canvas->Brush->Color = clRed;
       table->Canvas->FillRect(a_rect);
       table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
     }
-  } else {
-    //цвет фона
-    table->Canvas->Brush->Color = clBtnFace;
-    //цвет текста
-    table->Canvas->Font->Color = clBlack;
-    //заливаем фон
-    table->Canvas->FillRect(a_rect);
-    //красим текст
-    table->Canvas->TextOutW(
-      a_rect.Left, a_rect.Top, value/*table->Cells[a_col][a_row]*/);
+
+    /*if((a_col == table->Col) && (a_row == table->Row)){
+      //С†РІРµС‚ С„РѕРЅР°
+      table->Canvas->Brush->Color = clMoneyGreen;
+      //С†РІРµС‚ С‚РµРєСЃС‚Р°
+      table->Canvas->Font->Color = clBlack;
+      //cС‚РёР»СЊ С‚РµРєСЃС‚Р° (Р¶РёСЂРЅС‹Р№)
+      //RawDataStringGrid->Canvas->Font->Style << fsBold;
+      //Р·Р°Р»РёРІР°РµРј С„РѕРЅ
+      table->Canvas->FillRect(a_rect);
+      //РєСЂР°СЃРёРј С‚РµРєСЃС‚
+      table->Canvas->TextOutW(
+        a_rect.Left, a_rect.Top, value);
+    } */
   }
 }
 //---------------------------------------------------------------------------
@@ -2561,6 +2838,7 @@ void __fastcall TDataHandlingF::AddGroupCellsButtonClick(TObject *Sender)
 void __fastcall TDataHandlingF::CreateColActionExecute(TObject *Sender)
 {
   mp_active_table->create_col_table();
+  //Update
 }
 //---------------------------------------------------------------------------
 
@@ -2607,7 +2885,16 @@ void __fastcall TDataHandlingF::AddGroupCellsActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::StartAutoVoltMeasActionExecute(
       TObject *Sender)
 {
-  m_on_start_new_auto_meas = true;
+  if (!data_should_be_saved_dialog()) {
+    return;
+  }
+
+  if (lock_meas_cells_range_if_need()) {
+    m_on_start_new_auto_meas = true;
+  } else {
+    MessageDlg(irst("РќРµ РІС‹РґРµР»РµРЅ РґРёР°РїР°Р·РѕРЅ РёР·РјРµСЂСЏРµРјС‹С… СЏС‡РµРµРє"),
+      mtInformation, TMsgDlgButtons() << mbOK, 0);
+  }
 }
 //---------------------------------------------------------------------------
 
@@ -2622,7 +2909,21 @@ void __fastcall TDataHandlingF::StopVoltMeasActionExecute(TObject *Sender)
 void __fastcall TDataHandlingF::StartAutoVoltMeasActiveCellsActionExecute(
       TObject *Sender)
 {
-  m_on_process_auto_meas_active_cell = true;
+  // Р—Р°РїРѕРјРёРЅР°РµРј РІС‹Р±СЂР°РЅРЅСѓСЋ СЏС‡РµР№РєСѓ, С‚Р°Рє РєР°Рє РІ РЅР°С‡Р°Р»Рµ РёР·РјРµСЂРµРЅРёСЏ С‚Р°Р±Р»РёС†Р° СЃ РґР°РЅРЅС‹РјРё Р±СѓРґРµС‚
+  // РїРµСЂРµР·Р°РіСЂСѓР¶РµРЅР° Рё Р±СѓРґРµС‚ РІС‹РґРµР»РµРЅР° СЃС‚Р°СЂС‚РѕРІР°СЏ СЏС‡РµР№РєР° (1, 1)
+  m_start_cell.col = mp_active_table->get_col_displ();
+  m_start_cell.row = mp_active_table->get_row_displ();
+
+  if (!data_should_be_saved_dialog()) {
+    return;
+  }
+
+  if (lock_meas_cells_range_if_need()) {
+    m_on_process_auto_meas_active_cell = true;
+  } else {
+    MessageDlg(irst("РќРµ РІС‹РґРµР»РµРЅ РґРёР°РїР°Р·РѕРЅ РёР·РјРµСЂСЏРµРјС‹С… СЏС‡РµРµРє"),
+      mtInformation, TMsgDlgButtons() << mbOK, 0);
+  }
 }
 //---------------------------------------------------------------------------
 
@@ -2632,6 +2933,9 @@ void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
   String file_namedir;
   file_namedir = mp_active_table->get_file_namedir();
   if (!file_namedir.IsEmpty()) {
+
+    save_cells_config_if_need();
+
     mp_active_table->save_table_to_file(file_namedir.c_str());
     mp_active_table->save_table_to_m_file(file_namedir.c_str());
     //mp_active_table->save_table_to_json_file(file_namedir.c_str());
@@ -2643,14 +2947,25 @@ void __fastcall TDataHandlingF::FileSaveExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileSaveAsAccept(TObject *Sender)
 {
-  String file_namedir;
-  file_namedir = FileSaveAs->Dialog->FileName;
-  mp_active_table->set_file_namedir(file_namedir);
+  String file_namedir = FileSaveAs->Dialog->FileName;
+  //mp_active_table->set_file_namedir(file_namedir);
   mp_active_table->save_table_to_file(file_namedir.c_str());
   m_config_calibr.active_filename =
     m_file_name_service.make_relative_file_name(file_namedir);
-  // Сохраняем изменения конфигурации (изменен активный документ)
-  m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
+
+  irs::table_t<cell_config_calibr_t> saved_cells_config = m_config_calibr.cells_config;
+  if (!mp_active_table->is_cells_config_read_only()) {
+    m_config_calibr.cells_config = mp_active_table->get_cells_config();
+  }
+  // РЎРѕС…СЂР°РЅСЏРµРј РёР·РјРµРЅРµРЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё (РёР·РјРµРЅРµРЅ Р°РєС‚РёРІРЅС‹Р№ РґРѕРєСѓРјРµРЅС‚)
+  if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
+    DGI_MSG("РўРµРєСѓС‰Р°СЏ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃРїРµС€РЅРѕ СЃРѕС…СЂР°РЅРµРЅР°.");
+  } else {
+    if (!mp_active_table->is_cells_config_read_only()) {
+      m_config_calibr.cells_config = saved_cells_config;
+    }
+    DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё.");
+  }
   Caption = m_prog_name + String(irst(" - ")) + file_namedir;
 }
 //---------------------------------------------------------------------------
@@ -2670,13 +2985,14 @@ void __fastcall TDataHandlingF::FileSaveAsBeforeExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 {
-  if (!save_unsaved_changes_dialog()) {
+  if (!save_unsaved_changes_dialogs()) {
     return;
   }
   String filename;
   filename = mp_active_table->get_file_namedir();
   if(!filename.IsEmpty()) {
-    mp_active_table->load_table_from_file(filename.c_str());
+    mp_active_table->load_table_from_file(filename.c_str(),
+      m_inf_in_param, m_config_calibr.cells_config);
   } else {
     FileOpen->Execute();
   }
@@ -2685,16 +3001,22 @@ void __fastcall TDataHandlingF::FileReOpenExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::FileOpenAccept(TObject *Sender)
 {
-  if (!save_unsaved_changes_dialog()) {
+  if (!save_unsaved_changes_dialogs()) {
     return;
   }
-  String file_namedir;
-  file_namedir = FileOpen->Dialog->FileName;
-  mp_active_table->set_file_namedir(file_namedir);
-  mp_active_table->load_table_from_file(file_namedir.c_str());
-  m_config_calibr.active_filename =
-    m_file_name_service.make_relative_file_name(file_namedir);
-  // Сохраняем изменения конфигурации (изменен активный документ)
+  String file_namedir = FileOpen->Dialog->FileName;
+  //mp_active_table->set_file_namedir(file_namedir);
+  if (mp_active_table->load_table_from_file(file_namedir.c_str(),
+    m_inf_in_param, m_config_calibr.cells_config)) {
+
+    m_config_calibr.active_filename =
+      m_file_name_service.make_relative_file_name(file_namedir);
+  } else {
+    m_config_calibr.active_filename = irst("");
+    file_namedir = irst("");
+  }
+
+  // РЎРѕС…СЂР°РЅСЏРµРј РёР·РјРµРЅРµРЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё (РёР·РјРµРЅРµРЅ Р°РєС‚РёРІРЅС‹Р№ РґРѕРєСѓРјРµРЅС‚)
   m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
   Caption = m_prog_name + String(irst(" - "))+file_namedir;
 }
@@ -2767,44 +3089,44 @@ void __fastcall TDataHandlingF::SetJumpSmoothActionExecute(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::SetVoltDCMeasActionExecute(TObject *Sender)
 {
-  set_type_meas(tm_volt_dc);
+  //set_type_meas(tm_volt_dc);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetVoltACMeasActionExecute(TObject *Sender)
 {
-  set_type_meas(tm_volt_ac);
+  //set_type_meas(tm_volt_ac);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetCurrentDCMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_current_dc);
+  //set_type_meas(tm_current_dc);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetResistance2xMeasActionExecute(TObject *Sender)
 {
-  set_type_meas(tm_current_ac);
+  //set_type_meas(tm_current_ac);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::SetResistance4xMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_resistance_2x);
+  //set_type_meas(tm_resistance_2x);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::SetCurrentACMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_resistance_4x);
+  //set_type_meas(tm_resistance_4x);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::SetFrequencyMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_frequency);
+  //set_type_meas(tm_frequency);
 }
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::Button4Click(TObject *Sender)
@@ -2879,15 +3201,18 @@ void __fastcall TDataHandlingF::RawDataStringGridGetEditText(
 
 void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 {
-  if (!save_unsaved_changes_dialog()) {
+  if (!save_unsaved_changes_dialogs()) {
     return;
   }
 
-  if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
+  //if (!save_cells_config_if_need())
+   // return;
+  /*if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
     if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      DGI_MSG("Текущая конфигурация успешно сохранена.");
+      DGI_MSG("РўРµРєСѓС‰Р°СЏ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃРїРµС€РЅРѕ СЃРѕС…СЂР°РЅРµРЅР°.");
     }
-  }
+  }*/
+
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
   //config_form->set_path_program(m_path_prog);
   config_form->set_config_def();
@@ -2896,7 +3221,7 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
     int button_result = config_form->ShowModal();
     if (button_result == mrOk) {
       m_on_block_reconfiguration = true;
-      //перезагружаем список доступных конфигураций
+      //РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃРїРёСЃРѕРє РґРѕСЃС‚СѓРїРЅС‹С… РєРѕРЅС„РёРіСѓСЂР°С†РёР№
       String dir_config = m_file_name_service.get_config_dir();
       if (DirectoryExists(dir_config)) {
         load_config_calibr_to_display();
@@ -2914,7 +3239,7 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
       }
       load_config_calibr();
       bool forsed_connect = true;
-      // устанавливаем принудительно реконнект
+      // СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ СЂРµРєРѕРЅРЅРµРєС‚
       set_connect_if_enabled(forsed_connect);
     }
   }
@@ -2922,15 +3247,33 @@ void __fastcall TDataHandlingF::CreateConfigButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
 {
-  /*if (!save_unsaved_changes_dialog()) {
+  if (mp_active_table->is_cells_config_read_only()) {
+    MessageDlg(irst("Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РЅРµРІРѕР·РјРѕР¶РЅРѕ, С‚Р°Рє РєР°Рє С„Р°Р№Р» РґР°РЅРЅС‹С… Р±С‹Р» РѕС‚РєСЂС‹С‚ ")
+      irst("c РѕРїС†РёРµР№ \"РћС‚РєСЂС‹С‚СЊ Р±РµР· РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё\""),
+      mtInformation, TMsgDlgButtons() << mbOK, 0);
     return;
-  }*/
-
-  if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
-    if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
-      DGI_MSG("Текущая конфигурация успешно сохранена.");
-    }
   }
+
+  if (!save_unsaved_changes_dialogs()) {
+    return;
+  }
+
+  //if (!save_cells_config_if_need())
+    //return;
+  /*if (!m_cur_filename_conf_calibr_device.IsEmpty()) {
+    irs::table_t<cell_config_calibr_t> saved_cells_config = m_config_calibr.cells_config;
+    if (!mp_active_table->is_cells_config_read_only()) {
+      m_config_calibr.cells_config = mp_active_table->get_cells_config();
+    }
+    if (m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
+      DGI_MSG("РўРµРєСѓС‰Р°СЏ РєРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃРїРµС€РЅРѕ СЃРѕС…СЂР°РЅРµРЅР°.");
+    } else {
+      if (!mp_active_table->is_cells_config_read_only()) {
+        m_config_calibr.cells_config = saved_cells_config;
+      }
+      DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё.");
+    }
+  }*/
 
   irs::handle_t<TNewConfigF> config_form(new TNewConfigF(NULL, this));
   //config_form->set_path_program(m_path_prog);
@@ -2941,7 +3284,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
       int button_result = config_form->ShowModal();
       if (button_result == mrOk) {
         m_on_block_reconfiguration = true;
-        //перезагружаем список доступных конфигураций
+        //РїРµСЂРµР·Р°РіСЂСѓР¶Р°РµРј СЃРїРёСЃРѕРє РґРѕСЃС‚СѓРїРЅС‹С… РєРѕРЅС„РёРіСѓСЂР°С†РёР№
         String dir_config = m_file_name_service.get_config_dir();
         if (DirectoryExists(dir_config)) {
           load_config_calibr_to_display();
@@ -2959,7 +3302,7 @@ void __fastcall TDataHandlingF::EditConfigButtonClick(TObject *Sender)
         }
         load_config_calibr();
         const bool forsed_connect = true;
-        // устанавливаем принудительно реконнект
+        // СѓСЃС‚Р°РЅР°РІР»РёРІР°РµРј РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕ СЂРµРєРѕРЅРЅРµРєС‚
         set_connect_if_enabled(forsed_connect);
       }
     }
@@ -2990,7 +3333,7 @@ void __fastcall TDataHandlingF::FormClose(TObject *Sender,
   //save_cur_config_device();
 
   if (m_mode_program == mode_prog_single_channel) {
-    if (save_unsaved_changes_dialog()) {
+    if (save_unsaved_changes_dialogs()) {
       m_on_close_form_stat = true;
     } else {
       Action = caNone;
@@ -3004,6 +3347,10 @@ void __fastcall TDataHandlingF::FormClose(TObject *Sender,
 void __fastcall TDataHandlingF::WriteDataActionExecute(TObject *Sender)
 {
   if (m_calibr_data_stat == calibr_data_stat_off) {
+    if (!data_should_be_saved_dialog()) {
+      return;
+    }
+
     m_calibr_data_stat = calibr_data_stat_write;
   }
 }
@@ -3020,12 +3367,12 @@ void __fastcall TDataHandlingF::ConfigCBChange(TObject *Sender)
   const String new_selected_cfg = get_selected_config_filename();
   if (m_cur_filename_conf_calibr_device != new_selected_cfg) {
     m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str());
-    if (save_unsaved_changes_dialog()) {
+    if (save_unsaved_changes_dialogs()) {
       load_config_calibr();
       set_connect_if_enabled();
     } else {
-      // Возвращаем предыдущий выбранный конфиг, так как пользователь отменил
-      // действие
+      // Р’РѕР·РІСЂР°С‰Р°РµРј РїСЂРµРґС‹РґСѓС‰РёР№ РІС‹Р±СЂР°РЅРЅС‹Р№ РєРѕРЅС„РёРі, С‚Р°Рє РєР°Рє РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РѕС‚РјРµРЅРёР»
+      // РґРµР№СЃС‚РІРёРµ
       select_config(m_cur_index_conf_calibr);
     }
   }
@@ -3035,28 +3382,28 @@ void __fastcall TDataHandlingF::ConfigCBChange(TObject *Sender)
 
 void __fastcall TDataHandlingF::SetPhaseMeasActionExecute(TObject *Sender)
 {
-  set_type_meas(tm_phase);
+  //set_type_meas(tm_phase);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetPhaseAverageMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_phase_average);
+  //set_type_meas(tm_phase_average);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetTimeIntervalMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_time_interval);
+  //set_type_meas(tm_time_interval);
 }
 //---------------------------------------------------------------------------
 
 void __fastcall TDataHandlingF::SetTimeIntervalAverageMeasActionExecute(
       TObject *Sender)
 {
-  set_type_meas(tm_time_interval_average);
+  //set_type_meas(tm_time_interval_average);
 }
 
 
@@ -3065,7 +3412,7 @@ void __fastcall TDataHandlingF::SetTimeIntervalAverageMeasActionExecute(
 {
   device_mode_status_t device_mode_status = DM_BUSY;
   if (m_timer_delay_control.check()) {
-    m_log<<"Ждем установления рабочего режима.";
+    m_log<<"Р–РґРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.";
   }
   m_timer_delay_operating_duty.check();
   if ((m_timer_delay_control.stopped() == true) &&
@@ -3075,18 +3422,18 @@ void __fastcall TDataHandlingF::SetTimeIntervalAverageMeasActionExecute(
         if (on_reg_ready_back_cycle == true) {
           on_reg_ready_back_cycle = false;
           device_mode_status = DM_SUCCESS;
-          m_log << "Рабочий режим подтвержден.";
+          m_log << "Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј РїРѕРґС‚РІРµСЂР¶РґРµРЅ.";
         } else {
           on_reg_ready_back_cycle = true;
           m_timer_delay_operating_duty.set(m_delay_operating_duty);
-          m_log << "Рабочий режим установлен";
-          m_log << ("Ждем " + FloatToStr(
+          m_log << "Р Р°Р±РѕС‡РёР№ СЂРµР¶РёРј СѓСЃС‚Р°РЅРѕРІР»РµРЅ";
+          m_log << ("Р–РґРµРј " + FloatToStr(
             (CNT_TO_DBLTIME(m_delay_operating_duty))) +
-            " секунд.");
+            " СЃРµРєСѓРЅРґ.");
         }
       } else {
         if (on_reg_ready_back_cycle == true) {
-          m_log << "Происходит установление рабочего режима.";
+          m_log << "РџСЂРѕРёСЃС…РѕРґРёС‚ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёРµ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°.";
         }
         on_reg_ready_back_cycle = false;
       }
@@ -3099,11 +3446,11 @@ void TDataHandlingF::meas_execute()
 {
   m_value_meas.execute_meas(m_type_meas, &m_value_meas_multimetr);
   m_y_out = m_device.get_data()->y_out;
-  if (m_config_calibr.out_param_config_for_measurement.consider_out_param &&
-    m_config_calibr.out_param_config_for_measurement.out_param_filter_enabled) {
+  if (m_cur_cell_cfg.out_param_measuring_conf.consider_out_param &&
+    m_cur_cell_cfg.out_param_measuring_conf.filter_enabled) {
     m_y_out_filter.restart();
   }
-  //m_log << "Происходит измерение.";
+  //m_log << "РџСЂРѕРёСЃС…РѕРґРёС‚ РёР·РјРµСЂРµРЅРёРµ.";
 }
 
 meas_status_t TDataHandlingF::meas_status()
@@ -3111,9 +3458,9 @@ meas_status_t TDataHandlingF::meas_status()
   meas_status_t meas_status = meas_status_busy;
   meas_status = m_value_meas.get_status_meas();
   if(meas_status == meas_status_success) {
-    //m_log << "Измерение успешно завершено!";
+    //m_log << "РР·РјРµСЂРµРЅРёРµ СѓСЃРїРµС€РЅРѕ Р·Р°РІРµСЂС€РµРЅРѕ!";
   } else if(meas_status == meas_status_error) {
-    DGI_MSG("Измерение завершилось с ошибкой!");
+    DGI_MSG("РР·РјРµСЂРµРЅРёРµ Р·Р°РІРµСЂС€РёР»РѕСЃСЊ СЃ РѕС€РёР±РєРѕР№!");
   }
   return meas_status;
 }
@@ -3141,22 +3488,67 @@ void __fastcall TDataHandlingF::ModeProgramCBClick(TObject *Sender)
     mp_manager_channel->Visible = true;
   }
 }
+
+
+
+void TDataHandlingF::set_control_parameters(const cell_config_calibr_t& a_cell_cfg)
+{
+  out_param_measuring_conf_t out_param_cfg_for_meas = a_cell_cfg.out_param_measuring_conf;
+  m_y_out_filter.set_sampling_time(out_param_cfg_for_meas.filter_sampling_time);
+  m_y_out_filter.resize(out_param_cfg_for_meas.filter_point_count);
+
+  out_param_control_conf_t out_param_ctrl_cfg = a_cell_cfg.out_param_control_config;
+  if (out_param_ctrl_cfg.enabled) {
+    m_out_param_stability_control.set_stability_min_time(out_param_ctrl_cfg.time);
+  } else {
+    CurrentOutParamLabeledEdit->Text = String();
+    ReferenceOutParamLabeledEdit->Text = String();
+    AbsoluteDiffOutParamLabeledEdit->Text = String();
+    RemainingTimeForStableState->Text = String();
+  }
+
+  if (m_config_calibr.temperature_ctrl_common_cfg.enabled) {
+    temperature_control_config_t temperature_cfg = a_cell_cfg.temperature_control;
+    if (temperature_cfg.enabled) {
+      m_temperature_stability_control.set_reference(temperature_cfg.reference);
+      m_temperature_stability_control.set_diviation(temperature_cfg.difference);      
+      ReferenceTemperatureLabeledEdit->Text = FloatToStr(temperature_cfg.reference);
+      DifferenceTemperatureLabeledEdit->Text = FloatToStr(temperature_cfg.difference);
+    } else {
+      ReferenceTemperatureLabeledEdit->Text = String();
+      DifferenceTemperatureLabeledEdit->Text = String(); 
+    }
+  }
+}
+
+
+
 void TDataHandlingF::out_param(const param_cur_cell_t& a_param_cur_cell)
 {
   m_param_cur_cell = a_param_cur_cell;
   m_param_cur_cell.col_value.value =
-    m_param_cur_cell.col_value.value*m_config_calibr.in_parametr1.koef;
+    m_param_cur_cell.col_value.value*m_config_calibr.in_parameter1.koef;
   m_param_cur_cell.row_value.value =
-    m_param_cur_cell.row_value.value*m_config_calibr.in_parametr2.koef;
+    m_param_cur_cell.row_value.value*m_config_calibr.in_parameter2.koef;
   if(m_inf_in_param.number_in_param == THREE_PARAM){
     m_param_cur_cell.top_value.value =
-      m_param_cur_cell.top_value.value*m_config_calibr.in_parametr3.koef;
+      m_param_cur_cell.top_value.value*m_config_calibr.in_parameter3.koef;
   }
   m_on_out_data = true;
-  DGI_MSG("Установка параметров рабочего режима");
+  DGI_MSG("РЈСЃС‚Р°РЅРѕРІРєР° РїР°СЂР°РјРµС‚СЂРѕРІ СЂР°Р±РѕС‡РµРіРѕ СЂРµР¶РёРјР°");
   out_message_log_cur_param_cell(a_param_cur_cell);
 
 }
+
+
+void TDataHandlingF::out_default_param()
+{
+  m_param_cur_cell = m_default_param_cur_cell;
+  m_on_out_data = true;
+  DGI_MSG("РЈСЃС‚Р°РЅРѕРІРєР° РґРµС„РѕР»С‚РЅС‹С… РїР°СЂР°РјРµС‚СЂРѕРІ");
+}
+
+
 void TDataHandlingF::out_message_log_cur_param_cell(
   const param_cur_cell_t& a_param_cur_cell)
 {
@@ -3190,9 +3582,85 @@ void TDataHandlingF::out_message_log_cur_param_cell(
   }
   DGI_MSG(irs::str_conv<irs::string>(message_param));
 }
-bool TDataHandlingF::save_unsaved_changes_dialog()
+
+/*bool TDataHandlingF::save_unsaved_changes_dialogsold()
+{
+  // Р’РЅР°С‡Р°Р»Рµ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј СЃРѕС…СЂР°РЅРµРЅРёСЏ РёР·РјРµРЅРµРЅРёР№ РІ С‚Р°Р±Р»РёС†Рµ.
+  // Р•СЃР»Рё РёС… РЅРµ Р±С‹Р»Рѕ, С‚Рѕ Рё РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРё СЏС‡РµРµРє РЅРµ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РёР·РјРµРЅРµРЅРёР№ Рё
+  // С„СѓРЅРєС†РёСЏ save_cells_config_dialog РЅРёС‡РµРіРѕ РЅРµ Р±СѓРґРµС‚ РґРµР»Р°С‚СЊ
+
+  bool changes_were_forgotten = false;
+  if (!save_unsaved_data_changes_dialog(&changes_were_forgotten))
+    return false;
+
+  return changes_were_forgotten || save_cells_config_dialog();
+}*/
+
+bool TDataHandlingF::save_unsaved_changes_dialogs()
+{
+  if (!mp_active_table->have_unsaved_changes() && !cells_config_is_changed()) {
+    return true;
+  }
+
+  string_type message;
+  if (mp_active_table->have_unsaved_changes()) {
+    string_type filename =
+      irs::str_conv<string_type>(mp_active_table->get_file_namedir());
+    if (!filename.empty()) {
+      filename = string_type(irst(" \"")) + filename + irst("\"");
+    }
+
+    message = irst("РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РґР°РЅРЅС‹С…") + filename;
+  }
+
+  if (cells_config_is_changed()) {
+    if (message.empty()) {
+      message = irst("РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ РЅР°СЃС‚СЂРѕР№РєР°С… СЏС‡РµРµРє");
+    } else {
+      message += irst(" Рё РЅР°СЃС‚СЂРѕР№РєР°С… СЏС‡РµРµРє");
+    }
+  }
+
+  message += irst("?");
+
+  const string_type caption = irs::str_conv<string_type>(m_prog_name);
+
+  const int result = Application->MessageBox(message.c_str(), caption.c_str(),
+    MB_YESNOCANCEL + MB_ICONQUESTION);
+
+  switch (result) {
+
+    case mrYes: {
+      if (mp_active_table->have_unsaved_changes()) {
+        FileSave->Execute();
+      }
+
+      if (mp_active_table->have_unsaved_changes()) {
+        DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РґР°РЅРЅС‹С….");
+        return false;
+      } else {
+        return save_cells_config_if_need();
+      }
+
+    } break;
+
+    case mrNo: {
+      return true;
+    } break;
+
+    case mrCancel: {
+      return false;
+    } break;
+
+  }
+
+  return true;
+}
+
+/*bool TDataHandlingF::save_unsaved_data_changes_dialog()
 {
   bool fsuccess = true;
+
   if (mp_active_table->have_unsaved_changes()) {
 
     string_type filename =
@@ -3201,7 +3669,7 @@ bool TDataHandlingF::save_unsaved_changes_dialog()
       filename = string_type(irst(" \"")) + filename + irst("\"");
     }
     const string_type message =
-      irst("Сохранить изменения в таблице данных") + filename + irst("?");
+      irst("РЎРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РґР°РЅРЅС‹С…") + filename + irst("?");
 
     const string_type caption = irs::str_conv<string_type>(m_prog_name);
 
@@ -3215,6 +3683,7 @@ bool TDataHandlingF::save_unsaved_changes_dialog()
         int a = 0;
         FileSave->Execute();
         if (mp_active_table->have_unsaved_changes()) {
+          DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РґР°РЅРЅС‹С….");
           fsuccess = false;
         } else {
           fsuccess = true;
@@ -3229,7 +3698,97 @@ bool TDataHandlingF::save_unsaved_changes_dialog()
     } 
   }
   return fsuccess;
+}*/
+
+
+bool TDataHandlingF::save_cells_config_dialog()
+{
+  if (!save_cells_config_if_need()) {
+    string_type filename = irs::str_conv<string_type>(
+      m_cur_filename_conf_calibr_device);
+    if (!filename.empty()) {
+      filename = string_type(irst(" \"")) + filename + irst("\"");
+    }
+    const string_type message = string_type(
+      irst("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РЅР°СЃС‚СЂРѕРµРє СЏС‡РµРµРє ")) +
+      irst("РІ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ ") + filename + irst(". РџСЂРѕРґРѕР»Р¶РёС‚СЊ Р±РµР· СЃРѕС…СЂР°РЅРµРЅРёСЏ?");
+
+    const string_type caption = irs::str_conv<string_type>(m_prog_name);
+
+    const int result = Application->MessageBox(
+      message.c_str(),
+      caption.c_str(),
+      MB_YESNO + MB_ICONQUESTION);
+
+    switch (result) {
+      case mrYes: {
+        return true;
+      } break;
+      case mrNo: {
+        return false;
+      } break;
+    }  
+  }
+
+  return true;
 }
+
+
+bool TDataHandlingF::save_cells_config_if_need()
+{
+  irs::table_t<cell_config_calibr_t> saved_cells_config =
+    m_config_calibr.cells_config;
+  if (cells_config_is_changed()) {
+    m_config_calibr.cells_config = mp_active_table->get_cells_config();
+
+    if (!m_cur_filename_conf_calibr_device.IsEmpty() &&
+      m_config_calibr.save(m_cur_filename_conf_calibr_device.c_str())) {
+      DGI_MSG("РР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РЅР°СЃС‚СЂРѕРµРє СЏС‡РµРµРє СѓСЃРїРµС€РЅРѕ СЃРѕС…СЂР°РЅРµРЅС‹.");
+    } else {
+      m_config_calibr.cells_config = saved_cells_config;
+      DGI_MSG("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РёР·РјРµРЅРµРЅРёСЏ РІ С‚Р°Р±Р»РёС†Рµ РЅР°СЃС‚СЂРѕРµРє СЏС‡РµРµРє.");
+      return false;
+    }
+  }
+  return true;
+}
+
+
+bool TDataHandlingF::cells_config_is_changed() const
+{
+  if (!mp_active_table->is_cells_config_read_only() &&
+    m_config_calibr.cells_config != mp_active_table->get_cells_config()) {
+    return true;
+  }
+
+  return false;
+}
+
+
+bool TDataHandlingF::data_should_be_saved_dialog() const
+{
+  if (mp_active_table->is_cells_config_read_only()) {
+    MessageDlg(irst("РР·РјРµСЂРµРЅРёРµ РЅРµРІРѕР·РјРѕР¶РЅРѕ, С‚Р°Рє РєР°Рє С„Р°Р№Р» РґР°РЅРЅС‹С… Р±С‹Р» РѕС‚РєСЂС‹С‚ ")
+      irst("c РѕРїС†РёРµР№ \"РћС‚РєСЂС‹С‚СЊ Р±РµР· РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ РєРѕРЅС„РёРіСѓСЂР°С†РёРё\""),
+      mtInformation, TMsgDlgButtons() << mbOK, 0);
+    return false;
+  }
+
+  // РќРµ РїС‹С‚Р°РµРјСЃСЏ Р·РґРµСЃСЊ РІС‹Р·С‹РІР°С‚СЊ РґРёР°Р»РѕРіРё СЃРѕС…СЂР°РЅРµРЅРёСЏ РґР°РЅРЅС‹С…,
+  // С‚Р°Рє РєР°Рє РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РјРѕР¶РµС‚ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ СЃРѕС…СЂР°РЅРµРЅРёСЏ РґР°РЅРЅС‹С…, С‡С‚Рѕ РїРѕС‚СЂРµР±СѓРµС‚
+  // РїРµСЂРµР·Р°РіСЂСѓР·РєСѓ С„Р°Р№Р»Р°, С‡С‚Рѕ РёРЅРёС†РёРёСЂСѓРµС‚ РґРёР»РѕРі "РљРѕРЅС„Р»РёРєС‚ С‚Р°Р±Р»РёС†" Рё РѕРїСЏС‚СЊ РїСЂРёРґРµС‚СЃСЏ
+  // РїСЂРѕРІРµСЂСЏС‚СЊ is_cells_config_read_only
+  if (mp_active_table->have_unsaved_changes() || cells_config_is_changed()) {
+    MessageDlg(irst("РќРµРѕР±С…РѕРґРёРјРѕ СЃРѕС…СЂР°РЅРёС‚СЊ РґР°РЅРЅС‹Рµ РїРµСЂРµРґ РЅР°С‡Р°Р»РѕРј РёР·РјРµСЂРµРЅРёР№"),
+      mtInformation, TMsgDlgButtons() << mbOK, 0);
+    return false;
+  }
+
+  return true;
+}
+
+
+
 irs::matrix_t<cell_t> TDataHandlingF::get_sub_diapason_table_data(
   const int a_sub_diapason_index)
 {
@@ -3239,9 +3798,9 @@ irs::matrix_t<cell_t> TDataHandlingF::get_sub_diapason_table_data(
     return matrix;
   }*/
   const double value_begin =
-    m_config_calibr.v_sub_diapason_calibr[a_sub_diapason_index].value_begin;
+    m_config_calibr.eeprom_ranges[a_sub_diapason_index].value_begin;
   const double value_end =
-    m_config_calibr.v_sub_diapason_calibr[a_sub_diapason_index].value_end;
+    m_config_calibr.eeprom_ranges[a_sub_diapason_index].value_end;
 
   std::vector<irs::matrix_t<cell_t> > v_table =
     mp_active_table->read_table();
@@ -3279,13 +3838,13 @@ irs::matrix_t<cell_t> TDataHandlingF::get_sub_diapason_table_data(
         const int sub_diapason_col_count = value_end_index-value_begin_index+2;
         IRS_ASSERT(sub_diapason_col_count <= (value_end_index+1));
         sub_diapason.resize(sub_diapason_col_count, row_count);
-        // Копируем top_value
+        // РљРѕРїРёСЂСѓРµРј top_value
         sub_diapason[0][0] = static_cast<cell_t>(table[0][0]);
-        // Копируем row_value
+        // РљРѕРїРёСЂСѓРµРј row_value
         for (int row = 0; row < row_count; row++) {
           sub_diapason[0][row] = static_cast<cell_t>(table[0][row]);
         }
-        // Копируем все остальное
+        // РљРѕРїРёСЂСѓРµРј РІСЃРµ РѕСЃС‚Р°Р»СЊРЅРѕРµ
         for (int col = value_begin_index, col_sd = 1; col <= value_end_index;
           col++, col_sd++) {
           for (int row = 0; row < row_count; row++) {
@@ -3321,15 +3880,15 @@ irs::matrix_t<cell_t> TDataHandlingF::get_sub_diapason_table_data(
         const int sub_diapason_row_count = value_end_index-value_begin_index+2;
         IRS_ASSERT(sub_diapason_row_count <= (value_end_index+1));
         sub_diapason.resize(col_count, sub_diapason_row_count);
-        // Копируем top_value
+        // РљРѕРїРёСЂСѓРµРј top_value
         //#ifdef NOP
         sub_diapason[0][0] = static_cast<cell_t>(table[0][0]);
-        // Копируем col_value
+        // РљРѕРїРёСЂСѓРµРј col_value
         for (int col = 0; col < col_count; col++) {
           sub_diapason[col][0] = static_cast<cell_t>(table[col][0]);
         }
         //#ifdef NOP
-        // Копируем все остальное
+        // РљРѕРїРёСЂСѓРµРј РІСЃРµ РѕСЃС‚Р°Р»СЊРЅРѕРµ
         for (int col = 0; col < col_count; col++) {
           for (int row = value_begin_index, row_sd = 1; row <= value_end_index;
             row++, row_sd++) {
@@ -3362,16 +3921,16 @@ void TDataHandlingF::tick_calibr_data()
       m_process_calibr_data_stat = pcds_get_sub_diapason;
     } break;
     case pcds_get_sub_diapason: {
-      int sub_diapason_count = m_config_calibr.v_sub_diapason_calibr.size();
+      int sub_diapason_count = m_config_calibr.eeprom_ranges.size();
       if (m_cur_sub_diapason < sub_diapason_count) {
-        DGI_MSG("Обрабатывается диапазон №" << (m_cur_sub_diapason + 1));
+        DGI_MSG("РћР±СЂР°Р±Р°С‚С‹РІР°РµС‚СЃСЏ РґРёР°РїР°Р·РѕРЅ в„–" << (m_cur_sub_diapason + 1));
         irs::matrix_t<cell_t> sub_diapason =
           get_sub_diapason_table_data(m_cur_sub_diapason);
         calculation_koef(sub_diapason);
         m_index_pos_offset_eeprom =
-          m_config_calibr.v_sub_diapason_calibr[m_cur_sub_diapason].index_start;
+          m_config_calibr.eeprom_ranges[m_cur_sub_diapason].index_start;
         m_max_size_correct =
-          m_config_calibr.v_sub_diapason_calibr[m_cur_sub_diapason].size;
+          m_config_calibr.eeprom_ranges[m_cur_sub_diapason].size;
         if (m_calibr_data_stat == calibr_data_stat_write) {
           m_process_calibr_data_stat = pcds_write_sub_diapason;
         } else {
@@ -3379,7 +3938,7 @@ void TDataHandlingF::tick_calibr_data()
         }
       } else {
         m_process_calibr_data_stat = pcds_reset;
-        DGI_MSG("Обработка всех диапазонов завершена");
+        DGI_MSG("РћР±СЂР°Р±РѕС‚РєР° РІСЃРµС… РґРёР°РїР°Р·РѕРЅРѕРІ Р·Р°РІРµСЂС€РµРЅР°");
       }
     } break;
     case pcds_write_sub_diapason: {
@@ -3432,18 +3991,26 @@ void TDataHandlingF::modifi_table_data()
     }
   }
 }
-void TDataHandlingF::set_value_working_extra_params()
+void TDataHandlingF::set_value_working_extra_params(const coord_cell_t& a_coord)
 {
-  int parametr_ex_count = m_config_calibr.v_parametr_ex.size();
-  int extra_param_count = m_device.get_data()->v_extra_param.size();
+  if (!m_device.connected()) {
+    return;
+  }
+
+  const cell_config_calibr_t cell_config = get_cell_config(a_coord);
+
+  size_type parametr_ex_count = m_config_calibr.v_parameter_ex.size();
+  size_type extra_param_count = m_device.get_data()->v_extra_param.size();
   if (parametr_ex_count == extra_param_count) {
-    for (int i = 0; i < extra_param_count; i++) {
-      m_device.get_data()->v_extra_param[i] =
-        m_config_calibr.v_parametr_ex[i].value_working;
-      string_type value_working_str =
-        m_config_calibr.v_parametr_ex[i].value_working;
-      String message = m_config_calibr.v_parametr_ex[i].name;
-      message = message + irst(" установлен в ") + value_working_str.c_str();
+    IRS_ASSERT(extra_param_count == cell_config.ex_param_work_values.size());
+
+    for (size_type i = 0; i < extra_param_count; i++) {
+      m_device.get_data()->v_extra_param[i] = cell_config.ex_param_work_values[i];
+        //m_config_calibr.v_parameter_ex[i].value_working;
+      string_type value_working_str = cell_config.ex_param_work_values[i];
+        //m_config_calibr.v_parameter_ex[i].value_working;
+      String message = m_config_calibr.v_parameter_ex[i].name;
+      message = message + irst(" СѓСЃС‚Р°РЅРѕРІР»РµРЅ РІ ") + value_working_str.c_str();
       DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
@@ -3454,37 +4021,41 @@ void TDataHandlingF::set_value_default_extra_params()
   if (!m_device.connected()) {
     return;
   }
-  int parametr_ex_count = m_config_calibr.v_parametr_ex.size();
+  int parametr_ex_count = m_config_calibr.v_parameter_ex.size();
   int extra_param_count = m_device.get_data()->v_extra_param.size();
   if (parametr_ex_count == extra_param_count) {
     for (int i = 0; i < extra_param_count; i++) {
       m_device.get_data()->v_extra_param[i] =
-        m_config_calibr.v_parametr_ex[i].value_default ;
+        m_config_calibr.v_parameter_ex[i].value_default ;
       irs::string_t value_default_str =
-        m_config_calibr.v_parametr_ex[i].value_default;
-      String message = m_config_calibr.v_parametr_ex[i].name;
-      message = message + irst(" установлен в ") + value_default_str.c_str();
+        m_config_calibr.v_parameter_ex[i].value_default;
+      String message = m_config_calibr.v_parameter_ex[i].name;
+      message = message + irst(" СѓСЃС‚Р°РЅРѕРІР»РµРЅ РІ ") + value_default_str.c_str();
       DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
 }
 
-void TDataHandlingF::set_value_working_extra_bits()
+void TDataHandlingF::set_value_working_extra_bits(const coord_cell_t& a_coord)
 {
   if (!m_device.connected()) {
-    //m_log << "Устройство не подключено, не можем записать значения битов";
+    //m_log << "РЈСЃС‚СЂРѕР№СЃС‚РІРѕ РЅРµ РїРѕРґРєР»СЋС‡РµРЅРѕ, РЅРµ РјРѕР¶РµРј Р·Р°РїРёСЃР°С‚СЊ Р·РЅР°С‡РµРЅРёСЏ Р±РёС‚РѕРІ";
     return;
   }
-  int bit_type2_count = m_config_calibr.bit_type2_array.size();
-  int extra_bit_count = m_device.get_data()->v_extra_bit.size();
+
+  const cell_config_calibr_t cell_config = get_cell_config(a_coord);
+
+  size_type bit_type2_count = m_config_calibr.bit_type2_array.size();
+  size_type extra_bit_count = m_device.get_data()->v_extra_bit.size();
   if (bit_type2_count == extra_bit_count) {
-    for (int i = 0; i < extra_bit_count; i++) {
-      m_device.get_data()->v_extra_bit[i] =
-        m_config_calibr.bit_type2_array[i].value_working;
-      irs::string_t value_working_str =
-        m_config_calibr.bit_type2_array[i].value_working;
+    IRS_ASSERT(extra_bit_count == cell_config.ex_bit_work_values.size());
+
+    for (size_type i = 0; i < extra_bit_count; i++) {
+
+      m_device.get_data()->v_extra_bit[i] = cell_config.ex_bit_work_values[i];
+      irs::string_t value_working_str = cell_config.ex_bit_work_values[i];
       String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
-      message = message + irst(" установлен в ") + value_working_str.c_str();
+      message = message + irst(" СѓСЃС‚Р°РЅРѕРІР»РµРЅ РІ ") + value_working_str.c_str();
       DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
@@ -3492,7 +4063,7 @@ void TDataHandlingF::set_value_working_extra_bits()
 void TDataHandlingF::set_value_default_extra_bits()
 {
   if (!m_device.connected()) {
-    //m_log << "Устройство не подключено, не можем записать значения битов";
+    //m_log << "РЈСЃС‚СЂРѕР№СЃС‚РІРѕ РЅРµ РїРѕРґРєР»СЋС‡РµРЅРѕ, РЅРµ РјРѕР¶РµРј Р·Р°РїРёСЃР°С‚СЊ Р·РЅР°С‡РµРЅРёСЏ Р±РёС‚РѕРІ";
     return;
   }
   int bit_type2_count = m_config_calibr.bit_type2_array.size();
@@ -3505,7 +4076,7 @@ void TDataHandlingF::set_value_default_extra_bits()
       irs::string_t value_default_str =
         m_config_calibr.bit_type2_array[i].value_def;
       String message = m_config_calibr.bit_type2_array[i].bitname.c_str();
-      message = message + irst(" установлен в ") + value_default_str.c_str();
+      message = message + irst(" СѓСЃС‚Р°РЅРѕРІР»РµРЅ РІ ") + value_default_str.c_str();
       DGI_MSG(irs::str_conv<irs::string>(message));
     }
   }
@@ -3538,7 +4109,7 @@ void TDataHandlingF::load_main_device()
     load_main_device(config_name);
   } else {
     if (!config_name.IsEmpty()) {
-      DGI_MSG("Конфигурация устройства отсутствует");
+      DGI_MSG("РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃС‚СЂРѕР№СЃС‚РІР° РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚");
     }
   }
 }
@@ -3550,7 +4121,7 @@ void TDataHandlingF::load_ref_device()
     load_ref_device(config_name);
   } else {
     if (!config_name.IsEmpty()) {
-      DGI_MSG("Конфигурация устройства отсутствует");
+      DGI_MSG("РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ СѓСЃС‚СЂРѕР№СЃС‚РІР° РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚");
     }
   }
 }
@@ -4058,10 +4629,10 @@ void __fastcall TDataHandlingF::AutoUpdateChartActionExecute(
 void __fastcall TDataHandlingF::ExportTableToMExcelCsvFileActionExecute(
       TObject *Sender)
 {
-  SaveFileDialog->Filter = irst("Текстовые файлы Microsoft Excel (*.csv)")
-    irst("|*.csv|Все файлы (*.*)|*.*");
+  SaveFileDialog->Filter = irst("РўРµРєСЃС‚РѕРІС‹Рµ С„Р°Р№Р»С‹ Microsoft Excel (*.csv)")
+    irst("|*.csv|Р’СЃРµ С„Р°Р№Р»С‹ (*.*)|*.*");
   SaveFileDialog->DefaultExt = irst("csv");
-  SaveFileDialog->FileName = irst("Новый файл.csv");
+  SaveFileDialog->FileName = irst("РќРѕРІС‹Р№ С„Р°Р№Р».csv");
   if (SaveFileDialog->Execute()) {
     string_type file_name = SaveFileDialog->FileName.c_str();
     mp_active_table->save_table_to_microsoft_excel_csv_file(file_name);
@@ -4095,6 +4666,10 @@ void __fastcall TDataHandlingF::VerificationDataActionExecute(
       TObject *Sender)
 {
   if (m_calibr_data_stat == calibr_data_stat_off) {
+    if (!data_should_be_saved_dialog()) {
+      return;
+    }
+
     m_calibr_data_stat = calibr_data_stat_verify;
   }
 }
@@ -4189,15 +4764,19 @@ void __fastcall TDataHandlingF::ConnectionLogActionExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::DeleteConfigButtonClick(TObject *Sender)
 {
-  if (!save_unsaved_changes_dialog()) {
+  /*bool changes_were_forgotten = false;
+  if (!save_unsaved_data_changes_dialog(&changes_were_forgotten)) {
+    return;
+  } */
+  if (!save_unsaved_changes_dialogs()) {
     return;
   }
 
   const String config_name = get_selected_config();
   if (!config_name.IsEmpty()) {
     if (Application->MessageBox(
-      irst("Вы действительно хотите удалить конфигурацию?"),
-      irst("Вопрос"),  MB_OKCANCEL + MB_DEFBUTTON2 + MB_ICONQUESTION) ==
+      irst("Р’С‹ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ?"),
+      irst("Р’РѕРїСЂРѕСЃ"),  MB_OKCANCEL + MB_DEFBUTTON2 + MB_ICONQUESTION) ==
         IDOK) {
       delete_device_config(config_name);
     }
@@ -4253,6 +4832,50 @@ TDataHandlingF::make_mxmultimeter_assembly(
     make_assembly(a_device_type, a_device_name);
 }
 
+
+/*bool TDataHandlingF::are_displ_table_and_config_table_different() const
+{
+  bool are_headers_different = false;
+  
+  if (mp_active_table->col_count() ==
+      m_config_calibr.cells_config.get_col_count() &&
+    mp_active_table->row_count() ==
+      m_config_calibr.cells_config.get_row_count()) {
+
+    IRS_ASSERT(col_count() > 1 && row_count() > 1);
+
+    for (size_type col = 0; col < mp_active_table->col_count(); col++) {
+      cell_t displ_cell = mp_active_table->get_cell_table(col, 0);
+      cell_config_calibr_t cell_config =
+        m_config_calibr.cells_config.read_cell(col, 0);
+      if (displ_cell.init != cell_config.is_value_initialized ||
+        is_equals(displ_cell.value, cell_config.value)) {
+        are_headers_different = true;
+        break;
+      }
+    }
+
+    if (!are_headers_different) {
+      for (size_type row = 1; row < mp_active_table->row_count(); row++) {
+        cell_t displ_cell = mp_active_table->get_cell_table(0, row);
+        cell_config_calibr_t cell_config =
+          m_config_calibr.cells_config.read_cell(0, row);
+        if (displ_cell.init != cell_config.is_value_initialized ||
+          is_equals(displ_cell.value, cell_config.value)) {
+          are_headers_different = true;
+          break;
+        }
+      }  
+    }
+
+  } else {
+    are_headers_different = true;
+  }
+
+  return is_headers_different;
+}*/
+
+
 void __fastcall TDataHandlingF::ShowMeasPointChartActionExecute(TObject *Sender)
 {
   if (mp_meas_point_chart.is_empty()) {
@@ -4283,6 +4906,140 @@ void __fastcall TDataHandlingF::ParametersMenuItemClick(TObject *Sender)
 {
   ParametersForm->set_table(&mp_active_table);
   ParametersForm->Show();
+}
+//---------------------------------------------------------------------------
+
+
+
+void __fastcall TDataHandlingF::RawDataStringGridMouseActivate(TObject *Sender, TMouseButton Button,
+          TShiftState Shift, int X, int Y, int HitTest, TMouseActivate &MouseActivate)
+
+{
+  int ACol = 0;
+  int ARow = 0;
+  RawDataStringGrid->MouseToCell(X, Y, ACol, ARow);
+  on_select_cell(ACol, ARow, Shift);
+}
+//---------------------------------------------------------------------------
+
+
+
+void __fastcall TDataHandlingF::LockMeasCellsRangeActionExecute(TObject *Sender)
+{
+  if(!(LockMeasCellsRangeAction->Checked)){
+    try_to_lock_meas_cells_range();
+  } else {
+    LockMeasCellsRangeAction->Checked = false;
+    m_meas_cells_range = TRect(-1, -1, -1, -1);
+    RawDataStringGrid->Invalidate();
+  }
+}
+
+
+bool TDataHandlingF::try_to_lock_meas_cells_range()
+{
+  if (is_cells_range_valid(m_cells_range)) {
+    LockMeasCellsRangeAction->Checked = true;
+    m_meas_cells_range = m_cells_range;
+    RawDataStringGrid->Invalidate();
+    return true;
+  }
+
+  return false;
+}
+
+
+bool TDataHandlingF::lock_meas_cells_range_if_need()
+{
+  if (is_meas_cells_range_locked())
+    return true;
+
+  return try_to_lock_meas_cells_range();
+}
+
+
+
+bool TDataHandlingF::is_meas_cells_range_locked() const
+{
+  return LockMeasCellsRangeAction->Checked &&
+    is_cells_range_valid(m_meas_cells_range);
+}
+
+
+//
+bool TDataHandlingF::has_cells_out_param_ctrl_enabled() const
+{
+  const irs::table_t<cell_config_calibr_t>& table = m_config_calibr.cells_config;
+  for (size_type col_i = 1; col_i < table.get_col_count(); col_i++) {
+    for (size_type row_i = 1; row_i < table.get_row_count(); row_i++) {
+      const cell_config_calibr_t& cell = table.read_cell(col_i, row_i);
+      if (cell.out_param_control_config.enabled) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+//
+bool TDataHandlingF::is_cells_range_valid(const TRect& a_rect) const
+{
+  return irs::is_in_range<int>(a_rect.Left,
+      1, RawDataStringGrid->ColCount - 1 ) &&
+    irs::is_in_range<int>(a_rect.Top,
+      1, RawDataStringGrid->RowCount - 1 ) &&
+    irs::is_in_range<int>(a_rect.Right,
+      1, RawDataStringGrid->ColCount - 1 ) &&
+    irs::is_in_range<int>(a_rect.Bottom,
+      1, RawDataStringGrid->RowCount - 1 );
+}
+void __fastcall TDataHandlingF::AutoSaveMeasActionExecute(TObject *Sender)
+{
+  AutoSaveMeasAction->Checked = !AutoSaveMeasAction->Checked;
+  m_is_autosave_meas_enabled = AutoSaveMeasAction->Checked;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::CopyCellsConfligActionExecute(TObject *Sender)
+{
+  if (is_cells_range_valid(m_cells_range)) {
+    m_copied_cell_config.col = m_cells_range.Left;
+    m_copied_cell_config.row = m_cells_range.Top;
+    update_buttons_config();
+  }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::PasteCellsConfigActionExecute(TObject *Sender)
+{
+  coord_t coord;
+  coord.x = m_copied_cell_config.col;
+  coord.y = m_copied_cell_config.row;
+  mp_active_table->copy_cells_config(coord, m_cells_range);
+
+  if (ShowSameCellConfigsAction->Checked) {
+    RawDataStringGrid->Invalidate();
+  }
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TDataHandlingF::SelectAllCellsActionExecute(TObject *Sender)
+{
+  m_start_col = 1;
+  m_start_row = 1;
+  m_cells_range = TRect(1, 1, RawDataStringGrid->ColCount - 1,
+    RawDataStringGrid->RowCount - 1);
+  RawDataStringGrid->Invalidate();
+  update_buttons_config();
+}
+//-----------------------ShowSameCellConfigsActionExecute-------------------
+
+void __fastcall TDataHandlingF::ShowSameCellConfigsActionExecute(TObject *Sender)
+
+{
+  ShowSameCellConfigsAction->Checked = !ShowSameCellConfigsAction->Checked;
+  RawDataStringGrid->Invalidate();
 }
 //---------------------------------------------------------------------------
 

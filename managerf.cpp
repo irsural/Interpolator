@@ -488,51 +488,76 @@ void TManagerDGIF::meas_tick()
     if (m_cur_ref_channel != IRS_NULL) {
       bool on_auto_meas = m_cur_ref_channel->is_auto_meas_running();
       if (on_auto_meas != m_on_auto_meas_previous_value) {
-        for (int channel = 0; channel < m_channel_count; channel++) {
+        if (!on_auto_meas) {
+          set_extra_param_default_values();
+        }
+
+
+        /*for (int channel = 0; channel < m_channel_count; channel++) {
           if ((*mv_channels[channel]).get() != IRS_NULL) {
+            coord_cell_t coord_cell =
+              m_cur_ref_channel->get_coord_cur_cell_meas();
             if (on_auto_meas) {
               m_on_control_wait_mode_setting = false;
-              (*mv_channels[channel])->set_value_working_extra_params();
+              (*mv_channels[channel])->set_value_working_extra_params(coord_cell);
               (*mv_channels[channel])->set_value_working_extra_bits();
             } else {
               (*mv_channels[channel])->set_value_default_extra_params();
               (*mv_channels[channel])->set_value_default_extra_bits();
             }
           }
-        }
+        }*/
       }
+
       m_on_auto_meas_previous_value = on_auto_meas;
       if (on_auto_meas) {
         status_process_meas_t status_process_meas =
           m_cur_ref_channel->get_status_process_meas();
         switch (status_process_meas) {
+
+          case spb_wait_ext_trig_set_apply_params_and_bits: {
+            m_on_control_wait_mode_setting = false;
+            set_extra_param_and_bit_work_values(m_cur_ref_channel->get_coord_cur_cell_meas());
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
+          } break;
+
+          case spm_wait_ext_trig_off_signal: {
+            set_default_param_channels();
+            set_extra_param_and_bit_default_values();
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
+          } break;
+
           case spm_wait_ext_trig_set_range: {
             coord_cell_t coord_cell =
               m_cur_ref_channel->get_coord_cur_cell_meas();
             param_cur_cell_t param_cur_cell =
               m_cur_ref_channel->get_param_cell(coord_cell.col, coord_cell.row);
             set_param_channels(param_cur_cell);
-            m_cur_ref_channel->exec_ext_trig_process_meas(spm_set_range);
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
           } break;
+
           case spm_wait_ext_trig_control_wait_mode_setting: {
             set_phase_preset_channels();
-            m_cur_ref_channel->exec_ext_trig_process_meas(
-              spm_control_wait_mode_setting);
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
             m_timer_delay_filter_preset.start();
             m_on_control_wait_mode_setting = true;
           } break;
+
           case spm_wait_external_trig_meas: {
             m_on_control_wait_mode_setting = false;
             processing_data();
-            m_cur_ref_channel->exec_ext_trig_process_meas(spm_execute_meas);
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
           } break;
+
           case spm_wait_external_trig_processing_data: {
-            m_cur_ref_channel->exec_ext_trig_process_meas(spm_processing_data);
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
           } break;
+
           case spm_wait_ext_trig_process_data_to_next_elem: {
             processing_data();
-            m_cur_ref_channel->exec_ext_trig_process_meas(spm_jump_next_elem);
+            m_cur_ref_channel->exec_ext_trig_process_meas(status_process_meas);
           } break;
+
         }
         /*if (on_mode_wait_external_treg) {
            processing_data();
@@ -1015,6 +1040,43 @@ void __fastcall TManagerDGIF::ModePhaseCurrentRBClick(TObject *Sender)
   }
 }
 
+
+
+void TManagerDGIF::set_extra_param_and_bit_work_values(const coord_cell_t& a_coord_cell)
+{
+  for (int channel = 0; channel < m_channel_count; channel++) {
+    if ((*mv_channels[channel]).get() != IRS_NULL) {
+        (*mv_channels[channel])->set_value_working_extra_params(a_coord_cell);
+        (*mv_channels[channel])->set_value_working_extra_bits(a_coord_cell);
+    }
+  }
+}
+
+
+void TManagerDGIF::set_extra_param_and_bit_default_values()
+{
+  for (int channel = 0; channel < m_channel_count; channel++) {
+    if ((*mv_channels[channel]).get() != IRS_NULL) {
+        (*mv_channels[channel])->set_value_default_extra_params();
+        (*mv_channels[channel])->set_value_default_extra_bits();
+    }
+  }
+}
+
+
+
+void TManagerDGIF::set_extra_param_default_values()
+{
+  for (int channel = 0; channel < m_channel_count; channel++) {
+    if ((*mv_channels[channel]).get() != IRS_NULL) {      
+      (*mv_channels[channel])->set_value_default_extra_params();
+      (*mv_channels[channel])->set_value_default_extra_bits();
+    }
+  }
+}
+
+
+
 void TManagerDGIF::set_param_channels(const param_cur_cell_t& a_param_cur_cell)
 {
   const TDataHandlingF* const m_cur_ref_channel = get_ptr_ref_channel();
@@ -1044,6 +1106,19 @@ void TManagerDGIF::set_param_channels(const param_cur_cell_t& a_param_cur_cell)
     mp_channel_6->out_param(a_param_cur_cell);
   }
 }
+
+
+void TManagerDGIF::set_default_param_channels()
+{
+  for (int channel = 0; channel < m_channel_count; channel++) {
+    if ((*mv_channels[channel]).get() != IRS_NULL) {      
+      (*mv_channels[channel])->out_default_param();
+    }
+  }
+}
+
+
+
 void TManagerDGIF::set_phase_preset_channels()
 {
   const TDataHandlingF* const m_cur_ref_channel = get_ptr_ref_channel();
@@ -1163,7 +1238,7 @@ void __fastcall TManagerDGIF::FormCloseQuery(TObject *Sender, bool &CanClose)
     for (size_t i = 0; i < mv_channels.size(); i++) {
       if (!mv_channels[i]->is_empty()) {
         TDataHandlingF* data_handing = mv_channels[i]->get();
-        if (!data_handing->save_unsaved_changes_dialog()) {
+        if (!data_handing->save_unsaved_changes_dialogs()) {
           CanClose = false;
           break;
         }

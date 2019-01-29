@@ -61,9 +61,8 @@ __published:	// IDE-managed Components
   TCSpinEdit *ParamsExCSpinEdit;
   TLabel *Label4;
   TGroupBox *MultimeterSettingsGroupBox;
-  TLabeledEdit *MeasRangeKoefLabeledEdit;
   TGroupBox *GroupBox2;
-  TCheckBox *TemperatureControlCheckBox;
+  TCheckBox *TemperatureControlVariableCheckBox;
   TLabeledEdit *TemperatureVariableIndexByteLabeledEdit;
   TLabeledEdit *ReferenceTemperetureLabeledEdit;
   TLabeledEdit *DifferenceTemperatureLabeledEdit;
@@ -95,6 +94,11 @@ __published:	// IDE-managed Components
   TLabel *DeviceNameLabel;
   TGroupBox *DevideGroupBox;
   TGroupBox *RefDeviceGroupBox;
+  TPanel *Panel1;
+  TLabel *CellsRangeLabel;
+  TCheckBox *TemperatureControlCheckBox;
+  TCheckBox *RangeCheckBox;
+  TEdit *RangeEdit;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);
@@ -109,7 +113,7 @@ __published:	// IDE-managed Components
           int ARow, TRect &Rect, TGridDrawState State);
   void __fastcall ListParameterSGSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
-  void __fastcall TemperatureControlCheckBoxClick(TObject *Sender);
+  void __fastcall TemperatureControlVariableCheckBoxClick(TObject *Sender);
   void __fastcall ConsiderOutParameterForMeasurementCheckBoxClick(
           TObject *Sender);
   void __fastcall OutParameterFilterCheckBoxClick(TObject *Sender);
@@ -121,6 +125,8 @@ __published:	// IDE-managed Components
   void __fastcall DeviceNameComboBoxChange(TObject *Sender);
   void __fastcall RefDeviceNameComboBoxChange(TObject *Sender);
   void __fastcall RefDeviceComboBoxChange(TObject *Sender);
+  void __fastcall TemperatureControlCheckBoxClick(TObject *Sender);
+  void __fastcall RangeCheckBoxClick(TObject *Sender);
 private:	// User declarations
   typedef std::size_t size_type;
   typedef irs::string_t string_type;
@@ -135,6 +141,7 @@ private:	// User declarations
   const String m_device_options_section;
 
   config_calibr_t m_config_calibr;
+  irs::rect_t m_cells_range;
   String m_name_config;
 
   edit_mode_t m_edit_mode;

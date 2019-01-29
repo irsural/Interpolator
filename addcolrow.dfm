@@ -1,9 +1,9 @@
 object AddCorRowF: TAddCorRowF
   Left = 370
   Top = 290
-  Width = 635
-  Height = 358
   Caption = #1044#1086#1073#1072#1074#1083#1077#1085#1080#1077' '#1089#1090#1086#1083#1073#1094#1086#1074' '#1080' '#1089#1090#1088#1086#1082
+  ClientHeight = 334
+  ClientWidth = 607
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,11 +19,12 @@ object AddCorRowF: TAddCorRowF
   object GroupBox1: TGroupBox
     Left = 0
     Top = 0
-    Width = 627
+    Width = 607
     Height = 81
     Align = alTop
     Caption = #1052#1077#1089#1090#1086' '#1074#1089#1090#1072#1074#1082#1080
     TabOrder = 0
+    ExplicitWidth = 619
     object ColLabeledE: TLabeledEdit
       Left = 10
       Top = 35
@@ -32,8 +33,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 42
       EditLabel.Height = 13
       EditLabel.Caption = #1057#1090#1086#1083#1073#1077#1094
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 0
       Text = '2'
     end
@@ -45,8 +44,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 36
       EditLabel.Height = 13
       EditLabel.Caption = #1057#1090#1088#1086#1082#1072
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 1
       Text = '2'
     end
@@ -54,7 +51,7 @@ object AddCorRowF: TAddCorRowF
   object GroupBox2: TGroupBox
     Left = 0
     Top = 81
-    Width = 627
+    Width = 607
     Height = 216
     Align = alTop
     Caption = #1044#1086#1073#1072#1074#1083#1077#1085#1080#1103' '#1089#1090#1086#1083#1073#1094#1086#1074' '#1080' '#1089#1090#1088#1086#1082
@@ -65,6 +62,7 @@ object AddCorRowF: TAddCorRowF
     Font.Style = []
     ParentFont = False
     TabOrder = 1
+    ExplicitWidth = 619
     object NameTypeStepColLabel: TLabel
       Left = 500
       Top = 55
@@ -105,8 +103,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 87
       EditLabel.Height = 13
       EditLabel.Caption = #1053#1072#1095#1072#1083#1100#1085#1086#1077' '#1095#1080#1089#1083#1086
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 2
       Text = '1'
     end
@@ -118,8 +114,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 80
       EditLabel.Height = 13
       EditLabel.Caption = #1050#1086#1085#1077#1095#1085#1086#1077' '#1095#1080#1089#1083#1086
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 3
       Text = '2'
     end
@@ -131,8 +125,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 79
       EditLabel.Height = 13
       EditLabel.Caption = #1064#1072#1075' '#1080#1079#1084#1077#1085#1077#1085#1080#1103
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 4
       Text = '1'
     end
@@ -144,8 +136,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 87
       EditLabel.Height = 13
       EditLabel.Caption = #1053#1072#1095#1072#1083#1100#1085#1086#1077' '#1095#1080#1089#1083#1086
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 5
       Text = '1'
     end
@@ -157,8 +147,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 80
       EditLabel.Height = 13
       EditLabel.Caption = #1050#1086#1085#1077#1095#1085#1086#1077' '#1095#1080#1089#1083#1086
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 6
       Text = '2'
     end
@@ -170,8 +158,6 @@ object AddCorRowF: TAddCorRowF
       EditLabel.Width = 79
       EditLabel.Height = 13
       EditLabel.Caption = #1064#1072#1075' '#1080#1079#1084#1077#1085#1077#1085#1080#1103
-      LabelPosition = lpAbove
-      LabelSpacing = 3
       TabOrder = 7
       Text = '1'
     end
@@ -185,7 +171,6 @@ object AddCorRowF: TAddCorRowF
       Font.Height = -11
       Font.Name = 'MS Sans Serif'
       Font.Style = []
-      ItemHeight = 13
       ItemIndex = 0
       ParentFont = False
       TabOrder = 8
@@ -200,7 +185,6 @@ object AddCorRowF: TAddCorRowF
       Top = 160
       Width = 100
       Height = 21
-      ItemHeight = 13
       TabOrder = 9
       Text = #1058#1080#1087' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
       Items.Strings = (
@@ -219,8 +203,8 @@ object AddCorRowF: TAddCorRowF
     OnClick = OKButtonClick
   end
   object CloseFormButton: TButton
-    Left = 552
-    Top = 304
+    Left = 525
+    Top = 303
     Width = 75
     Height = 25
     Caption = #1047#1072#1082#1088#1099#1090#1100

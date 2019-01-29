@@ -8,16 +8,17 @@
 
 //---------------------------------------------------------------------------
 USEFORM("modifidatatable.cpp", ModifiDataTableF);
+USEFORM("newconfig.cpp", NewConfigF);
 USEFORM("managerf.cpp", ManagerDGIF);
 USEFORM("showmessages.cpp", MessagesForm);
-USEFORM("newconfig.cpp", NewConfigF);
+USEFORM("parameters.cpp", ParametersForm);
 USEFORM("About.cpp", AboutForm);
 USEFORM("addcolrow.cpp", AddCorRowF);
 USEFORM("datahandling.cpp", DataHandlingF);
 USEFORM("copytable.cpp", CopyTableForm);
 USEFORM("comparison.cpp", ComparsionDataForm);
 USEFORM("connectionlog.cpp", ConnectionLogForm);
-USEFORM("parameters.cpp", ParametersForm);
+USEFORM("configtableconflict.cpp", ConfigTableConflictF);
 //---------------------------------------------------------------------------
 int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {

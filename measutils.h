@@ -66,8 +66,8 @@ public:
   ~value_meas_t();
   //inline int set_connect_multimetr(type_multimetr_t a_type_multimetr,
     //multimeter_mode_type_t a_multimeter_mode_type);
-  inline void set_connect_multimetr(mxmultimeter_t* ap_mxmultimeter);
-  inline void disconnect_multimetr();
+  inline void set_connect_multimeter(mxmultimeter_t* ap_mxmultimeter);
+  inline void disconnect_multimeter();
   inline void execute_meas(const type_meas_t a_type_meas, double* ap_value);
   inline void abort_meas();
   inline void set_range(const type_meas_t a_type_meas, const double a_range);
@@ -118,7 +118,7 @@ public:
   }
   return 0;
 }*/
-inline void value_meas_t::set_connect_multimetr(mxmultimeter_t* ap_mxmultimeter)
+inline void value_meas_t::set_connect_multimeter(mxmultimeter_t* ap_mxmultimeter)
 {
   m_multimeter = ap_mxmultimeter;
 
@@ -131,7 +131,7 @@ inline void value_meas_t::set_connect_multimetr(mxmultimeter_t* ap_mxmultimeter)
     m_on_connect_multimetr = false;
   }
 }
-inline void value_meas_t::disconnect_multimetr()
+inline void value_meas_t::disconnect_multimeter()
 {
   /*if (!m_multimeter.is_empty()) {
     m_multimeter->abort();

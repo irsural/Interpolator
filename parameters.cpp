@@ -444,11 +444,11 @@ void TParametersForm::out_to_string_grid(
         int green = 150 + static_cast<int>(105*ratio);
         int red = 255;
 
-        TColor color = (blue << 16) | (green << 8) | red;
+        TColor color = static_cast<TColor>((blue << 16) | (green << 8) | red);
         m_table_colors.write_cell(c, r, color);
 
       } else {
-        m_table_colors.write_cell(c, r, 0xFFFFFF);
+        m_table_colors.write_cell(c, r, static_cast<TColor>(0xFFFFFF));
       }
     }
   }

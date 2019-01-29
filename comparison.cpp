@@ -157,7 +157,7 @@ void TComparsionDataForm::update_color()
 
   IRS_LIB_ASSERT(colors.size() == m_color_edits.size());
 
-  for (int i = 0; i < m_color_edits.size(); i++) {
+  for (size_t i = 0; i < m_color_edits.size(); i++) {
     m_color_edits[i]->Color = colors[i];
   }
 
@@ -205,11 +205,11 @@ void TComparsionDataForm::update_color()
             int green = 150 + static_cast<int>(105*ratio);
             int red = 255;
 
-            TColor color = (blue << 16) | (green << 8) | red;
+            TColor color = static_cast<TColor>((blue << 16) | (green << 8) | red);
             m_table_colors.write_cell(c, r, color);
 
           } else {
-            m_table_colors.write_cell(c, r, 0xFFFFFF);
+            m_table_colors.write_cell(c, r, static_cast<TColor>(0xFFFFFF));
           }
         } else {
 
@@ -270,8 +270,8 @@ void __fastcall TComparsionDataForm::StringGridDrawCell(TObject *Sender, int ACo
   if ((ACol == 0) || (ARow == 0)) {
     return;
   }
-  if ((m_table_colors.get_col_count() < StringGrid->ColCount) &&
-    (m_table_colors.get_row_count() < StringGrid->RowCount)) {
+  if ((static_cast<int>(m_table_colors.get_col_count()) < StringGrid->ColCount) ||
+    (static_cast<int>(m_table_colors.get_row_count()) < StringGrid->RowCount)) {
     return;
   }
 

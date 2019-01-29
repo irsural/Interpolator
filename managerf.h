@@ -184,7 +184,11 @@ private:
     const double a_value_out_param);
   void processing_data_phase_cur_channel(
     TDataHandlingF* a_channel, const coord_cell_t& a_coord_cur_cell);
+  void set_extra_param_and_bit_work_values(const coord_cell_t& a_coord_cur_cell);
+  void set_extra_param_and_bit_default_values();
+  void set_extra_param_default_values();
   void set_param_channels(const param_cur_cell_t& a_param_cur_cell);
+  void set_default_param_channels();
   void set_phase_preset_channels();
   double filter_phase_normalize(double a_value);
 };

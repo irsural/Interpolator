@@ -9,10 +9,12 @@
 #include <tstlan5lib.h>
 
 #include "servisfunction.h"
+#include "configtableconflict.h"
 
 #include <irsfinal.h>
 
 
+const double epsion = 1e-15;
 const double not_a_number = 2e300;
 //---------------------------------------------------------------------------
 //table_string_grid_t
@@ -77,6 +79,11 @@ int table_string_grid_t::col()
 int table_string_grid_t::row()
 {
   return mp_table->Row;
+}
+irs::rect_t table_string_grid_t::selection() const
+{
+  TGridRect r = mp_table->Selection;
+  return irs::rect_t(r.Left, r.Top, r.Right, r.Bottom);
 }
 void table_string_grid_t::set_col(const int a_col)
 {
@@ -188,6 +195,8 @@ table_data_t::table_data_t(display_table_t* ap_display_table,
   m_cur_row(0),
   m_cur_table(0),
   m_inf_in_param(),
+  m_cells_config(),
+  m_is_cells_config_read_only(false),
   m_table_modifi_stat(false)
 { 
   irs:: matrix_t<cell_t> matrix(2,2);
@@ -288,6 +297,17 @@ void table_data_t::cur_cell_in_display()
         cell.value = cur_cell.value;
         cell.init = cur_cell.init;
         mv_table[i][cur_col][cur_row] = cell;
+
+        if (!m_is_cells_config_read_only && i == 0) {
+          IRS_ASSERT(m_cells_config.get_col_count() ==
+            static_cast<size_type>(mv_table[0].col_count()));
+          IRS_ASSERT(m_cells_config.get_row_count() ==
+            static_cast<size_type>(mv_table[0].row_count()));
+          cell_config_calibr_t cell_cfg;
+          cell_cfg.is_value_initialized = cur_cell.init;
+          cell_cfg.value = cur_cell.value;
+          m_cells_config.write_cell(cur_col, cur_row, cell_cfg);
+        }
       }
     } else {
       cell_t cell = mv_table[cur_table][cur_col][cur_row];
@@ -370,21 +390,38 @@ table_data_t::string_type table_data_t::get_cell_display_variable_precision(
   }
   return value;
 }
+
 void table_data_t::create_col_table()
 {
   const int create_col_count = 1;
   int cur_col = mp_display_table->col();
-  if (cur_col != 0){
-    int table_count = mv_table.size();
+  int cur_row = mp_display_table->row();
+  int table_count = mv_table.size();
+  if (table_count > 0 && cur_col > 0 && cur_row > 0) {
     cell_t cell;
     cell.value = 0;
     cell.init = false;
-    for(int i = 0; i < table_count; i++){
+    for (int i = 0; i < table_count; i++) {
       mv_table[i].newcols(cur_col, create_col_count, cell);
     }
     mp_display_table->out_display(mv_table, m_inf_in_param);
+
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.set_col_count(mv_table[0].col_count());
+
+      for (size_type col = m_cells_config.get_col_count() - 1;
+        col > static_cast<size_type>(cur_col); col--) {
+
+        for (size_type row = 0; row < m_cells_config.get_row_count(); row++) {
+          cell_config_calibr_t cell_config = m_cells_config.read_cell(col - 1, row);
+          m_cells_config.write_cell(col, row, cell_config);
+        }
+      }
+      m_cells_config.write_cell(cur_col, 0, cell_config_calibr_t());
+    }
   }
 }
+
 void table_data_t::create_group_col_table(
   double a_num_begin,
   double a_num_finite,
@@ -401,72 +438,117 @@ void table_data_t::create_group_col_table(
   long double count = 0;
   select_col = mp_display_table->col();
   previous_col_count = mv_table[0].col_count();
-  if(select_col < 1)
+  if (select_col < 1)
     select_col = 1;
-  //вычисляем количество добовляемых столбцов
-  if(a_type_step_col == INCREMENT_STEP)
-    count = (a_num_finite-a_num_begin)/a_step+1;
-  else if(a_type_step_col == DECREMENT_STEP)
-    count = (a_num_begin-a_num_finite)/a_step+1;
-  else if(a_type_step_col == MULTIPLIER_STEP)
-    count = 1+logl(a_num_finite/a_num_begin)/logl(a_step);
-  if(count < 2){ new_col_count = 2;
-  }else{
+  // вычисляем количество добовляемых столбцов
+  if (a_type_step_col == INCREMENT_STEP)
+    count = (a_num_finite - a_num_begin) / a_step + 1;
+  else if (a_type_step_col == DECREMENT_STEP)
+    count = (a_num_begin - a_num_finite) / a_step + 1;
+  else if (a_type_step_col == MULTIPLIER_STEP)
+    count = 1 + logl(a_num_finite / a_num_begin) / logl(a_step);
+  if (count < 2) {
+    new_col_count = 2;
+  } else {
     integer_part_count = count;
-    if(count-integer_part_count < m_min_fractional_part_count)
+    if (count - integer_part_count < m_min_fractional_part_count)
       new_col_count = integer_part_count;
     else
       new_col_count = integer_part_count + 1;
   }
   all_col_count = previous_col_count + new_col_count;
-  if(all_col_count <= m_max_col_count){
+  if (all_col_count <= m_max_col_count && !mv_table.empty()) {
     unsigned int size = mv_table.size();
     cell_t cell;
     cell.value = 0;
     cell.init = true;
     //заполняем шапку таблицы новыми значениями
-    for(unsigned int i = 0; i < size; i++){
+    for (unsigned int i = 0; i < size; i++){
       cur_number_x = a_num_begin;
       mv_table[i].newcols(select_col, new_col_count, cell);
-      for(int x = select_col; x < select_col+new_col_count-1; x++){
+      for (int x = select_col; x < select_col + new_col_count - 1; x++) {
         cell.value = cur_number_x;
         mv_table[i][x][0] = cell;
-        if(a_type_step_col == INCREMENT_STEP)
-          cur_number_x = cur_number_x+a_step;
-        else if(a_type_step_col == DECREMENT_STEP)
-          cur_number_x = cur_number_x-a_step;
-        else if(a_type_step_col == MULTIPLIER_STEP)
+        if (a_type_step_col == INCREMENT_STEP)
+          cur_number_x = cur_number_x + a_step;
+        else if (a_type_step_col == DECREMENT_STEP)
+          cur_number_x = cur_number_x - a_step;
+        else if (a_type_step_col == MULTIPLIER_STEP)
           cur_number_x = cur_number_x*a_step;
       }
       cell.value = a_num_finite;
-      mv_table[i][select_col+new_col_count-1][0] = cell;
+      mv_table[i][select_col+new_col_count - 1][0] = cell;
     }
     mp_display_table->out_display(mv_table, m_inf_in_param);
+
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.set_col_count(mv_table[0].col_count());
+
+      // Сдвигаем настройки ячеек вправо, на количество вставленных столбцов
+      for (size_type col = m_cells_config.get_col_count() - 1;
+        col > static_cast<size_type>(select_col + new_col_count); col--) {
+
+        for (size_type row = 0; row < m_cells_config.get_row_count(); row++) {
+          cell_config_calibr_t cell_config =
+            m_cells_config.read_cell(col - new_col_count, row);
+          m_cells_config.write_cell(col, row, cell_config);
+        }
+      }
+
+      // В новые столбцы записываем выделенный столбец
+      for (size_type col = select_col + 1;
+        col < static_cast<size_type>(select_col + new_col_count); col++) {
+
+        for (size_type row = 0; row < m_cells_config.get_row_count(); row++) {
+          cell_config_calibr_t cell_config =
+            m_cells_config.read_cell(select_col, row);
+          m_cells_config.write_cell(col, row, cell_config);
+        }
+      }
+
+      for (size_type col = select_col;
+        col < static_cast<size_type>(select_col + new_col_count); col++) {
+
+        cell_t cell = mv_table[0][col][0];
+
+        cell_config_calibr_t cell_config;
+        cell_config.is_value_initialized = cell.init;
+        cell_config.value = cell.value;
+        m_cells_config.write_cell(col, 0, cell_config);
+      }
+    }
   }               
 }
+
 void table_data_t::delete_col_table()
 {
   int cur_col = 0;
   cur_col = mp_display_table->col();
-  if(cur_col > 0)
+  if (cur_col > 0)
   {
     int table_count = mv_table.size();
-    if(table_count > 0){
-      if(mv_table[0].col_count() > 2){
-        for(int i = 0; i < table_count; i++){
+    if (table_count > 0) {
+      if (mv_table[0].col_count() > 2){
+        for (int i = 0; i < table_count; i++){
           mv_table[i].delcols(cur_col, cur_col);
         }
         mp_display_table->out_display(mv_table, m_inf_in_param);
       }
     }
+
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.col_erase(cur_col);
+    }
   }
 }
+
 void table_data_t::create_row_table()
 {
   const create_row_count = 1;
+  int cur_col_displ = mp_display_table->col();
   int cur_row_displ = mp_display_table->row();
   int table_count = mv_table.size();
-  if(table_count > 0){
+  if(table_count > 0 && cur_col_displ > 0 && cur_row_displ > 0 ) {
     int row_count = mv_table[0].row_count();
     div_t val = div(cur_row_displ, row_count);
     int cur_row = val.rem;
@@ -478,9 +560,24 @@ void table_data_t::create_row_table()
         mv_table[i].newrows(cur_row, create_row_count, cell);
       }
     }
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.set_row_count(mv_table[0].row_count());
+      for (size_type col = 0;
+        col < static_cast<size_type>(m_cells_config.get_col_count()); col++) {
+
+        for (size_type row = m_cells_config.get_row_count() - 1;
+          row > static_cast<size_type>(cur_row_displ); row--) {
+
+          cell_config_calibr_t cell_config = m_cells_config.read_cell(col, row - 1);
+          m_cells_config.write_cell(col, row, cell_config);
+        }
+      }
+      m_cells_config.write_cell(0, cur_row_displ, cell_config_calibr_t());
+    }
   }
   mp_display_table->out_display(mv_table, m_inf_in_param);
 }
+
 void table_data_t::create_group_row_table(
   double a_num_begin,
   double a_num_finite,
@@ -542,9 +639,47 @@ void table_data_t::create_group_row_table(
         mv_table[i][0][cur_row+new_row_count-1] = cell;
       }
       mp_display_table->out_display(mv_table, m_inf_in_param);
+
+      if (!m_is_cells_config_read_only) {
+        m_cells_config.set_row_count(mv_table[0].row_count());
+
+        // Сдвигаем настройки ячеек вниз, на количество вставленных строк
+        for (size_type row = m_cells_config.get_row_count() - 1;
+          row > static_cast<size_type>(cur_row + new_row_count); row--) {
+
+          for (size_type col = 0; col < m_cells_config.get_col_count(); col++) {
+            cell_config_calibr_t cell_config =
+              m_cells_config.read_cell(col, row - new_row_count);
+            m_cells_config.write_cell(col, row, cell_config);
+          }
+        }
+
+        // В новые строки записываем выделенную строку
+        for (size_type row = cur_row + 1;
+          row < static_cast<size_type>(cur_row + new_row_count); row++) {
+
+          for (size_type col = 0; col < m_cells_config.get_col_count(); col++) {
+            cell_config_calibr_t cell_config =
+              m_cells_config.read_cell(col, cur_row);
+            m_cells_config.write_cell(col, row, cell_config);
+          }
+        }
+
+        for (size_type row = cur_row;
+          row < static_cast<size_type>(cur_row + new_row_count); row++) {
+
+          cell_t cell = mv_table[0][0][row];
+
+          cell_config_calibr_t cell_config;
+          cell_config.is_value_initialized = cell.init;
+          cell_config.value = cell.value;
+          m_cells_config.write_cell(0, row, cell_config);
+        }
+      }
     }
   }
 }
+
 void table_data_t::delete_row_table()
 {
   int cur_row_displ = 0;
@@ -562,6 +697,10 @@ void table_data_t::delete_row_table()
         }
         mp_display_table->out_display(mv_table, m_inf_in_param);
       }
+    }
+
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.row_erase(cur_row_displ);
     }
   }
 }
@@ -604,10 +743,16 @@ void table_data_t::delete_subtable()
 
 //---------------------------------------------------------------------------
 
-void table_data_t::create_new_table()
+void table_data_t::create_new_table(const inf_in_param_t& a_inf_in_param,
+    const irs::table_t<cell_config_calibr_t>& a_cells_config)
 {
   clear_table_def();
-  mv_saved_table = mv_table;
+  m_inf_in_param = a_inf_in_param;
+  m_cells_config = a_cells_config;
+  set_config_table_to_data(&mv_table[0]);
+  mv_saved_table.clear();
+  mp_display_table->out_display(mv_table, m_inf_in_param);
+  //mv_saved_table = mv_table;
 }
 
 void table_data_t::save_table_to_json_file(const string_type& a_file_name)
@@ -672,7 +817,6 @@ void table_data_t::save_table_to_json(size_type a_index,
   ap_parameters->clear();
   const unsigned int col_count = mv_table[a_index].col_count();
   const unsigned int row_count = mv_table[a_index].row_count();
-  const unsigned int size_z = mv_table.size();
 
   for(unsigned int col = 1; col < col_count; col++) {
     Json::Value col_param;
@@ -937,17 +1081,52 @@ void table_data_t::save_table_to_m_file(const string_type a_file_name) const
   #endif //NOP
 }
 
-void table_data_t::load_table_from_file(const string_type& a_file_name)
+bool table_data_t::load_table_from_file(const string_type& a_file_name,
+  const inf_in_param_t& a_inf_in_param,
+  const irs::table_t<cell_config_calibr_t>& a_cells_config)
 {
+  m_file_namedir = String();
+  //m_inf_in_param = a_inf_in_param;
+  //m_cells_config = a_cells_config;
+  create_new_table(a_inf_in_param, a_cells_config);
+
   std::vector<irs::matrix_t<cell_t> > table;
   number_in_param_t param_count_from_file = TWO_PARAM;
 
   ::load_table_from_file(param_count_from_file, a_file_name, table);
-  /*try {
-    load_table_from_json_file(param_count_from_file, a_file_name, subtable);
-  } catch (...) {
-    load_table_from_ini_file(param_count_from_file, a_file_name, subtable);
-  } */
+
+  if (table.size() > 0) {
+    irs::matrix_t<cell_t>& t = table[0];
+
+    bool are_headers_different = !displ_table_matches_config_table(t, m_cells_config);
+
+    if (are_headers_different) {
+      irs::handle_t<TConfigTableConflictF> conflict_dialog(
+        new TConfigTableConflictF(NULL));
+      //config_form->set_path_program(m_path_prog);
+
+      int button_result = conflict_dialog->ShowModal();
+      if (button_result == mrOk) {
+        m_is_cells_config_read_only = false;
+        switch(conflict_dialog->get_result())
+        {
+          case TConfigTableConflictF::r_data_table_to_config: {
+            set_data_table_to_config(&t);
+          } break;
+          case TConfigTableConflictF::r_config_table_to_data: {
+            set_config_table_to_data(&t);
+          } break;
+          case TConfigTableConflictF::r_dont_modify_config: {
+            m_is_cells_config_read_only = true;
+          } break;
+        }
+      } else {
+        return false;
+      }
+    }/* else {
+      set_config_table_to_data(&t);
+    }*/
+  }
 
   if (m_inf_in_param.number_in_param == param_count_from_file) {
     mv_table.clear();
@@ -957,8 +1136,14 @@ void table_data_t::load_table_from_file(const string_type& a_file_name)
     #endif
     mv_table = table;
     mp_display_table->out_display(mv_table, m_inf_in_param);
+    m_file_namedir = irs::str_conv<String>(a_file_name);
+    return true;
   } else {
-    // сообщение о несоответствии загруженного файла выбранной конфигурации
+    MessageDlg(irst("Не совпадает количество входных параметров в конфигурации и в файле данных"),
+      mtError, TMsgDlgButtons() << mbOK, 0);
+    DGI_MSG("Не совпадает количество входных параметров в конфигурации и в файле данных");
+    // надо вывести сообщение о несоответствии загруженного файла выбранной конфигурации    
+    return false;
   }
 }
 
@@ -1055,6 +1240,18 @@ void load_points(const Json::Value& a_points_value,
   }
 }
 
+namespace {
+
+  class parse_json_error_t: std::runtime_error
+  {
+  public:
+    explicit parse_json_error_t(const std::string& what_arg):
+      std::runtime_error(what_arg)
+    {}
+  };
+
+} // unnamed namespace
+
 void load_table_from_json_file(
   number_in_param_t& a_number_in_param,
   const irs::string_t& a_file_name,
@@ -1076,7 +1273,7 @@ void load_table_from_json_file(
     std::cout << "Failed to parse JSON" <<
       std::endl << reader.getFormatedErrorMessages() <<
       std::endl;
-    throw std::runtime_error("Неудалось разобрать файл");
+    throw parse_json_error_t("Не удалось разобрать файл");
   }
 
   const unsigned int param_count = data["parameter_count"].asUInt();
@@ -1211,6 +1408,15 @@ void table_data_t::clear_table()
       }
     }
     mp_display_table->out_display(mv_table, m_inf_in_param);
+
+    if (!m_is_cells_config_read_only) {
+      for (size_type col = 0; col < m_cells_config.get_col_count(); col++) {
+        m_cells_config.write_cell(col, 0, cell_config_calibr_t());
+      }
+      for (size_type row = 1; row < m_cells_config.get_row_count(); row++) {
+        m_cells_config.write_cell(0, row, cell_config_calibr_t());
+      }
+    }
   }
 }
 void table_data_t::clear_table_def()
@@ -1233,6 +1439,17 @@ void table_data_t::clear_table_def()
       }
     }
     mp_display_table->out_display(mv_table, m_inf_in_param);
+
+    if (!m_is_cells_config_read_only) {
+      m_cells_config.set_col_count(mv_table[0].col_count());
+      m_cells_config.set_row_count(mv_table[0].row_count());
+      for (size_type col = 0; col < m_cells_config.get_col_count(); col++) {
+        m_cells_config.write_cell(col, 0, cell_config_calibr_t());
+      }
+      for (size_type row = 1; row < m_cells_config.get_row_count(); row++) {
+        m_cells_config.write_cell(0, row, cell_config_calibr_t());
+      }
+    }
   }
 }
 void table_data_t::clear_content_table()
@@ -1326,10 +1543,10 @@ void table_data_t::clear_coord_special_cells()
   mv_coord_special_cells.resize(0);
 }
 
-void table_data_t::set_file_namedir(String a_file_namedir)
+/*void table_data_t::set_file_namedir(String a_file_namedir)
 {
   m_file_namedir = a_file_namedir;
-}
+}*/
 
 String table_data_t::get_file_namedir()
 {
@@ -1481,7 +1698,7 @@ void load_table_from_file(
 {
   try {
     load_table_from_json_file(a_number_in_param, a_file_name, a_table);
-  } catch (...) {
+  } catch (parse_json_error_t /*&ex*/) {
     load_table_from_ini_file(a_number_in_param, a_file_name, a_table);
   }
 }
@@ -1858,8 +2075,232 @@ void table_data_t::modify_content_table(const string_type& a_str)
     mp_display_table->out_display(mv_table, m_inf_in_param);
   }
 }
-//class table_data_size_t
 
+
+void table_data_t::copy_cells_config(const coord_t& a_src_cell, const TRect& a_range)
+{
+  if (m_is_cells_config_read_only)
+    return;
+
+  
+  if (is_cells_config_range_valid(a_range) && is_cells_config_coord_valid(a_src_cell)) {
+    //irs::is_in_range(a_src_cell.x, 1, static_cast<int>(m_cells_config.get_col_count()) - 1) &&
+    //irs::is_in_range(a_src_cell.y, 1, static_cast<int>(m_cells_config.get_row_count()) - 1)) {
+
+    cell_config_calibr_t cell_config = m_cells_config.read_cell(a_src_cell.x, a_src_cell.y);
+
+    size_type start_col = static_cast<size_type>(a_range.Left);
+    size_type stop_col = static_cast<size_type>(a_range.Right);
+    size_type start_row = static_cast<size_type>(a_range.Top);
+    size_type stop_row = static_cast<size_type>(a_range.Bottom);
+    for (size_type col_i = start_col; col_i <= stop_col; col_i++) {
+      for (size_type row_i = start_row; row_i <= stop_row; row_i++) {
+        m_cells_config.write_cell(col_i, row_i, cell_config);
+      }
+    }
+  }   
+}
+
+
+bool table_data_t::is_cells_config_coord_valid(const coord_t& a_coord) const
+{
+  return irs::is_in_range(a_coord.x, 1, static_cast<int>(m_cells_config.get_col_count()) - 1) &&
+    irs::is_in_range(a_coord.y, 1, static_cast<int>(m_cells_config.get_row_count()) - 1);
+}
+
+
+
+bool table_data_t::is_cells_config_range_valid(const TRect& a_rect) const
+{
+  int table_count = mv_table.size();
+  if(table_count > 0) {
+    int col_count = mv_table[0].col_count();
+    int row_count = mv_table[0].row_count();
+
+    return irs::is_in_range<int>(a_rect.Left, 1, col_count - 1 ) &&
+      irs::is_in_range<int>(a_rect.Top, 1, row_count - 1 ) &&
+      irs::is_in_range<int>(a_rect.Right, 1, col_count - 1 ) &&
+      irs::is_in_range<int>(a_rect.Bottom, 1, row_count - 1 );
+  }
+
+  return false;  
+}
+
+/*static*/ bool table_data_t::displ_table_matches_config_table(
+  const irs::matrix_t<cell_t>& a_table,
+  const irs::table_t<cell_config_calibr_t>& a_cells_config)
+{
+  bool are_headers_different = false;
+    
+  if (static_cast<size_type>(a_table.col_count()) ==
+      a_cells_config.get_col_count() &&
+    static_cast<size_type>(a_table.row_count()) ==
+      a_cells_config.get_row_count()) {
+
+    IRS_ASSERT(a_table.col_count() > 1 && a_table.row_count() > 1);
+
+    for (int col = 0; col < a_table.col_count(); col++) {
+      cell_t data_cell = a_table[col][0];
+      cell_config_calibr_t cell_config =
+        a_cells_config.read_cell(col, 0);
+
+      if (data_cell.init != cell_config.is_value_initialized ||
+        !is_equals(data_cell.value, cell_config.value)) {
+        are_headers_different = true;
+        break;
+      }
+    }
+
+    if (!are_headers_different) {
+      for (int row = 1; row < a_table.row_count(); row++) {
+        cell_t data_cell = a_table[0][row];
+        cell_config_calibr_t cell_config = a_cells_config.read_cell(0, row);
+        if (data_cell.init != cell_config.is_value_initialized ||
+          !is_equals(data_cell.value, cell_config.value)) {
+          are_headers_different = true;
+          break;
+        }
+      }
+    }
+  } else {
+    are_headers_different = true;
+  }
+
+  return !are_headers_different;
+}
+
+
+void table_data_t::set_data_table_to_config(irs::matrix_t<cell_t>* ap_table)
+{
+  size_type col_count = max<size_type>(ap_table->col_count(),
+    m_cells_config.get_col_count());
+  size_type row_count = max<size_type>(ap_table->row_count(),
+    m_cells_config.get_row_count());
+
+  const size_type old_config_col_count = m_cells_config.get_col_count();
+  const size_type old_config_row_count = m_cells_config.get_row_count();
+
+  if (static_cast<size_type>(ap_table->col_count()) < col_count) {
+    ap_table->newcols(ap_table->col_count(), col_count - ap_table->col_count(),
+      cell_t());
+  }
+
+  if (static_cast<size_type>(ap_table->row_count()) < row_count) {
+    ap_table->newrows(ap_table->row_count(), row_count - ap_table->row_count(),
+      cell_t());
+  }
+
+  m_cells_config.set_col_count(col_count);
+  m_cells_config.set_row_count(row_count);
+
+  for (int col = 0; col < ap_table->col_count(); col++) {
+    cell_t data_cell = (*ap_table)[col][0];
+    cell_config_calibr_t cell_config;
+    cell_config.is_value_initialized = data_cell.init;
+    cell_config.value = data_cell.value;
+
+    m_cells_config.write_cell(col, 0, cell_config);
+  }
+
+  for (int row = 1; row < ap_table->row_count(); row++) {
+    cell_t data_cell = (*ap_table)[0][row];
+    cell_config_calibr_t cell_config;
+    cell_config.is_value_initialized = data_cell.init;
+    cell_config.value = data_cell.value;
+
+    m_cells_config.write_cell(0, row, cell_config);
+  }
+
+  IRS_ASSERT(old_config_col_count > 1 );
+  IRS_ASSERT(old_config_row_count > 1 );
+
+  for (size_type col = old_config_col_count; col < col_count; col++) {
+    for (size_type row = 1; row < old_config_row_count; row++) {
+
+      cell_config_calibr_t cell_config =
+        m_cells_config.read_cell(old_config_col_count - 1, row);
+      m_cells_config.write_cell(col, row, cell_config);
+    }
+  }
+
+  for (size_type col = 1; col < col_count; col++) {
+    for (size_type row = old_config_row_count; row < row_count; row++) {
+
+      cell_config_calibr_t cell_config =
+        m_cells_config.read_cell(col, old_config_row_count - 1);
+      m_cells_config.write_cell(col, row, cell_config);
+    }
+  }
+
+  config_calibr_t::check_cells_config(m_cells_config);
+}
+
+void table_data_t::set_config_table_to_data(irs::matrix_t<cell_t>* ap_table)
+{
+  size_type col_count = max<size_type>(ap_table->col_count(),
+    m_cells_config.get_col_count());
+  size_type row_count = max<size_type>(ap_table->row_count(),
+    m_cells_config.get_row_count());
+
+  const size_type old_config_col_count = m_cells_config.get_col_count();
+  const size_type old_config_row_count = m_cells_config.get_row_count();
+
+  if (static_cast<size_type>(ap_table->col_count()) < col_count) {
+    ap_table->newcols(ap_table->col_count(), col_count - ap_table->col_count(),
+      cell_t());
+  }
+
+  if (static_cast<size_type>(ap_table->row_count()) < row_count) {
+    ap_table->newrows(ap_table->row_count(), row_count - ap_table->row_count(),
+      cell_t());
+  }
+
+  m_cells_config.set_col_count(col_count);
+  m_cells_config.set_row_count(row_count);
+
+  for (int col = 0; col < ap_table->col_count(); col++) {
+    cell_t data_cell;
+    cell_config_calibr_t cell_config = m_cells_config.read_cell(col, 0);
+    data_cell.init = cell_config.is_value_initialized;
+    data_cell.value = cell_config.value;
+
+    (*ap_table)[col][0] = data_cell;
+  }
+
+  for (int row = 1; row < ap_table->row_count(); row++) {
+    cell_t data_cell;
+    cell_config_calibr_t cell_config = m_cells_config.read_cell(0, row);
+    data_cell.init = cell_config.is_value_initialized;
+    data_cell.value = cell_config.value;
+
+    (*ap_table)[0][row] = data_cell;    
+  }
+
+  IRS_ASSERT(old_config_col_count > 1 );
+  IRS_ASSERT(old_config_row_count > 1 );
+
+  for (size_type col = old_config_col_count; col < col_count; col++) {
+    for (size_type row = 1; row < old_config_row_count; row++) {
+
+      cell_config_calibr_t cell_config =
+        m_cells_config.read_cell(old_config_col_count - 1, row);
+      m_cells_config.write_cell(col, row, cell_config);
+    }
+  }
+
+  for (size_type col = 1; col < col_count; col++) {
+    for (size_type row = old_config_row_count; row < row_count; row++) {
+
+      cell_config_calibr_t cell_config =
+        m_cells_config.read_cell(col, old_config_row_count - 1);
+      m_cells_config.write_cell(col, row, cell_config);
+    }
+  }
+
+  config_calibr_t::check_cells_config(m_cells_config);
+}
+
+//class table_data_size_t
 table_data_size_t::table_data_size_t(table_data_t* ap_table_data
 ):
   mp_table_data(ap_table_data)
@@ -1954,19 +2395,231 @@ int get_index_row_combo_box_str(
   return index;
 }
 
+
+//cell_config_calibr_t
+cell_config_calibr_t::cell_config_calibr_t():
+  value(0),
+  is_value_initialized(false),
+  /*input_param1_coef(1),
+  input_param2_coef(1),
+  input_param3_coef(1),*/
+  output_param_coef(1),
+  ex_param_work_values(),
+  ex_bit_work_values(),
+  type_meas(irs::str_conv<String>(type_meas_to_str(tm_first))),
+  range_enabled(false),
+  range(1),
+  delay_meas(0),
+  meas_interval(0),
+  count_reset_over_bit(0),
+  out_param_measuring_conf(),
+  out_param_control_config(),
+  temperature_control()
+{
+}
+
+
+void cell_config_calibr_t::clear()
+{
+  *this = cell_config_calibr_t();
+}
+
+
+bool cell_config_calibr_t::operator==(const cell_config_calibr_t& a_config) const
+{
+  if (ex_param_work_values.size() != a_config.ex_param_work_values.size()) {
+    return false;
+  }
+
+  if (!std::equal(ex_param_work_values.begin(), ex_param_work_values.end(),
+    a_config.ex_param_work_values.begin(), is_equals<double>)) {
+    return false;
+  }
+
+
+  if( ex_bit_work_values != a_config.ex_bit_work_values) {
+    return false;
+  }
+
+  return is_equals(value, a_config.value) &&
+      is_value_initialized == a_config.is_value_initialized &&
+      type_meas == a_config.type_meas &&
+      range_enabled == a_config.range_enabled &&
+      is_equals(range, a_config.range) &&
+      delay_meas == a_config.delay_meas &&
+      is_equals(meas_interval, a_config.meas_interval) &&
+      count_reset_over_bit == a_config.count_reset_over_bit &&
+      is_equals(output_param_coef, a_config.output_param_coef) &&
+      out_param_measuring_conf == a_config.out_param_measuring_conf &&
+      out_param_control_config == a_config.out_param_control_config &&
+      temperature_control == a_config.temperature_control;
+}
+
+
+bool cell_config_calibr_t::operator!=(const cell_config_calibr_t& a_config) const
+{
+  return !operator==(a_config);
+}
+
+
+void cell_config_calibr_t::load_from_json( const Json::Value& a_data, bool a_is_header_cell )
+{
+  clear();
+
+  if (a_is_header_cell) {
+    if(!a_data["value"].empty() && jsonv_get_num(a_data["value"], &value)) {
+      is_value_initialized = true;
+    }
+  } else {
+    {
+      Json::Value param = a_data["output_parameter"];
+      if (!param.empty()) {
+        irs::str_to_num_classic(param["coefficient"].asString(), &output_param_coef);
+      }
+
+      if (a_data["ex_param_work_values"].isArray()) {
+        Json::Value values = a_data["ex_param_work_values"];
+        for (size_t i = 0; i < values.size(); i++) {
+          Json::Value value = values[i];
+          double work_value = 0;
+          jsonv_get_num(value, &work_value);
+          ex_param_work_values.push_back(work_value);
+        }
+      }
+
+      if (a_data["ex_bit_work_values"].isArray()) {
+        Json::Value values = a_data["ex_bit_work_values"];
+        for (size_t i = 0; i < values.size(); i++) {
+          Json::Value value = values[i];
+          bool work_value = 0;
+          jsonv_get_num(value, &work_value);
+          ex_bit_work_values.push_back(work_value);
+        }
+      }
+
+      {
+        Json::Value data = a_data["measurement"];
+        jsonv_get_cbstr(data["type"], &type_meas);
+        jsonv_get_num(data["range_enabled"], &range_enabled);
+        jsonv_get_num(data["range"], &range);
+        jsonv_get_num(data["delay"], &delay_meas);
+        jsonv_get_num(data["time"], &meas_interval);
+        jsonv_get_num(data["error_amount_max"], &count_reset_over_bit);
+      }
+
+      {
+        Json::Value data = a_data["output_parameter_options"];
+        jsonv_get_num(data["consider"], &out_param_measuring_conf.consider_out_param);
+
+        Json::Value filter = data["filter"];
+        jsonv_get_num(filter["enabled"], &out_param_measuring_conf.filter_enabled);
+        jsonv_get_num(filter["sampling_time"], &out_param_measuring_conf.filter_sampling_time);
+        jsonv_get_num(filter["point_count"], &out_param_measuring_conf.filter_point_count);
+
+        Json::Value control = data["control"];
+        jsonv_get_num(control["enabled"], &out_param_control_config.enabled);
+        jsonv_get_num(control["relative_deviation_max"], &out_param_control_config.max_relative_difference);
+        jsonv_get_num(control["time"], &out_param_control_config.time);
+      }
+
+      {
+        Json::Value data = a_data["temperature_control"];
+
+        jsonv_get_num(data["enabled"],        &temperature_control.enabled);
+        jsonv_get_num(data["reference"],      &temperature_control.reference);
+        jsonv_get_num(data["deviation_max"],  &temperature_control.difference);
+      }
+    }
+  }
+}
+
+
+Json::Value cell_config_calibr_t::save_to_json(bool is_header_cell) const
+{
+  Json::Value root;
+
+  if (is_header_cell){
+    root["value"] = num_to_u8(value);
+  } else {
+    {
+      Json::Value data;
+      data["coefficient"] = num_to_u8(output_param_coef);
+      root["output_parameter"] = data;
+    }
+
+    {
+      Json::Value ex_params(Json::arrayValue);
+      for (size_type i = 0; i < ex_param_work_values.size(); i++) {
+        Json::Value value = num_to_u8(ex_param_work_values[i]);
+        ex_params.append(value);
+      }
+      root["ex_param_work_values"] = ex_params;     
+    }
+
+    {
+      Json::Value ex_bits(Json::arrayValue);
+      for (size_type i = 0; i < ex_bit_work_values.size(); i++) {
+        Json::Value value = num_to_u8(ex_bit_work_values[i]);
+        ex_bits.append(value);
+      }
+      root["ex_bit_work_values"] = ex_bits;     
+    }
+
+    {
+      Json::Value data;
+      data["type"] = irs::encode_utf_8(type_meas);
+      data["range_enabled"] = num_to_u8(range_enabled);
+      data["range"] = num_to_u8(range);
+      data["delay"] = num_to_u8(delay_meas);
+      data["time"] = num_to_u8(meas_interval);
+      data["error_amount_max"] = num_to_u8(count_reset_over_bit);
+
+      root["measurement"] = data;
+    }
+
+    {
+      Json::Value data;
+      data["consider"] = num_to_u8(out_param_measuring_conf.consider_out_param);
+      Json::Value filter;
+      filter["enabled"] = num_to_u8(out_param_measuring_conf.filter_enabled);
+      filter["sampling_time"] = num_to_u8(out_param_measuring_conf.filter_sampling_time);
+      filter["point_count"] = num_to_u8(out_param_measuring_conf.filter_point_count);
+      data["filter"] = filter;
+
+      Json::Value control;
+      control["enabled"] = num_to_u8(out_param_control_config.enabled);
+      control["relative_deviation_max"] = num_to_u8(out_param_control_config.max_relative_difference);
+      control["time"] = num_to_u8(out_param_control_config.time);
+      data["control"] = control;
+
+      root["output_parameter_options"] = data;
+    }
+
+    {
+      Json::Value data;
+      data["enabled"] = num_to_u8(temperature_control.enabled);
+      data["reference"] = num_to_u8(temperature_control.reference);
+      data["deviation_max"] = num_to_u8(temperature_control.difference);
+
+      root["temperature_control"] = data;
+    }
+  }
+
+  return root;
+}
+
 //-------------------------------------------------------------------------
 //struct config_calibr_t
 config_calibr_t::config_calibr_t():
-  type_meas(irs::str_conv<String>(type_meas_to_str(tm_first))),
   device_name(),
   reference_device_name(),
   ip_adress(irst("192.168.0.200")),
   port(5005),
-  in_parametr1(),
-  in_parametr2(),
-  in_parametr3(),
-  out_parametr(),
-  v_parametr_ex(),
+  in_parameter1(),
+  in_parameter2(),
+  in_parameter3(),
+  out_parameter(),
+  v_parameter_ex(),
   bit_pos_mismatch_state(),
   bit_pos_correct_mode(),
   bit_pos_operating_duty(),
@@ -1976,34 +2629,373 @@ config_calibr_t::config_calibr_t():
   bit_type2_array(),
   index_work_time(0),
   index_pos_eeprom(0),
-  out_param_config_for_measurement(),
-  out_param_control_config(),
-  temperature_control(),
+  temperature_ctrl_common_cfg(),
   type_sub_diapason(tsd_parameter2),
-  v_sub_diapason_calibr(),
-  meas_range_koef(1.),
-  delay_meas(0),
-  meas_interval(0),
-  count_reset_over_bit(0),
+  eeprom_ranges(),
   active_filename(),
-  reference_channel()
+  reference_channel(),
+  cells_config()
 {
+  in_parameter2.anchor = 1; // TWO_PARAM
 }
+
+
 void config_calibr_t::clear()
 {
   *this = config_calibr_t();
 }
+
+namespace {
+
+Json::Value bit_to_json(const bit_type1_pos_t& bit)
+{
+   Json::Value data;
+   data["byte_index"] = num_to_u8(bit.index_byte);
+   data["bit_index"] = num_to_u8(bit.index_bit);
+   return data;
+}
+
+bool jsonv_get_bit(const Json::Value& a_value, bit_type1_pos_t* ap_bit)
+{
+  if( !a_value["byte_index"].isString() || !a_value["bit_index"].isString() )
+    return false;
+
+  bit_type1_pos_t bit;
+  if( !irs::str_to_num_classic( a_value["byte_index"].asString(), &bit.index_byte ) ) {
+    return false;
+  }
+
+  if( !irs::str_to_num_classic( a_value["bit_index"].asString(), &bit.index_bit ) ) {
+    return false;
+  }
+
+  *ap_bit = bit;
+  return true;
+}
+
+} // unnamed namespace
+
 bool config_calibr_t::save(const string_type& a_filename)
+{
+  if (a_filename.empty()) {
+    return false;
+  }
+
+  ofstream ofile;
+  string_type filename = a_filename;
+  ofile.open(IRS_SIMPLE_FROM_TYPE_STR(filename.c_str()), ios::in|ios::out|ios::trunc);
+
+  if (!ofile.good()) {
+    throw runtime_error("Не удалось сохранить файл");
+  }
+
+  return save_to_json(&ofile);
+}
+
+
+bool config_calibr_t::save_to_json(std::ostream* ap_ostr)
+{
+  check_config(*this);
+
+  bool fsuccess = true;
+
+  Json::Value root;
+
+  {
+    Json::Value data;
+    data["name"] = irs::encode_utf_8(device_name);
+    root["device"] = data;
+  }
+
+  {
+    Json::Value data;
+    data["enabled"] = num_to_u8(reference_channel.enabled);
+    data["name"] = irs::encode_utf_8(reference_device_name);
+    root["reference_device"] = data;
+  }
+
+  // input_parameter1
+  {
+    Json::Value data;
+    data["type"] = irs::encode_utf_8(lang_type_to_str(in_parameter1.type));
+    data["name"] = irs::encode_utf_8(in_parameter1.name);
+    data["unit"] = irs::encode_utf_8(in_parameter1.unit);
+    data["binding"] = num_to_u8(in_parameter1.anchor);
+    data["index"] = num_to_u8(in_parameter1.index);
+    data["coefficient"] = num_to_u8(in_parameter1.koef);
+    data["default_value"] = num_to_u8(in_parameter1.default_val);
+    root["input_parameter1"] = data;
+  }
+
+  // input_parameter2
+  {
+    Json::Value data;
+    data["type"] = irs::encode_utf_8(lang_type_to_str(in_parameter2.type));
+    data["name"] = irs::encode_utf_8(in_parameter2.name);
+    data["unit"] = irs::encode_utf_8(in_parameter2.unit);
+    data["binding"] = num_to_u8(in_parameter2.anchor);
+    data["index"] = num_to_u8(in_parameter2.index);
+    data["coefficient"] = num_to_u8(in_parameter2.koef);
+    data["default_value"] = num_to_u8(in_parameter2.default_val);
+    root["input_parameter2"] = data;
+  }
+
+  // input_parameter3
+  {
+    Json::Value data;
+    data["type"] = irs::encode_utf_8(lang_type_to_str(in_parameter3.type));
+    data["name"] = irs::encode_utf_8(in_parameter3.name);
+    data["unit"] = irs::encode_utf_8(in_parameter3.unit);
+    data["index"] = num_to_u8(in_parameter3.index);
+    data["coefficient"] = num_to_u8(in_parameter3.koef);
+    data["default_value"] = num_to_u8(in_parameter3.default_val);
+    root["input_parameter3"] = data;
+  }
+
+  // output_parameter
+  {
+    Json::Value data;
+    data["type"] = irs::encode_utf_8(lang_type_to_str(out_parameter.type));
+    data["name"] = irs::encode_utf_8(out_parameter.name);
+    data["unit"] = irs::encode_utf_8(out_parameter.unit);
+    data["index"] = num_to_u8(out_parameter.index);
+
+    root["output_parameter"] = data;
+  }
+
+
+  // EEPROM
+  {
+    Json::Value data;
+    data["pos_index"] = num_to_u8(index_pos_eeprom);   // Индекс воронки
+
+    int subrange_amount = eeprom_ranges.size();
+    int num_param_subrange = type_sub_diapason == tsd_parameter1 ? 1 : 2;
+    //data["range_amount"] = num_to_u8(subrange_amount);
+    data["range_type"] = num_to_u8(num_param_subrange);
+
+    Json::Value ranges(Json::arrayValue);
+
+    for (int i = 0; i < subrange_amount; i++) {
+      Json::Value range;
+
+      int index_start = eeprom_ranges[i].index_start;
+      int size = eeprom_ranges[i].size;
+      double value_begin = eeprom_ranges[i].value_begin;
+      double value_end = eeprom_ranges[i].value_end;
+
+      range["position"] = num_to_u8(index_start);
+      range["size"] = num_to_u8(size);
+      range["min"] = num_to_u8(value_begin);
+      range["max"] = num_to_u8(value_end);
+
+      ranges.append(range);
+    }
+
+    data["ranges"] = ranges;
+    root["eeprom"] = data;
+  }
+
+  // доп.параметры
+  {
+    int extra_param_amount = v_parameter_ex.size();
+
+    Json::Value params(Json::arrayValue);
+    for (int i = 0; i < extra_param_amount; i++) {
+      Json::Value param;
+
+      String name = v_parameter_ex[i].name.c_str();
+      String type = lang_type_to_str(v_parameter_ex[i].type).c_str();
+      String unit = v_parameter_ex[i].unit.c_str();
+      irs_i32 index = v_parameter_ex[i].index;
+      double value_default = v_parameter_ex[i].value_default;
+
+      param["name"] = irs::encode_utf_8(name);
+      param["type"] = irs::encode_utf_8(type);
+      param["unit"] = irs::encode_utf_8(unit);
+      param["byte_index"] = num_to_u8(index);
+      param["default_value"] = num_to_u8(value_default);
+      params.append(param);
+    }
+    root["extra_parameters"] = params;
+  }
+
+  // сетевые переменные
+  {
+    Json::Value data;
+    data["work_time"] = num_to_u8(index_work_time);
+    root["bytes"] = data;
+  }
+
+  // сетевые биты
+  {
+    Json::Value data;
+    data["mismatch_state"] = bit_to_json(bit_pos_mismatch_state);
+    data["correct_mode"] = bit_to_json(bit_pos_correct_mode);
+    data["operating_duty"] = bit_to_json(bit_pos_operating_duty);
+    data["error_bit"] = bit_to_json(bit_pos_error_bit);
+    data["reset_over_bit"] = bit_to_json(bit_pos_reset_over_bit);
+    data["phase_preset_bit"] = bit_to_json(bit_pos_phase_preset_bit);
+
+    root["bits"] = data;
+  }
+
+  // доп.сетевые биты
+  {
+    int bit_type2_amount = bit_type2_array.size();
+    Json::Value bits(Json::arrayValue);
+    for (int i = 0; i < bit_type2_amount; i++) {
+      Json::Value bit;
+
+      String bitname = bit_type2_array[i].bitname.c_str();
+      int index_byte = bit_type2_array[i].index_byte;
+      int index_bit = bit_type2_array[i].index_bit;
+      bool value_def = bit_type2_array[i].value_def;
+
+      bit["name"] = irs::encode_utf_8(bitname);
+      bit["byte_index"] = num_to_u8(index_byte);
+      bit["bit_index"] = num_to_u8(index_bit);
+      bit["defalut_value"] = num_to_u8(bit_type2_array[i].value_def);
+      bits.append(bit);
+    }
+    root["extra_bits"] = bits;
+  }
+
+  {
+    Json::Value data;
+    data["enabled"] = num_to_u8(temperature_ctrl_common_cfg.enabled);
+    data["index"] = num_to_u8(temperature_ctrl_common_cfg.index);
+
+    root["temperature_ctrl_common_cfg"] = data;
+  }
+
+  // Оптимизация. Ищем, настройки какой ячейки встречаются чаще всего и сохраняем
+  //  эти настройки отдельно. При загрузке настроек сначала инициализируем все
+  //  ячейки этими настройками, а затем перезаписываем ячейки с отличающимися
+  //  настройками. Это позволит уменьшить объем данных. Если в таблице один
+  //  диапазон, то будут записаны настройки только одной ячейки
+  cell_config_calibr_t default_cell_config;
+  size_t default_config_amount = 0;
+  {
+    cell_config_calibr_t default_config;
+
+    const size_t col_count = cells_config.get_col_count();
+    const size_t row_count = cells_config.get_row_count();
+
+    size_t best_col = 0;
+    size_t best_row = 0;
+
+    for (size_t col = 1; col < col_count; col++) {
+      for (size_t row = 1; row < row_count; row++) {
+        const cell_config_calibr_t cell = cells_config.read_cell(col, row);
+        size_t amount = 0;
+        size_t col2 = col;
+        size_t row2 = row + 1;
+        if(row >= row_count)
+        {
+          col2++;
+          row2 = 0;
+        }
+        for (; col2 < col_count; col2++) {
+          for (; row2 < row_count; row2++) {
+            if (cell == cells_config.read_cell(col2, row2)) {
+              amount++;
+              if(amount > default_config_amount)
+              {
+                 best_col = col2;
+                 best_row = row2;
+                 default_config_amount = amount;
+                 default_cell_config = cell;
+              }
+            }
+          }
+        }
+      }
+    }
+    if(default_config_amount > 0) {
+      root["default_cell_config"] = default_cell_config.save_to_json(false);
+    }
+  }
+
+  {
+    const size_t col_count = cells_config.get_col_count();
+    const size_t row_count = cells_config.get_row_count();
+
+    Json::Value cells_data;
+    cells_data["col_count"] = num_to_u8(col_count);
+    cells_data["row_count"] = num_to_u8(row_count);
+
+    // Записываем таблицу настроек в виде массива столбцов. Каждый столбец
+    // состоит из массива ячеек, соответствующих строкам. Значение и индекс
+    // столбца записываются в столбец, а значение и индекс строки в
+    // каждую ячейку
+    Json::Value cols_data(Json::arrayValue);
+
+    for (size_t col_i = 0; col_i < col_count; col_i++) {
+      Json::Value col_data;
+      const cell_config_calibr_t col_header = cells_config.read_cell(col_i, 0);
+      if (col_header.is_value_initialized) {
+        col_data["col"] = col_header.save_to_json(true);
+      }
+      col_data["col_i"] = num_to_u8(col_i);
+
+      Json::Value cells_data(Json::arrayValue);
+      for(size_t row_i = col_i == 0 ? 0 : 1; row_i < row_count; row_i++) {
+        Json::Value cell_data;
+        const cell_config_calibr_t row_cell = cells_config.read_cell(col_i, row_i);
+        if (col_i == 0 && row_cell.is_value_initialized) {
+          cell_data["row"] = row_cell.save_to_json(true);
+        } else if(col_i > 0 && row_i > 0) {
+          const cell_config_calibr_t cell = cells_config.read_cell(col_i, row_i);
+          if (cell != default_cell_config) {
+            cell_data["config"] = cell.save_to_json(false);
+          }
+        }
+        if(!cell_data.empty()) {
+          cell_data["row_i"] = num_to_u8(row_i);
+          cells_data.append(cell_data);
+        }
+      }
+      col_data["cells"] = cells_data;
+      cols_data.append(col_data);
+    }
+
+    cells_data["cols"] = cols_data;
+    root["cells_config"] = cells_data;
+  }
+
+  root["last_active_file"] = irs::encode_utf_8(active_filename);
+
+  /*ofstream ofile;
+  string_type filename = a_filename;
+  change_file_ext(string_type("jsontest"), &filename);
+  ofile.open(IRS_SIMPLE_FROM_TYPE_STR(filename.c_str()), ios::in|ios::out|ios::trunc);
+
+  if (!ofile.good()) {
+    throw runtime_error("Не удалось сохранить файл");
+  }
+
+  ofile << root << std::endl;*/
+
+  *ap_ostr << root << std::endl;
+
+  return true;
+}
+
+bool config_calibr_t::save_to_ini(const string_type& a_filename)
 {
   bool fsuccess = true;
   if (a_filename.empty()) {
     fsuccess = false;
     return fsuccess;
   }
+
+  cell_config_calibr_t cell_config_calibr;
+
   irs::ini_file_t ini_file;
   ini_file.set_ini_name(a_filename.c_str());
   ini_file.clear_control();
-  add_static_param(&ini_file);
+  add_static_param(&ini_file, &cell_config_calibr);
   ini_file.save();
   ini_file.clear_control();
 
@@ -2013,14 +3005,10 @@ bool config_calibr_t::save(const string_type& a_filename)
   ini_file.set_section(irst("Конфигурация опорного устройства"));
   ini_file.add(irst("Имя"), &reference_device_name);
 
-  string_type in_parametr1_unit_str =
-    lang_type_to_str(in_parametr1.unit);
-  string_type in_parametr2_unit_str =
-    lang_type_to_str(in_parametr2.unit);
-  string_type in_parametr3_unit_str =
-    lang_type_to_str(in_parametr3.unit);
-  string_type out_parametr_unit_str =
-    lang_type_to_str(out_parametr.unit);
+  string_type in_parametr1_unit_str = lang_type_to_str(in_parameter1.type);
+  string_type in_parametr2_unit_str = lang_type_to_str(in_parameter2.type);
+  string_type in_parametr3_unit_str = lang_type_to_str(in_parameter3.type);
+  string_type out_parametr_unit_str = lang_type_to_str(out_parameter.type);
   ini_file.set_section(irst("Входной параметр 1"));
   ini_file.add(irst("Тип параметра"), &in_parametr1_unit_str);
   ini_file.set_section(irst("Входной параметр 2"));
@@ -2032,7 +3020,7 @@ bool config_calibr_t::save(const string_type& a_filename)
   ini_file.save();
   ini_file.clear_control();
   ini_file.set_section(irst("Опции"));
-  int sub_diapason_count = v_sub_diapason_calibr.size();
+  int sub_diapason_count = eeprom_ranges.size();
   ini_file.add(String(irst("Количество поддиапазонов")), &sub_diapason_count);
   int num_param_sub_diapason = 0;
   ini_file.add(irst("Тип поддиапазона"), &num_param_sub_diapason);
@@ -2050,10 +3038,10 @@ bool config_calibr_t::save(const string_type& a_filename)
     String size_key = irst("Размер") + diapason_id_key;
     String value_begin_key = irst("Начальное значение") + diapason_id_key;
     String value_end_key = irst("Конечное значение") + diapason_id_key;
-    int index_start = v_sub_diapason_calibr[i].index_start;
-    int size = v_sub_diapason_calibr[i].size;
-    double value_begin = v_sub_diapason_calibr[i].value_begin;
-    double value_end = v_sub_diapason_calibr[i].value_end;
+    int index_start = eeprom_ranges[i].index_start;
+    int size = eeprom_ranges[i].size;
+    double value_begin = eeprom_ranges[i].value_begin;
+    double value_end = eeprom_ranges[i].value_end;
     ini_file.add(index_start_key, &index_start);
     ini_file.add(size_key, &size);
     ini_file.add(value_begin_key, &value_begin);
@@ -2064,7 +3052,7 @@ bool config_calibr_t::save(const string_type& a_filename)
   // сохранение доп.параметров
   ini_file.clear_control();
   ini_file.set_section(irst("Опции"));
-  int param_ex_count = v_parametr_ex.size();
+  int param_ex_count = v_parameter_ex.size();
   ini_file.add(irst("Количество доп.параметров"), &param_ex_count);
   ini_file.save();
   ini_file.clear_control();
@@ -2078,18 +3066,18 @@ bool config_calibr_t::save(const string_type& a_filename)
     String value_working_key = irst("Рабочее значение") + param_ex_id_key;
     String value_default_key = irst("Значение по умолчанию") + param_ex_id_key;
 
-    String name = v_parametr_ex[i].name.c_str();
-    String unit = lang_type_to_str(v_parametr_ex[i].unit).c_str();
-    String type_variable = v_parametr_ex[i].type_variable.c_str();
-    irs_i32 index = v_parametr_ex[i].index;
-    double value_working = v_parametr_ex[i].value_working;
-    double value_default = v_parametr_ex[i].value_default;
+    String name = v_parameter_ex[i].name.c_str();
+    String unit = lang_type_to_str(v_parameter_ex[i].type).c_str();
+    String type_variable = v_parameter_ex[i].unit.c_str();
+    irs_i32 index = v_parameter_ex[i].index;
+    //double value_working = v_parameter_ex[i].value_working;
+    double value_default = v_parameter_ex[i].value_default;
 
     ini_file.add(name_key, &name);
     ini_file.add(unit_key, &unit);
     ini_file.add(type_variable_key, &type_variable);
     ini_file.add(index_key, &index);
-    ini_file.add(value_working_key, &value_working);
+    //ini_file.add(value_working_key, &value_working);
     ini_file.add(value_default_key, &value_default);
     ini_file.save();
     ini_file.clear_control();
@@ -2112,25 +3100,560 @@ bool config_calibr_t::save(const string_type& a_filename)
     String bitname = bit_type2_array[i].bitname.c_str();
     int index_byte = bit_type2_array[i].index_byte;
     int index_bit = bit_type2_array[i].index_bit;
-    bool value_working = bit_type2_array[i].value_working;
+    //bool value_working = bit_type2_array[i].value_working;
     bool value_def = bit_type2_array[i].value_def;
     ini_file.add(bitname_key, &bitname);
     ini_file.add(byte_index_key, &index_byte);
     ini_file.add(bit_index_key, &index_bit);
-    ini_file.add(value_working_key, &value_working);
+    //ini_file.add(value_working_key, &value_working);
     ini_file.add(value_def_key, &value_def);
     ini_file.save();
     ini_file.clear_control();
   }
   return fsuccess;
 }
-bool config_calibr_t::load(const string_type& a_filename)
+
+
+bool config_calibr_t::load( const string_type& a_filename )
+{
+  //return load_from_ini(a_filename);
+
+  std::ifstream ifile;
+  string_type filename = a_filename;
+  //change_file_ext( string_type( "jsontest" ), &filename );
+  ifile.open( IRS_SIMPLE_FROM_TYPE_STR( filename.c_str() ), ios::in );
+  if (!ifile.good()) {
+    throw runtime_error( "Не удалось загрузить файл" );
+  }
+
+  try {
+    return load_from_json(&ifile);
+  } catch (parse_json_error_t /*&ex*/) {
+    return load_from_ini( a_filename );
+  }
+}
+
+
+//
+bool config_calibr_t::load_from_json(std::istream* ap_ostr)
+{
+  clear();
+
+  Json::Reader reader;
+  Json::Value root;
+  const bool collect_comments = false;
+  const bool parsed_success = reader.parse( *ap_ostr, root, collect_comments );
+  if (!parsed_success) {
+    std::cout << "Failed to parse JSON" <<
+      std::endl << reader.getFormatedErrorMessages() <<
+      std::endl;
+    throw parse_json_error_t("Не удалось разобрать файл как json");
+  }
+
+  {
+    Json::Value data = root["device"];
+    jsonv_get_cbstr(data["name"], &device_name);
+  }
+
+  {
+    Json::Value data = root["reference_device"];
+    jsonv_get_num(data["enabled"], &reference_channel.enabled);
+    jsonv_get_cbstr(data["name"], &reference_device_name);
+  }
+
+  // input_parameter1
+  {
+    Json::Value data = root["input_parameter1"];
+
+    if (!str_to_lang_type(jsonv_safe_get_cbstr(data["type"], String()).c_str(),
+      in_parameter1.type)) {
+      return false;
+    }
+
+    jsonv_get_cbstr(data["name"],         &in_parameter1.name);
+    jsonv_get_cbstr(data["unit"],         &in_parameter1.unit);
+    jsonv_get_num(data["binding"],        &in_parameter1.anchor);
+    jsonv_get_num(data["index"],          &in_parameter1.index);
+    jsonv_get_num(data["coefficient"],    &in_parameter1.koef);
+    jsonv_get_num(data["default_value"],  &in_parameter1.default_val);
+  }
+
+  // input_parameter2
+  {
+    Json::Value data = root["input_parameter2"];
+
+    if (!str_to_lang_type(jsonv_safe_get_cbstr(data["type"], String()).c_str(),
+      in_parameter2.type)) {
+      return false;
+    }
+
+    jsonv_get_cbstr(data["name"],         &in_parameter2.name);
+    jsonv_get_cbstr(data["unit"],         &in_parameter2.unit);
+    jsonv_get_num(data["binding"],        &in_parameter2.anchor);
+    jsonv_get_num(data["index"],          &in_parameter2.index);
+    jsonv_get_num(data["coefficient"],    &in_parameter2.koef);
+    jsonv_get_num(data["default_value"],  &in_parameter2.default_val);
+  }
+
+  // input_parameter3
+  {
+    Json::Value data = root["input_parameter3"];
+
+    if (!str_to_lang_type(jsonv_safe_get_cbstr(data["type"], String()).c_str(),
+      in_parameter3.type)) {
+      return false;
+    }
+
+    jsonv_get_cbstr(data["name"],         &in_parameter3.name);
+    jsonv_get_cbstr(data["unit"],         &in_parameter3.unit);
+    jsonv_get_num(data["index"],          &in_parameter3.index);
+    jsonv_get_num(data["coefficient"],    &in_parameter3.koef);
+    jsonv_get_num(data["default_value"],  &in_parameter3.default_val);
+  }
+
+  // output_parameter
+  {
+    Json::Value data = root["output_parameter"];
+
+    if (!str_to_lang_type(jsonv_safe_get_cbstr(data["type"], String()).c_str(),
+      out_parameter.type)) {
+      return false;
+    }
+
+    jsonv_get_cbstr(data["name"], &out_parameter.name);
+    jsonv_get_cbstr(data["unit"], &out_parameter.unit);
+    jsonv_get_num(data["index"], &out_parameter.index);
+  }
+
+  // EEPROM
+  {
+    Json::Value data = root["eeprom"];
+    jsonv_get_num(data["pos_index"], &index_pos_eeprom);      // Индекс воронки
+    //int subrange_amount = 0;
+    int num_param_subrange = 1;
+    //jsonv_get_num(data["range_amount"], &subrange_amount);
+    jsonv_get_num(data["range_type"], &num_param_subrange);
+    type_sub_diapason = num_param_subrange == 1 ? tsd_parameter1 : tsd_parameter2;
+
+    //eeprom_ranges.clear();
+    if (data["ranges"].isArray()) {
+      Json::Value ranges = data["ranges"];
+      for (size_t i = 0; i < ranges.size(); i++) {
+        Json::Value range = ranges[i];
+
+        eeprom_range_t range_calibr;
+        jsonv_get_num(range["position"],  &range_calibr.index_start);
+        jsonv_get_num(range["size"],      &range_calibr.size);
+        jsonv_get_num(range["min"],       &range_calibr.value_begin);
+        jsonv_get_num(range["max"],       &range_calibr.value_end);
+
+        eeprom_ranges.push_back(range_calibr);
+      }
+    }
+  }
+
+  // доп.параметры
+  {
+    if (root["extra_parameters"].isArray())
+    {
+      Json::Value params = root["extra_parameters"];
+      for (size_t i = 0; i < params.size(); i++) {
+        Json::Value param = params[i];
+        parameter_ex_t param_ex;
+
+        if( !str_to_lang_type(jsonv_safe_get_cbstr(param["type"], String() ).c_str(),
+          param_ex.type)) {
+          return false;
+        }
+
+        jsonv_get_cbstr(param["name"],        &param_ex.name);
+        jsonv_get_cbstr(param["unit"],        &param_ex.unit);
+        jsonv_get_num(param["byte_index"],    &param_ex.index);
+        //jsonv_get_num(param["work_value"],    &param_ex.value_working);
+        jsonv_get_num(param["default_value"], &param_ex.value_default);
+
+        v_parameter_ex.push_back(param_ex);
+      }
+    }
+  }
+
+  // сетевые переменные
+  {
+    Json::Value data = root["bytes"];
+    jsonv_get_num(data["work_time"], &index_work_time);
+  }
+
+  // сетевые биты
+  {
+    Json::Value data = root["bits"];
+
+    jsonv_get_bit(data["mismatch_state"],   &bit_pos_mismatch_state);
+    jsonv_get_bit(data["correct_mode"],     &bit_pos_correct_mode);
+    jsonv_get_bit(data["operating_duty"],   &bit_pos_operating_duty);
+    jsonv_get_bit(data["error_bit"],        &bit_pos_error_bit);
+    jsonv_get_bit(data["reset_over_bit"],   &bit_pos_reset_over_bit);
+    jsonv_get_bit(data["phase_preset_bit"], &bit_pos_phase_preset_bit);
+  }
+
+  // доп.сетевые биты
+  {
+    if (root["extra_bits"].isArray()) {
+      Json::Value bits = root["extra_bits"];
+
+      for (size_t i = 0; i < bits.size(); i++) {
+        Json::Value bit_data = bits[i];
+        bit_type2_pos_t bit;
+
+        jsonv_get_str(bit_data["name"],           &bit.bitname);
+        jsonv_get_num(bit_data["byte_index"],     &bit.index_byte);
+        jsonv_get_num(bit_data["bit_index"],      &bit.index_bit);
+        //jsonv_get_num(bit_data["work_value"],     &bit.value_working);
+        jsonv_get_num(bit_data["defalut_value"],  &bit.value_def);
+
+        bit_type2_array.push_back(bit);
+      }
+    }
+  }
+
+  {
+    Json::Value data = root["temperature_ctrl_common_cfg"];
+
+    jsonv_get_num(data["enabled"],        &temperature_ctrl_common_cfg.enabled);
+    jsonv_get_num(data["index"],          &temperature_ctrl_common_cfg.index);
+  }
+
+  cell_config_calibr_t default_config;
+  default_config.load_from_json(root["default_cell_config"], false);
+
+  Json::Value cells_data = root["cells_config"];
+  size_t col_count = 0;
+  size_t row_count = 0;
+  jsonv_get_num(cells_data["col_count"], &col_count);
+  jsonv_get_num(cells_data["row_count"], &row_count);
+
+  if (col_count < min_col_count)
+    return false;
+
+  if (row_count < min_row_count)
+    return false;
+
+  cells_config.resize(col_count, row_count, default_config);
+  for (size_type col_i = 0; col_i < cells_config.get_col_count(); col_i++ )
+    cells_config.write_cell(col_i, 0, cell_config_calibr_t());
+  for (size_type row_i = 1; row_i < cells_config.get_row_count(); row_i++ )
+    cells_config.write_cell(0, row_i, cell_config_calibr_t());
+
+  Json::Value cols_data = cells_data["cols"];
+  if (cols_data.isArray()) {
+    for (size_t col_i = 0; col_i < cols_data.size(); col_i++) {
+      Json::Value col_data = cols_data[col_i];
+
+      size_t col_idx = 0;
+      jsonv_get_num(col_data["col_i"], &col_idx);
+
+      if (!col_data["col"].empty()) {
+        cell_config_calibr_t col_header;
+        col_header.load_from_json(col_data["col"], true);
+        cells_config.write_cell(col_idx, 0, col_header);
+      }
+
+      Json::Value cells = col_data["cells"];
+      if (!cells.isArray()) {
+        continue;
+      }
+
+      for (size_t row_i = 0; row_i < cells.size(); row_i++) {
+
+        Json::Value cell_data = cells[row_i];
+        size_t row_idx = 0;
+        jsonv_get_num(cell_data["row_i"], &row_idx);
+
+        if (col_idx == 0) {
+          if (!cell_data["row"].empty()) {
+            cell_config_calibr_t row_header;
+            row_header.load_from_json(cell_data["row"], true);
+            cells_config.write_cell(0, row_idx, row_header);
+          }
+        } else if (!cell_data["config"].empty()) {
+          cell_config_calibr_t cell;
+          cell.load_from_json(cell_data["config"], false);
+          cells_config.write_cell(col_idx, row_idx, cell);
+        }
+      }
+    }
+  }
+
+  jsonv_get_cbstr(root["last_active_file"], &active_filename);
+
+  return true;
+}
+
+
+//
+bool config_calibr_t::operator==(const config_calibr_t& a_config)
+{
+  return device_name == a_config.device_name &&
+    reference_device_name == a_config.reference_device_name &&
+    ip_adress == a_config.ip_adress &&
+    port == a_config.port &&
+    in_parameter1 == a_config.in_parameter1 &&
+    in_parameter2 == a_config.in_parameter2 &&
+    in_parameter3 == a_config.in_parameter3 &&
+    out_parameter == a_config.out_parameter &&
+    v_parameter_ex == a_config.v_parameter_ex &&
+
+    bit_pos_mismatch_state == a_config.bit_pos_mismatch_state &&
+    bit_pos_correct_mode == a_config.bit_pos_correct_mode &&
+    bit_pos_operating_duty == a_config.bit_pos_operating_duty &&
+    bit_pos_error_bit == a_config.bit_pos_error_bit &&
+    bit_pos_reset_over_bit == a_config.bit_pos_reset_over_bit &&
+    bit_pos_phase_preset_bit == a_config.bit_pos_phase_preset_bit &&
+    bit_type2_array == a_config.bit_type2_array &&
+
+    index_work_time == a_config.index_work_time &&
+    index_pos_eeprom == a_config.index_pos_eeprom &&
+
+    //out_param_measuring_conf == a_config.out_param_measuring_conf &&
+    //out_param_control_config == a_config.out_param_control_config &&
+    temperature_ctrl_common_cfg == a_config.temperature_ctrl_common_cfg &&
+
+    type_sub_diapason == a_config.type_sub_diapason &&
+    eeprom_ranges == a_config.eeprom_ranges &&
+
+    active_filename == a_config.active_filename &&
+    reference_channel == a_config.reference_channel &&
+    cells_config == a_config.cells_config;
+}
+
+
+/*bool config_calibr_t::is_equal(const config_calibr_t& a_config)
+{
+  return type_meas == a_config.type_meas &&
+    device_name == a_config.device_name &&
+    reference_device_name == a_config.reference_device_name &&
+    ip_adress == a_config.ip_adress &&
+    port == a_config.port &&
+    in_parameter1 == a_config.in_parameter1 &&
+    in_parameter2 == a_config.in_parameter2 &&
+    in_parameter3 == a_config.in_parameter3 &&
+    out_parameter == a_config.out_parameter &&
+    v_parameter_ex == a_config.v_parameter_ex &&
+    bit_pos_mismatch_state == a_config.bit_pos_mismatch_state &&
+    bit_pos_correct_mode == a_config.bit_pos_correct_mode &&
+    bit_pos_operating_duty == a_config.bit_pos_operating_duty &&
+    bit_pos_error_bit == a_config.bit_pos_error_bit &&
+    bit_pos_reset_over_bit == a_config.bit_pos_reset_over_bit &&
+    bit_pos_phase_preset_bit == a_config.bit_pos_phase_preset_bit &&
+    bit_type2_array == a_config.bit_type2_array &&
+    index_work_time == a_config.index_work_time &&
+    index_pos_eeprom == a_config.index_pos_eeprom &&
+    out_param_measuring_conf == a_config.out_param_measuring_conf &&
+    out_param_control_config == a_config.out_param_control_config &&
+    temperature_control == a_config.temperature_control &&
+    type_sub_diapason == a_config.type_sub_diapason &&
+    eeprom_ranges == a_config.eeprom_ranges &&
+    delay_meas == a_config.delay_meas &&
+    meas_interval == a_config.meas_interval &&
+    count_reset_over_bit == a_config.count_reset_over_bit &&
+    active_filename == a_config.active_filename &&
+    reference_channel == a_config.reference_channel &&
+    cells_config == a_config.cells_config;
+}*/
+
+/*static */ irs::table_t<cell_config_calibr_t> config_calibr_t::get_default_cells_config()
+{
+  irs::table_t<cell_config_calibr_t> cells_cfg;
+  cells_cfg.set_col_count(default_col_count);
+  cells_cfg.set_row_count(default_row_count);
+  cells_cfg.write_cell(1, 1, cell_config_calibr_t());
+  return cells_cfg;
+}
+
+
+/*static*/ void config_calibr_t::check_config(const config_calibr_t& a_config_calibr)
+{
+  check_cells_config(a_config_calibr.cells_config);
+
+  IRS_ASSERT(a_config_calibr.cells_config.get_col_count() > 1 );
+  IRS_ASSERT(a_config_calibr.cells_config.get_row_count() > 1 );
+
+  const cell_config_calibr_t ref_cell_cfg = a_config_calibr.cells_config.read_cell(1, 1);
+  IRS_ASSERT(ref_cell_cfg.ex_param_work_values.size() == a_config_calibr.v_parameter_ex.size());
+  IRS_ASSERT(ref_cell_cfg.ex_bit_work_values.size() == a_config_calibr.bit_type2_array.size());
+}
+
+
+/*static*/ void config_calibr_t::check_cells_config(const irs::table_t<cell_config_calibr_t>& a_cells_config)
+{
+  IRS_ASSERT(a_cells_config.get_col_count() > 1 );
+  IRS_ASSERT(a_cells_config.get_row_count() > 1 );
+
+  const cell_config_calibr_t ref_cell_cfg = a_cells_config.read_cell(1, 1);
+
+  // Проверяем, что количество доп.параметров и доп.битов одинаковое во всех ячейках
+  for (size_type col = 1; col < a_cells_config.get_col_count(); col++) {
+    for (size_type row = 1; row < a_cells_config.get_row_count(); row++) {
+      cell_config_calibr_t cell_cfg = a_cells_config.read_cell(col, row);
+      IRS_ASSERT(cell_cfg.ex_param_work_values.size() == ref_cell_cfg.ex_param_work_values.size());
+      IRS_ASSERT(cell_cfg.ex_bit_work_values.size() == ref_cell_cfg.ex_bit_work_values.size());
+    }
+  }   
+}
+
+/*static*/ void config_calibr_t::save_load_test()
+{
+  config_calibr_t cfg;
+  cfg.device_name = irst("Калибратор");
+  cfg.reference_device_name = irst("Калибратор2");
+  //cfg.ip_adress = irst("192.168.1.1");
+  //cfg.port = 9999;
+
+  cfg.in_parameter1 = parameter1_t("Частота", type_float, irst("Гц"), false, 1, 2.123, 3.1);
+  cfg.in_parameter2 = parameter1_t("Ток", type_double, irst("А"), true, 2, 3.234, 0.3);
+  cfg.in_parameter3 = parameter2_t("Фаза", type_long_double, irst("Гр"), 3, 1.123456789, 90.5 );
+  cfg.out_parameter = parameter3_t("Ток", type_double, irst("А"), 4, 234.456);
+
+  cfg.v_parameter_ex.push_back(
+    parameter_ex_t(irst("Доп.парам1"), type_long_double, "", 5, 3.1));
+  cfg.v_parameter_ex.push_back(
+    parameter_ex_t(irst("Доп.парам2"), type_float, "", 5, 4.1213));
+
+  cfg.bit_pos_mismatch_state = bit_type1_pos_t(1, 1);
+  cfg.bit_pos_correct_mode = bit_type1_pos_t(3, 2);
+  cfg.bit_pos_operating_duty = bit_type1_pos_t(5, 3);
+  cfg.bit_pos_error_bit = bit_type1_pos_t(7, 4);
+  cfg.bit_pos_reset_over_bit = bit_type1_pos_t(9, 5);
+  cfg.bit_pos_phase_preset_bit = bit_type1_pos_t(11, 6);
+
+  cfg.bit_type2_array.push_back(bit_type2_pos_t(irst("Доп.1"),1, 3, false));
+  cfg.bit_type2_array.push_back(bit_type2_pos_t(irst("Доп.2"), 3, 4, true));
+
+  cfg.index_work_time = 10;
+  cfg.index_pos_eeprom = 15;
+
+  temperature_control_common_cfg_t tccc_control;
+  tccc_control.enabled = true;
+  tccc_control.index = 123;
+  cfg.temperature_ctrl_common_cfg = tccc_control;
+
+  cfg.eeprom_ranges.push_back(eeprom_range_t(1, 100, 10.123, 20.123));
+  cfg.eeprom_ranges.push_back(eeprom_range_t(2, 20, 11.123, 21.123));
+
+  cfg.type_sub_diapason = tsd_parameter1;
+  cfg.active_filename = irst("C:\\temp\\1.cpc");
+
+  cfg.cells_config.resize(3, 3, cell_config_calibr_t());
+  cell_config_calibr_t col_1_header;
+  col_1_header.value = 1.0123;
+  col_1_header.is_value_initialized = true;
+  cfg.cells_config.write_cell(1, 0, col_1_header);
+
+  cell_config_calibr_t col_2_header;
+  col_2_header.value = 2.1123567;
+  col_2_header.is_value_initialized = true;
+  cfg.cells_config.write_cell(1, 0, col_2_header);
+
+  cell_config_calibr_t row_1_header;
+  row_1_header.value = 3.133567;
+  row_1_header.is_value_initialized = true;
+  cfg.cells_config.write_cell(0, 1, row_1_header);
+
+  /*cell_config_calibr_t row_2_header;
+  row_2_header.value = 4.123567;
+  row_2_header.is_value_initialized = true;
+  cfg.cells_config.write_cell(0, 2, row_2_header);*/
+
+  cell_config_calibr_t cell_11;
+  /*cell_11.input_param1_coef = 1.123;
+  cell_11.input_param2_coef = 2.3234;
+  cell_11.input_param3_coef = 3.3234; */
+  cell_11.output_param_coef = 4.3234;
+  cell_11.ex_param_work_values.push_back(1.123456789123456789);
+  cell_11.ex_param_work_values.push_back(100.265259);
+  cell_11.ex_bit_work_values.push_back(true);
+  cell_11.ex_bit_work_values.push_back(false);
+  cell_11.type_meas = irs::str_conv<String>(type_meas_to_str(tm_volt_ac)),
+  cell_11.range_enabled = true;
+  cell_11.range = 3.1;
+  cell_11.delay_meas = 123;
+  cell_11.meas_interval = 1.23345678999;
+  cell_11.count_reset_over_bit = 23;
+  out_param_measuring_conf_t meas_conf;
+  meas_conf.consider_out_param = true;
+  meas_conf.filter_enabled = true;
+  meas_conf.filter_sampling_time = false;
+  meas_conf.filter_point_count = true;
+  cell_11.out_param_measuring_conf = meas_conf;
+  temperature_control_config_t t_control;
+  t_control.enabled = true;
+  t_control.reference = 90.1;
+  t_control.difference = 0.2;
+  cell_11.temperature_control = t_control;
+
+  out_param_control_conf_t control_conf;
+  control_conf.enabled = true;
+  control_conf.max_relative_difference = 0.12345678912345678;
+  control_conf.time = 100.5;
+  cell_11.out_param_control_config = control_conf;
+
+  cfg.cells_config.write_cell(1, 1, cell_11);
+
+  cell_config_calibr_t cell_12 = cell_11;
+  cfg.cells_config.write_cell(1, 2, cell_12);
+
+  cell_config_calibr_t cell_21 = cell_11;
+  cfg.cells_config.write_cell(2, 1, cell_21);
+
+  cell_config_calibr_t cell_22;
+  /*cell_22.input_param1_coef = 10.123;
+  cell_22.input_param2_coef = 20.3234;
+  cell_22.input_param3_coef = 30.3234;*/
+  cell_22.output_param_coef = 40.3234;
+  cell_22.ex_param_work_values.push_back(154.24456);
+  cell_22.ex_param_work_values.push_back(34.2359);
+  cell_22.ex_bit_work_values.push_back(true);
+  cell_22.ex_bit_work_values.push_back(true);
+  temperature_control_config_t t_control22;
+  t_control22.enabled = false;
+  t_control22.reference = 40.1;
+  t_control22.difference = 0.1;
+  cell_22.temperature_control = t_control22;
+  cfg.cells_config.write_cell(2, 2, cell_22);
+
+  std::stringstream str;
+
+  //cfg.save("testcfgjson.json");
+  cfg.save_to_json(&str);
+  config_calibr_t readed_cfg;
+  //readed_cfg.load("testcfgjson.json");
+  readed_cfg.load_from_json(&str);
+
+  int t = 0;
+  for(size_type col_i = 0; col_i < cfg.cells_config.get_col_count(); col_i++)
+  {
+    for(size_type row_i = 0; row_i < cfg.cells_config.get_row_count(); row_i++)
+    {
+      cell_config_calibr_t cell = cfg.cells_config.read_cell(col_i, row_i);
+      cell_config_calibr_t readed_cell =
+        readed_cfg.cells_config.read_cell(col_i, row_i);
+      if(cell != readed_cell)
+        t = 1;
+    }
+  }
+
+  IRS_LIB_ASSERT(cfg == readed_cfg);
+}
+
+bool config_calibr_t::load_from_ini(const string_type& a_filename)
 {
   bool fsuccess = true;
+
+  cell_config_calibr_t cell_config_calibr;
+
   irs::ini_file_t ini_file;
   ini_file.set_ini_name(a_filename.c_str());
   ini_file.clear_control();
-  add_static_param(&ini_file);
+  add_static_param(&ini_file, &cell_config_calibr);
   ini_file.load();
   ini_file.clear_control();
 
@@ -2156,16 +3679,16 @@ bool config_calibr_t::load(const string_type& a_filename)
   ini_file.clear_control();
   if (fsuccess) {
     fsuccess =
-      str_to_lang_type(in_parametr1_unit_str.c_str(), in_parametr1.unit);
+      str_to_lang_type(in_parametr1_unit_str.c_str(), in_parameter1.type);
   }
   if (fsuccess) {
-    str_to_lang_type(in_parametr2_unit_str.c_str(), in_parametr2.unit);
+    str_to_lang_type(in_parametr2_unit_str.c_str(), in_parameter2.type);
   }
   if (fsuccess) {
-    str_to_lang_type(in_parametr3_unit_str.c_str(), in_parametr3.unit);
+    str_to_lang_type(in_parametr3_unit_str.c_str(), in_parameter3.type);
   }
   if (fsuccess) {
-    str_to_lang_type(out_parametr_unit_str.c_str(), out_parametr.unit);
+    str_to_lang_type(out_parametr_unit_str.c_str(), out_parameter.type);
   }
   if (fsuccess) {
     ini_file.set_section(irst("Опции"));
@@ -2176,7 +3699,7 @@ bool config_calibr_t::load(const string_type& a_filename)
     ini_file.add(irst("Тип поддиапазона"), &num_param_sub_diapason);
     ini_file.load();
     ini_file.clear_control();
-    v_sub_diapason_calibr.clear();
+    eeprom_ranges.clear();
     if (num_param_sub_diapason == 1) {
       type_sub_diapason = tsd_parameter1;
     } else {
@@ -2184,7 +3707,7 @@ bool config_calibr_t::load(const string_type& a_filename)
     }
     ini_file.set_section(irst("Опции"));
     for (int i = 0; i < sub_diapason_count; i++) {
-      sub_diapason_calibr_t sub_diapason_calibr;
+      eeprom_range_t sub_diapason_calibr;
       String diapason_id_key = irst(" д") + IntToStr(i);
       String index_start_key = irst("Начальный индекс") + diapason_id_key;
       String size_key = irst("Размер") + diapason_id_key;
@@ -2196,7 +3719,7 @@ bool config_calibr_t::load(const string_type& a_filename)
       ini_file.add(value_end_key, &sub_diapason_calibr.value_end);
       ini_file.load();
       ini_file.clear_control();
-      v_sub_diapason_calibr.push_back(sub_diapason_calibr);
+      eeprom_ranges.push_back(sub_diapason_calibr);
     }
     // загрузка доп.параметров
     ini_file.clear_control();
@@ -2205,10 +3728,11 @@ bool config_calibr_t::load(const string_type& a_filename)
     ini_file.add(irst("Количество доп.параметров"), &param_ex_count);
     ini_file.load();
     ini_file.clear_control();
-    v_parametr_ex.clear();
+    v_parameter_ex.clear();
     ini_file.set_section(irst("Опции"));
     for (int i = 0; i < param_ex_count; i++) {
-      parametr_ex_t parametr_ex;
+      parameter_ex_t parametr_ex;
+      double ex_param_work_value = 0;
       String param_ex_id_key = irst(" доп.параметр") + IntToStr(i);
       String name_key = irst("Имя параметра") + param_ex_id_key;
       String unit_key = irst("Единицы измерения") + param_ex_id_key;
@@ -2221,17 +3745,18 @@ bool config_calibr_t::load(const string_type& a_filename)
 
       ini_file.add(name_key, &parametr_ex.name);
       ini_file.add(unit_key, &unit_str);
-      ini_file.add(type_variable_key, &parametr_ex.type_variable);
+      ini_file.add(type_variable_key, &parametr_ex.unit);
       ini_file.add(index_key, &parametr_ex.index);
-      ini_file.add(value_working_key, &parametr_ex.value_working);
+      ini_file.add(value_working_key, &ex_param_work_value);
       ini_file.add(value_default_key, &parametr_ex.value_default);
       ini_file.load();
       ini_file.clear_control();
-      fsuccess = str_to_lang_type(unit_str.c_str(), parametr_ex.unit);
+      fsuccess = str_to_lang_type(unit_str.c_str(), parametr_ex.type);
       if (!fsuccess) {
         break;
       }
-      v_parametr_ex.push_back(parametr_ex);
+      v_parameter_ex.push_back(parametr_ex);      
+      cell_config_calibr.ex_param_work_values.push_back(ex_param_work_value);
     }
   }
   if (fsuccess) {
@@ -2246,6 +3771,7 @@ bool config_calibr_t::load(const string_type& a_filename)
     ini_file.set_section(irst("Опции"));
     for (int i = 0; i < bit_type2_count; i++) {
       bit_type2_pos_t bit_type2_pos;
+      bool bit_type2_pos_work_value = false;
       String bit_type2_id_key = irst(" доп.бит") + IntToStr(i);
       String bitname_key = irst("Имя бита") + bit_type2_id_key;
       String byte_index_key = irst("Индекс байта") + bit_type2_id_key;
@@ -2256,68 +3782,76 @@ bool config_calibr_t::load(const string_type& a_filename)
       ini_file.add(bitname_key, &bitname);
       ini_file.add(byte_index_key, &bit_type2_pos.index_byte);
       ini_file.add(bit_index_key, &bit_type2_pos.index_bit);
-      ini_file.add(value_working_key, &bit_type2_pos.value_working);
+      ini_file.add(value_working_key, &bit_type2_pos_work_value);
       ini_file.add(value_def_key, &bit_type2_pos.value_def);
       ini_file.load();
       ini_file.clear_control();
       bit_type2_pos.bitname = bitname.c_str();
       bit_type2_array.push_back(bit_type2_pos);
+      cell_config_calibr.ex_bit_work_values.push_back(bit_type2_pos_work_value);
     }
   }
+
+  if (fsuccess) {
+    cells_config.set_col_count(default_col_count);
+    cells_config.set_row_count(default_row_count);
+    cells_config.write_cell(1, 1, cell_config_calibr);
+  }
+
   if (!fsuccess) {
-    // освобождение ресурсов ресурсов
+    // освобождение ресурсов
     ini_file.clear_control();
     clear();
   }
   return fsuccess;
 }
-void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
+void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file,
+  cell_config_calibr_t* ap_cell_config_calibr)
 {
   ap_ini_file->set_section(irst("Свойства сетевого подключения"));
   ap_ini_file->add(irst("IP-адрес"), &ip_adress);
   ap_ini_file->add(irst("Порт"),&port);
 
   ap_ini_file->set_section(irst("Входной параметр 1"));
-  ap_ini_file->add(irst("Имя параметра"), &in_parametr1.name);
-  ap_ini_file->add(irst("Единицы измерения"), &in_parametr1.type_variable);
-
-  //ap_ini_file->add("Тип параметра", &in_parametr1.unit);
-  ap_ini_file->add(irst("Привязка"), &in_parametr1.anchor);
-  ap_ini_file->add(irst("Индекс"), &in_parametr1.index);
-  ap_ini_file->add(irst("Коэффициент"), &in_parametr1.koef);
-  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr1.default_val);
+  ap_ini_file->add(irst("Имя параметра"), &in_parameter1.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parameter1.unit);
+  //ap_ini_file->add("Тип параметра", &in_parameter1.unit);
+  ap_ini_file->add(irst("Привязка"), &in_parameter1.anchor);
+  ap_ini_file->add(irst("Индекс"), &in_parameter1.index);
+  ap_ini_file->add(irst("Коэффициент"), &in_parameter1.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parameter1.default_val);
 
   ap_ini_file->set_section(irst("Входной параметр 2"));
-  ap_ini_file->add(irst("Имя параметра"), &in_parametr2.name);
-  ap_ini_file->add(irst("Единицы измерения"), &in_parametr2.type_variable);
-  //ap_ini_file->add("Тип параметра", &in_parametr2.unit);
-  ap_ini_file->add(irst("Привязка"), &in_parametr2.anchor);
-  ap_ini_file->add(irst("Индекс"), &in_parametr2.index);
-  ap_ini_file->add(irst("Коэффициент"), &in_parametr2.koef);
-  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr2.default_val);
+  ap_ini_file->add(irst("Имя параметра"), &in_parameter2.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parameter2.unit);
+  //ap_ini_file->add("Тип параметра", &in_parameter2.unit);
+  ap_ini_file->add(irst("Привязка"), &in_parameter2.anchor);
+  ap_ini_file->add(irst("Индекс"), &in_parameter2.index);
+  ap_ini_file->add(irst("Коэффициент"), &in_parameter2.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parameter2.default_val);
 
   ap_ini_file->set_section(irst("Входной параметр 3"));
-  ap_ini_file->add(irst("Имя параметра"), &in_parametr3.name);
-  ap_ini_file->add(irst("Единицы измерения"), &in_parametr3.type_variable);
-  //ap_ini_file->add("Тип параметра", &in_parametr3.unit);
-  ap_ini_file->add(irst("Индекс"), &in_parametr3.index);
-  ap_ini_file->add(irst("Коффициент"), &in_parametr3.koef);
-  ap_ini_file->add(irst("Значение по умолчанию"), &in_parametr3.default_val);
+  ap_ini_file->add(irst("Имя параметра"), &in_parameter3.name);
+  ap_ini_file->add(irst("Единицы измерения"), &in_parameter3.unit);
+  //ap_ini_file->add("Тип параметра", &in_parameter3.unit);
+  ap_ini_file->add(irst("Индекс"), &in_parameter3.index);
+  ap_ini_file->add(irst("Коффициент"), &in_parameter3.koef);
+  ap_ini_file->add(irst("Значение по умолчанию"), &in_parameter3.default_val);
 
   ap_ini_file->set_section(irst("Выходной параметр"));
-  ap_ini_file->add(irst("Имя параметра"), &out_parametr.name);
-  ap_ini_file->add(irst("Единицы измерения"), &out_parametr.type_variable);
-  //ap_ini_file->add("Тип параметра", &out_parametr.unit);
-  ap_ini_file->add(irst("Индекс"), &out_parametr.index);
-  ap_ini_file->add(irst("Коэффициент шунта"), &out_parametr.koef_shunt);
+  ap_ini_file->add(irst("Имя параметра"), &out_parameter.name);
+  ap_ini_file->add(irst("Единицы измерения"), &out_parameter.unit);
+  //ap_ini_file->add("Тип параметра", &out_parameter.unit);
+  ap_ini_file->add(irst("Индекс"), &out_parameter.index);
+  ap_ini_file->add(irst("Коэффициент шунта"),
+    &ap_cell_config_calibr->output_param_coef);
 
   ap_ini_file->set_section(irst("Опции"));
-  ap_ini_file->add(irst("Вид измерения"), &type_meas);
-  ap_ini_file->add(irst("Коэффициент диапазона измерения"), &meas_range_koef);
-  ap_ini_file->add(irst("Задержка измерения"), &delay_meas);
-  ap_ini_file->add(irst("Время измерений"), &meas_interval);
+  ap_ini_file->add(irst("Вид измерения"), &ap_cell_config_calibr->type_meas);
+  ap_ini_file->add(irst("Задержка измерения"), &ap_cell_config_calibr->delay_meas);
+  ap_ini_file->add(irst("Время измерений"), &ap_cell_config_calibr->meas_interval);
   ap_ini_file->add(irst("Количество допустимых сбросов ошибок"),
-    &count_reset_over_bit);
+    &ap_cell_config_calibr->count_reset_over_bit);
   /*ap_ini_file->add("Режим расстройки",
     &mismatch_mode);*/
   ap_ini_file->add(irst("Индекс счетчика"), &index_work_time);
@@ -2357,30 +3891,30 @@ void config_calibr_t::add_static_param(irs::ini_file_t* ap_ini_file)
   ap_ini_file->add(irst("IP-адрес"), &reference_channel.ip_adress);
   ap_ini_file->add(irst("Порт"), &reference_channel.port);
 
-  ap_ini_file->set_section(irst("Опции выходного параметра для измерения"));
+  /*ap_ini_file->set_section(irst("Опции выходного параметра для измерения"));
   ap_ini_file->add(irst("Учитывать выходной параметр при измерении"),
-    &out_param_config_for_measurement.consider_out_param);
+    &out_param_measuring_conf.consider_out_param);
   ap_ini_file->add(irst("Включить фильтрацию выходного параметра"),
-    &out_param_config_for_measurement.out_param_filter_enabled);
+    &out_param_measuring_conf.filter_enabled);
   ap_ini_file->add(irst("Время дискретизации"),
-    &out_param_config_for_measurement.filter_sampling_time);
+    &out_param_measuring_conf.filter_sampling_time);
   ap_ini_file->add(irst("Количество точек"),
-    &out_param_config_for_measurement.filter_point_count);
+    &out_param_measuring_conf.filter_point_count);
 
   ap_ini_file->set_section(irst("Контроль выходного параметра"));
   ap_ini_file->add(irst("Включение"),
     &out_param_control_config.enabled);
   ap_ini_file->add(irst("Допустимое относительное отклонение"),
     &out_param_control_config.max_relative_difference);
-  ap_ini_file->add(irst("Временное окно"), &out_param_control_config.time);
+  ap_ini_file->add(irst("Временное окно"), &out_param_control_config.time);*/
 
   ap_ini_file->set_section(irst("Контроль температуры"));
   ap_ini_file->add(irst("Включение"),
-    &temperature_control.enabled);
-  ap_ini_file->add(irst("Индекс"), &temperature_control.index);
-  ap_ini_file->add(irst("Уставка"), &temperature_control.reference);
+    &temperature_ctrl_common_cfg.enabled);
+  ap_ini_file->add(irst("Индекс"), &temperature_ctrl_common_cfg.index);
+  /*ap_ini_file->add(irst("Уставка"), &temperature_control.reference);
   ap_ini_file->add(irst("Допустимое отклонение"),
-    &temperature_control.difference);
+    &temperature_control.difference);*/
 }
 
 //-------------------------------------------------------------------------
@@ -2398,19 +3932,19 @@ bool correct_map_t::connect(
   index = y_count.connect(ap_data, index);
 
   index = x_points.connect(
-    a_config_calibr.in_parametr1.unit,
+    a_config_calibr.in_parameter1.type,
     ap_data,
     index,
     x_count);
   index = y_points.connect(
-    a_config_calibr.in_parametr2.unit,
+    a_config_calibr.in_parameter2.type,
     ap_data,
     index,
     y_count);
   irs_uarc koef_array_size = x_count * y_count * a_number_of_koef_per_point;
 
   koef_array.connect(
-    a_config_calibr.out_parametr.unit,
+    a_config_calibr.out_parameter.type,
     ap_data,
     index,
     koef_array_size);
