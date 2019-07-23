@@ -112,6 +112,10 @@ object NewConfigF: TNewConfigF
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object ListParameterSG: TStringGrid
           Left = 0
           Top = 0
@@ -169,6 +173,10 @@ object NewConfigF: TNewConfigF
       end
       object MeasAndCalibrationSettingsTabSheet: TTabSheet
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1077#1085#1080#1103' '#1080' '#1082#1072#1083#1080#1073#1088#1086#1074#1082#1080
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         DesignSize = (
           1025
           393)
