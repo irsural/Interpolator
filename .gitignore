@@ -1,6 +1,8 @@
 # Interpolator ignore
 Log_manager.txt
 Log.txt
+/Win32
+*.local
 
 # irs global ignore
 *.*~
