@@ -134,6 +134,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_delay_control_error_bit(irs::make_cnt_ms(5000)),
   m_delay_next_cell(irs::make_cnt_ms(5000)),
   m_restart_timer(irs::make_cnt_s(60)),
+  m_need_restart(false),
   m_timer_delay_control(m_delay_start_control_reg),
   m_timer_delay_operating_duty(m_delay_operating_duty),
   m_timer_delay_control_error_bit(m_delay_control_error_bit),
@@ -1494,6 +1495,11 @@ void TDataHandlingF::process_volt_meas()
       }
     }
   }
+  if (m_need_restart) {
+    m_need_restart = false;
+    StartAutoVoltMeasActiveCellsActionExecute(NULL);
+  }
+
   switch(m_status_process_meas)
   {
     case spm_off_process: {
@@ -1748,7 +1754,12 @@ void TDataHandlingF::process_volt_meas()
       #endif
 
       if (m_restart_timer.check()) {
-        DGI_MSG("БАГ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        //Баг с зависанием измерения
+        DGI_MSG("----БАГ---- Перезапускаем измерение");
+        //Останавливаем измерение
+        m_on_stop_process_auto_volt_meas = true;
+        //И сразу запускаем с той же ячейки
+        m_need_restart = true;
       }
 
       m_timer_delay_control.check();

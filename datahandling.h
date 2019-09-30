@@ -767,6 +767,8 @@ private:	// User declarations
   counter_t m_delay_next_cell;
 
   irs::timer_t m_restart_timer;
+  bool m_need_restart;
+
   irs::timer_t m_timer_delay_control;
   irs::timer_t m_timer_delay_operating_duty;
   irs::timer_t m_timer_delay_control_error_bit;
