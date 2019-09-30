@@ -1495,14 +1495,14 @@ void TDataHandlingF::process_volt_meas()
       }
     }
   }
-  if (m_need_restart) {
-    m_need_restart = false;
-    StartAutoVoltMeasActiveCellsActionExecute(NULL);
-  }
-
   switch(m_status_process_meas)
   {
     case spm_off_process: {
+      if (m_need_restart) {
+        m_need_restart = false;
+        StartAutoVoltMeasActiveCellsActionExecute(NULL);
+      }
+    
       if (m_on_start_new_auto_meas == true) {
         m_count_point_meas = 0;
         m_previous_count_point_meas = 0;
@@ -4415,6 +4415,7 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
     string_type z_value_str;
     ostringstream_type ostr_row;
     ostringstream_type ostr_z;
+    
     ostr_row << setprecision(precision_name_graph) << row_value;
     row_value_str = ostr_row.str();
     double norm_koef = 1;
@@ -4429,9 +4430,15 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
           a_inf_in_param.type_variable_param3 + irst(", ");
       }
     }
-    name_graph += row_value_str + irst(" ") +
-      a_inf_in_param.type_variable_param2;
+
+    name_graph += irst(" ") +
+      a_inf_in_param.type_variable_param2 + irst(" (строка ") +
+      irs::num_to_str(a_row_z_data) + irst(")");
+
     if (!a_on_update) {
+    
+      ostringstream_type out2(name_graph);
+      DGI_MSG(IRS_SIMPLE_FROM_TYPE_STR(name_graph.c_str()) <<  " added");
       add_chart_z_of_x(
         name_graph, p_points, x_points, a_inf_in_param, norm_koef);
       p_chart_window_z_of_x->show();
@@ -4487,8 +4494,11 @@ void TDataHandlingF::chart_t::add_chart_z_of_y(
           a_inf_in_param.type_variable_param3 + irst(", ");
       }
     }
+
     name_graph += col_value_str + irst(" ") +
-      a_inf_in_param.type_variable_param1;
+      a_inf_in_param.type_variable_param1 + irst(" (колонка ") +
+      irs::num_to_str(a_col_z_data) + irst(")");;
+
     if (!a_on_update) {
       add_chart_z_of_y(
         name_graph, p_points, y_points, a_inf_in_param, norm_koef);
@@ -5086,4 +5096,6 @@ void __fastcall TDataHandlingF::measureMethodImpulseFilterCheckboxClick(TObject 
   m_measure_method = mm_impulse_filter;
 }
 //---------------------------------------------------------------------------
+
+
 

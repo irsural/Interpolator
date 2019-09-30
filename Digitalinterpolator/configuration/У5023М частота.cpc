@@ -39,7 +39,7 @@
 	},
 	"cells_config" : 
 	{
-		"col_count" : "22",
+		"col_count" : "6",
 		"cols" : 
 		[
 			
@@ -74,57 +74,9 @@
 					{
 						"row" : 
 						{
-							"value" : "4"
+							"value" : "3"
 						},
 						"row_i" : "4"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "5"
-						},
-						"row_i" : "10"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "6"
-						},
-						"row_i" : "11"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "7"
-						},
-						"row_i" : "12"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "8"
-						},
-						"row_i" : "13"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "9"
-						},
-						"row_i" : "14"
-					},
-					
-					{
-						"row" : 
-						{
-							"value" : "10"
-						},
-						"row_i" : "15"
 					}
 				],
 				"col_i" : "0"
@@ -132,110 +84,184 @@
 			
 			{
 				"cells" : [],
+				"col" : 
+				{
+					"value" : "1"
+				},
 				"col_i" : "1"
 			},
 			
 			{
 				"cells" : [],
+				"col" : 
+				{
+					"value" : "2"
+				},
 				"col_i" : "2"
 			},
 			
 			{
 				"cells" : [],
+				"col" : 
+				{
+					"value" : "3"
+				},
 				"col_i" : "3"
 			},
 			
 			{
 				"cells" : [],
+				"col" : 
+				{
+					"value" : "4"
+				},
 				"col_i" : "4"
 			},
 			
 			{
-				"cells" : [],
+				"cells" : 
+				[
+					
+					{
+						"config" : 
+						{
+							"ex_bit_work_values" : [],
+							"ex_param_work_values" : [ "0" ],
+							"measurement" : 
+							{
+								"delay" : "52",
+								"error_amount_max" : "3",
+								"range" : "1",
+								"range_enabled" : "0",
+								"time" : "0",
+								"type" : "Значение при текущих настройках измерения"
+							},
+							"output_parameter" : 
+							{
+								"coefficient" : "1"
+							},
+							"output_parameter_options" : 
+							{
+								"consider" : "1",
+								"control" : 
+								{
+									"enabled" : "0",
+									"relative_deviation_max" : "3e-05",
+									"time" : "15"
+								},
+								"filter" : 
+								{
+									"enabled" : "1",
+									"point_count" : "100",
+									"sampling_time" : "0.1"
+								}
+							},
+							"temperature_control" : 
+							{
+								"deviation_max" : "0.5",
+								"enabled" : "0",
+								"reference" : "65"
+							}
+						},
+						"row_i" : "2"
+					},
+					
+					{
+						"config" : 
+						{
+							"ex_bit_work_values" : [],
+							"ex_param_work_values" : [ "0" ],
+							"measurement" : 
+							{
+								"delay" : "500",
+								"error_amount_max" : "3",
+								"range" : "1",
+								"range_enabled" : "0",
+								"time" : "0",
+								"type" : "Значение при текущих настройках измерения"
+							},
+							"output_parameter" : 
+							{
+								"coefficient" : "1"
+							},
+							"output_parameter_options" : 
+							{
+								"consider" : "1",
+								"control" : 
+								{
+									"enabled" : "0",
+									"relative_deviation_max" : "3e-05",
+									"time" : "15"
+								},
+								"filter" : 
+								{
+									"enabled" : "1",
+									"point_count" : "100",
+									"sampling_time" : "0.1"
+								}
+							},
+							"temperature_control" : 
+							{
+								"deviation_max" : "0.5",
+								"enabled" : "0",
+								"reference" : "65"
+							}
+						},
+						"row_i" : "3"
+					},
+					
+					{
+						"config" : 
+						{
+							"ex_bit_work_values" : [],
+							"ex_param_work_values" : [ "0" ],
+							"measurement" : 
+							{
+								"delay" : "500",
+								"error_amount_max" : "3",
+								"range" : "1",
+								"range_enabled" : "0",
+								"time" : "0",
+								"type" : "Значение при текущих настройках измерения"
+							},
+							"output_parameter" : 
+							{
+								"coefficient" : "1"
+							},
+							"output_parameter_options" : 
+							{
+								"consider" : "1",
+								"control" : 
+								{
+									"enabled" : "0",
+									"relative_deviation_max" : "3e-05",
+									"time" : "15"
+								},
+								"filter" : 
+								{
+									"enabled" : "1",
+									"point_count" : "100",
+									"sampling_time" : "0.1"
+								}
+							},
+							"temperature_control" : 
+							{
+								"deviation_max" : "0.5",
+								"enabled" : "0",
+								"reference" : "65"
+							}
+						},
+						"row_i" : "4"
+					}
+				],
+				"col" : 
+				{
+					"value" : "5"
+				},
 				"col_i" : "5"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "6"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "7"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "8"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "9"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "10"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "11"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "12"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "13"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "14"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "15"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "16"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "17"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "18"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "19"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "20"
-			},
-			
-			{
-				"cells" : [],
-				"col_i" : "21"
 			}
 		],
-		"row_count" : "16"
+		"row_count" : "5"
 	},
 	"default_cell_config" : 
 	{
