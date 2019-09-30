@@ -27,8 +27,6 @@ void table_string_grid_t::out_display(
   const vector<irs::matrix_t<cell_t> >& av_data,
   const inf_in_param_t& a_inf_in_param)
 {
-//return;
-  //mp_table->Repaint();
   unsigned int size_z = av_data.size();
   unsigned int size_x = 0;
   unsigned int size_y = 0;
@@ -36,8 +34,9 @@ void table_string_grid_t::out_display(
     size_x = av_data[0].col_count();
     size_y = av_data[0].row_count();
   }
-  mp_table->ColCount = size_x;
+
   mp_table->RowCount = size_z*size_y;
+  mp_table->ColCount = size_x;
   int y1 = 0;
   for(unsigned int z = 0; z < size_z; z++){
     for(unsigned int y = 0; y < size_y; y++){
