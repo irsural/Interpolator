@@ -84,7 +84,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_correct_mode_previous_stat(false),
 
   m_is_autosave_meas_enabled(false),
-
+  m_measure_method(mm_impulse_filter),
   m_need_size_memory(0),
   m_on_mismatch_state(false),
   m_on_mismatch_state_previous(false),
@@ -133,6 +133,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_delay_operating_duty(irs::make_cnt_ms(2000)),
   m_delay_control_error_bit(irs::make_cnt_ms(5000)),
   m_delay_next_cell(irs::make_cnt_ms(5000)),
+  m_restart_timer(irs::make_cnt_s(60)),
   m_timer_delay_control(m_delay_start_control_reg),
   m_timer_delay_operating_duty(m_delay_operating_duty),
   m_timer_delay_control_error_bit(m_delay_control_error_bit),
@@ -183,6 +184,7 @@ __fastcall TDataHandlingF::TDataHandlingF(
   m_cur_count_reset_over_bit(0),
   m_y_out(0.),
   m_y_out_filter(),
+  m_impulse_filter(),
   m_meas_value_filter(1000000),
   m_meas_value_filter_timer(irs::make_cnt_s(0)),
   m_meas_value_filter_elapsed_time(),
@@ -238,15 +240,21 @@ __fastcall TDataHandlingF::TDataHandlingF(
     String(irst("Автообновление графиков")), &m_chart.on_auto_update);
   m_main_opt_ini_file.add(
     String(irst("Автоматическое сохранение измерений")), &m_is_autosave_meas_enabled);
+  m_main_opt_ini_file.add(
+    String(irst("Метод усреднения")), &m_measure_method);
 
   m_main_opt_ini_file.load();
   reset_mxmultimeter_assembly();
   correct_mode_change_stat(m_on_correct);
   mismatch_mode_change_stat(m_on_mismatch_state);
   set_setting_for_type_jump_next_cell(m_str_type_jump_next_elem);
+  if (m_measure_method == mm_impulse_filter) {
+    measureMethodImpulseFilterCheckbox->Checked = true;
+  } else {
+    measureMethodAverageCheckbox->Checked = true;
+  }
   AutoUpdateChartAction->Checked = m_chart.on_auto_update;
   AutoSaveMeasAction->Checked = m_is_autosave_meas_enabled;
-
   load_config_calibr();
   set_connect_if_enabled();
 
@@ -1495,7 +1503,7 @@ void TDataHandlingF::process_volt_meas()
         set_connect_calibr_device();
         m_on_start_new_auto_meas = false;
         m_auto_meas_is_running = true;
-
+             
         IRS_ASSERT(!mp_active_table->is_cells_config_read_only() &&
           m_config_calibr.cells_config == mp_active_table->get_cells_config());
         IRS_ASSERT(is_cells_range_valid(m_meas_cells_range));
@@ -1503,8 +1511,8 @@ void TDataHandlingF::process_volt_meas()
         m_manager_traffic_cell.set_min_col(m_meas_cells_range.Left);
         m_manager_traffic_cell.set_min_row(m_meas_cells_range.Top);
         m_manager_traffic_cell.set_max_col(m_meas_cells_range.Right);
-        m_manager_traffic_cell.set_max_row(m_meas_cells_range.Bottom);
-
+        m_manager_traffic_cell.set_max_row(m_meas_cells_range.Bottom);    
+             
         illegal_cells_t illegal_cells =
           mp_active_table->get_illegal_cells();
         m_manager_traffic_cell.set_illegal_cell(illegal_cells);
@@ -1512,10 +1520,10 @@ void TDataHandlingF::process_volt_meas()
         m_cur_cell_cfg.clear();
         m_prev_cell_cfg.clear();
 
-       
+
         // Всегда начинаем с левой верхней ячейки?
         m_manager_traffic_cell.set_current_cell(
-          m_meas_cells_range.Left, m_meas_cells_range.Top); 
+          m_meas_cells_range.Left, m_meas_cells_range.Top);
         /*if (m_type_jump_next_elem == HORIZONTAL_DOWN ||
           m_type_jump_next_elem == HORIZONTAL_DOWN_SMOOTH ||
           m_type_jump_next_elem == VERTICAL_FORWARD ||
@@ -1538,7 +1546,6 @@ void TDataHandlingF::process_volt_meas()
         } else {
           DGI_MSG("Запуск автоматического измерения.");
         }
-
         select_cur_meas_cell();
 
         m_cur_cell_cfg = get_cell_config(m_manager_traffic_cell.get_coord_cell());
@@ -1725,10 +1732,6 @@ void TDataHandlingF::process_volt_meas()
         mp_active_table->get_param_cell(
           coord_cur_cell.col, coord_cur_cell.row);
       out_param(param_cur_cell);
-      /*m_log << (irst("Ждем ") + FloatToStr(
-        (CNT_TO_DBLTIME(m_delay_start_control_reg))) +
-        " секунд перед проверкой рабочего режима.");
-      m_timer_delay_control.set(m_delay_start_control_reg);*/
       if (m_config_calibr.temperature_ctrl_common_cfg.enabled &&
           m_cur_cell_cfg.temperature_control.enabled) {
         DGI_MSG("Ждем установления рабочего режима и температуры.");
@@ -1743,13 +1746,11 @@ void TDataHandlingF::process_volt_meas()
       #ifdef debug_datahanding
         m_on_reg_ready = true;
       #endif
-      /*if (m_timer_delay_control.check()) {
-        if (m_config_calibr.out_param_control_config.enabled) {
-          m_log<<"Ждем установления рабочего режима и температуры.";
-        } else {
-          m_log<<"Ждем установления рабочего режима.";
-        }
-      } */
+
+      if (m_restart_timer.check()) {
+        DGI_MSG("БАГ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      }
+
       m_timer_delay_control.check();
       if ((m_timer_delay_control.stopped() == true)) {
         if (m_on_out_data == false) {
@@ -1768,6 +1769,7 @@ void TDataHandlingF::process_volt_meas()
           all_ready = all_ready && m_on_reg_ready;
           if (all_ready) {
             DGI_MSG("Рабочий режим установлен");
+            m_restart_timer.stop();
 
             if (m_mode_program == mode_prog_single_channel) {
               m_delay_operating_duty = irs::make_cnt_s((int)m_cur_cell_cfg.delay_meas);
@@ -1838,6 +1840,7 @@ void TDataHandlingF::process_volt_meas()
           DGI_MSG("Ждем " << CNT_TO_DBLTIME(m_delay_start_control_reg) <<
             " секунд перед проверкой рабочего режима.");
           m_timer_delay_control.set(m_delay_start_control_reg);
+          m_restart_timer.start();
           m_status_process_meas = spm_wait_mode_setting;
         }
       }
@@ -1851,6 +1854,7 @@ void TDataHandlingF::process_volt_meas()
     } break;
     case sps_start_meas: {
       m_points.clear();
+      m_impulse_filter.clear();
       m_meas_value_filter.clear();
       m_meas_value_filter_timer.set(irs::make_cnt_s(m_cur_cell_cfg.meas_interval));
       m_meas_value_filter_timer.start();
@@ -1899,6 +1903,7 @@ void TDataHandlingF::process_volt_meas()
         } else {
           y_out = m_y_out;
         }
+
         const double calc_value = calc_meas_value(
           m_value_meas_multimetr, y_out, m_param_cur_cell);
         m_meas_value_filter.add(calc_value);
@@ -1910,7 +1915,7 @@ void TDataHandlingF::process_volt_meas()
       update_point_measurement_progress();
       //m_log << "Обновление значения.";
       //--------------------------------------
-      update_result();
+      update_result(false);
       if (!mp_meas_point_chart.is_empty()) {
         int col = mp_active_table->get_col_displ();
         int row = mp_active_table->get_row_displ();
@@ -1931,7 +1936,7 @@ void TDataHandlingF::process_volt_meas()
     } break;
     case spm_processing_filter_data: {
       m_y_out_filter.stop();
-      update_result();
+      update_result(true);
       m_count_point_meas++;
       if (m_mode_program == mode_prog_single_channel) {
         m_status_process_meas = spm_jump_next_elem;
@@ -2399,9 +2404,9 @@ double TDataHandlingF::calc_meas_value(
   return out_value;
 }
 
-void TDataHandlingF::update_result()
+void TDataHandlingF::update_result(bool a_last_call)
 {
-  cell_t cell = process_measured_points();
+  cell_t cell = process_measured_points(a_last_call);
   coord_cell_t coord_cur_cell =
     m_manager_traffic_cell.get_coord_cell();
   mp_active_table->set_cell(cell, coord_cur_cell.col, coord_cur_cell.row);
@@ -2418,7 +2423,7 @@ void TDataHandlingF::update_result()
   }
 }
 
-cell_t TDataHandlingF::process_measured_points()
+cell_t TDataHandlingF::process_measured_points(bool a_last_call)
 {
   vector<double> values;
   for (size_type i = 0; i < m_points.size(); i++) {
@@ -2482,7 +2487,24 @@ cell_t TDataHandlingF::process_measured_points()
       }
       // Уточненное среднее
       const double N_2 = values.size()*values.size();
-      const double result = average + ((p - n)*d_total)/N_2;
+      double result = average + ((p - n)*d_total)/N_2;
+
+      if (a_last_call && m_measure_method == mm_impulse_filter) {
+        //Если включен импульсный фильтр, то его нужно применить только в
+        //последний вызов функции update_result
+        if (values.size() < 3) {
+          DGI_MSG("Ошибка: слишком мало измерений для импульсного фильтра, "
+            "результат рассчитан по алгоритму среднего значения");
+        } else {
+          m_impulse_filter.assign(values);
+          double average = result;
+          result = m_impulse_filter.get();
+
+          DGI_MSG("Значение (среднее): " << average);
+          DGI_MSG("Значение (импульсный фильтр): " << result);
+          DGI_MSG("Разница: " << (average - result) / average * 100);
+        }
+      }
       cell.value = result;
     }
   }
@@ -5036,10 +5058,21 @@ void __fastcall TDataHandlingF::SelectAllCellsActionExecute(TObject *Sender)
 //-----------------------ShowSameCellConfigsActionExecute-------------------
 
 void __fastcall TDataHandlingF::ShowSameCellConfigsActionExecute(TObject *Sender)
-
 {
   ShowSameCellConfigsAction->Checked = !ShowSameCellConfigsAction->Checked;
   RawDataStringGrid->Invalidate();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::measureMethodAverageCheckboxClick(TObject *Sender)
+{
+  m_measure_method = mm_average;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TDataHandlingF::measureMethodImpulseFilterCheckboxClick(TObject *Sender)
+{
+  m_measure_method = mm_impulse_filter;
 }
 //---------------------------------------------------------------------------
 

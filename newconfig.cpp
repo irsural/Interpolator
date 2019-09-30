@@ -1615,3 +1615,4 @@ void __fastcall TNewConfigF::RangeCheckBoxClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+

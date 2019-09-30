@@ -304,6 +304,10 @@
             <DependentOn>..\mxsrclib\hardflowg.h</DependentOn>
             <BuildOrder>11</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\mxsrclib\imp_filt.cpp">
+            <DependentOn>..\mxsrclib\imp_filt.h</DependentOn>
+            <BuildOrder>85</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\mxsrclib\irsadc.cpp">
             <DependentOn>..\mxsrclib\irsadc.h</DependentOn>
             <BuildOrder>13</BuildOrder>

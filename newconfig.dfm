@@ -3,8 +3,8 @@ object NewConfigF: TNewConfigF
   Top = 148
   BorderStyle = bsSingle
   Caption = #1053#1086#1074#1072#1103' '#1082#1086#1085#1092#1080#1075#1091#1088#1072#1094#1080#1103
-  ClientHeight = 735
-  ClientWidth = 1044
+  ClientHeight = 710
+  ClientWidth = 1052
   Color = clBtnFace
   Constraints.MinHeight = 550
   Constraints.MinWidth = 1037
@@ -18,15 +18,15 @@ object NewConfigF: TNewConfigF
   ShowHint = True
   OnClose = FormClose
   DesignSize = (
-    1044
-    735)
+    1052
+    710)
   PixelsPerInch = 96
   TextHeight = 13
   object InformationPanel: TPanel
     Left = 0
     Top = 0
-    Width = 1044
-    Height = 33
+    Width = 1052
+    Height = 27
     Align = alTop
     BevelInner = bvRaised
     BevelOuter = bvLowered
@@ -40,8 +40,8 @@ object NewConfigF: TNewConfigF
     TabOrder = 0
   end
   object CreateConfigButton: TButton
-    Left = 881
-    Top = 703
+    Left = 889
+    Top = 678
     Width = 73
     Height = 25
     Anchors = [akRight, akBottom]
@@ -51,8 +51,8 @@ object NewConfigF: TNewConfigF
     OnClick = CreateConfigButtonClick
   end
   object ExitButton: TButton
-    Left = 967
-    Top = 703
+    Left = 975
+    Top = 678
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -65,8 +65,8 @@ object NewConfigF: TNewConfigF
   end
   object Panel2: TPanel
     Left = 0
-    Top = 33
-    Width = 1044
+    Top = 27
+    Width = 1052
     Height = 48
     Align = alTop
     BevelInner = bvRaised
@@ -95,8 +95,8 @@ object NewConfigF: TNewConfigF
   end
   object Panel3: TPanel
     Left = 0
-    Top = 259
-    Width = 1044
+    Top = 229
+    Width = 1052
     Height = 438
     Align = alTop
     BevelInner = bvRaised
@@ -107,15 +107,11 @@ object NewConfigF: TNewConfigF
       Top = 8
       Width = 1033
       Height = 421
-      ActivePage = PrimaryNetworkVariablesTabSheet
+      ActivePage = MeasAndCalibrationSettingsTabSheet
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 2
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object ListParameterSG: TStringGrid
           Left = 0
           Top = 0
@@ -144,10 +140,6 @@ object NewConfigF: TNewConfigF
       object SecondaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1073#1080#1090#1099
         ImageIndex = 1
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object ListByteSG: TStringGrid
           Left = 0
           Top = 0
@@ -173,10 +165,6 @@ object NewConfigF: TNewConfigF
       end
       object MeasAndCalibrationSettingsTabSheet: TTabSheet
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1077#1085#1080#1103' '#1080' '#1082#1072#1083#1080#1073#1088#1086#1074#1082#1080
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         DesignSize = (
           1025
           393)
@@ -443,7 +431,7 @@ object NewConfigF: TNewConfigF
           Left = 672
           Top = 40
           Width = 337
-          Height = 113
+          Height = 110
           Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1076#1083#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
           TabOrder = 5
           object Label5: TLabel
@@ -507,9 +495,9 @@ object NewConfigF: TNewConfigF
   end
   object Panel4: TPanel
     Left = 0
-    Top = 81
-    Width = 1044
-    Height = 152
+    Top = 75
+    Width = 1052
+    Height = 128
     Align = alTop
     BevelInner = bvRaised
     BevelOuter = bvLowered
@@ -651,8 +639,8 @@ object NewConfigF: TNewConfigF
   end
   object Panel1: TPanel
     Left = 0
-    Top = 233
-    Width = 1044
+    Top = 203
+    Width = 1052
     Height = 26
     Align = alTop
     TabOrder = 6

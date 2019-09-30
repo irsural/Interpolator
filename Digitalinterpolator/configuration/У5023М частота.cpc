@@ -39,7 +39,7 @@
 	},
 	"cells_config" : 
 	{
-		"col_count" : "2",
+		"col_count" : "16",
 		"cols" : 
 		[
 			
@@ -49,57 +49,121 @@
 			},
 			
 			{
-				"cells" : 
-				[
-					
-					{
-						"config" : 
-						{
-							"ex_bit_work_values" : [],
-							"ex_param_work_values" : [ "0" ],
-							"measurement" : 
-							{
-								"delay" : "5",
-								"error_amount_max" : "3",
-								"range" : "1",
-								"range_enabled" : "0",
-								"time" : "0",
-								"type" : "Значение при текущих настройках измерения"
-							},
-							"output_parameter" : 
-							{
-								"coefficient" : "1"
-							},
-							"output_parameter_options" : 
-							{
-								"consider" : "1",
-								"control" : 
-								{
-									"enabled" : "0",
-									"relative_deviation_max" : "3e-05",
-									"time" : "15"
-								},
-								"filter" : 
-								{
-									"enabled" : "1",
-									"point_count" : "100",
-									"sampling_time" : "0.1"
-								}
-							},
-							"temperature_control" : 
-							{
-								"deviation_max" : "0.5",
-								"enabled" : "0",
-								"reference" : "65"
-							}
-						},
-						"row_i" : "1"
-					}
-				],
+				"cells" : [],
 				"col_i" : "1"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "2"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "3"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "4"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "5"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "6"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "7"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "8"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "9"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "10"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "11"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "12"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "13"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "14"
+			},
+			
+			{
+				"cells" : [],
+				"col_i" : "15"
 			}
 		],
-		"row_count" : "2"
+		"row_count" : "11"
+	},
+	"default_cell_config" : 
+	{
+		"ex_bit_work_values" : [],
+		"ex_param_work_values" : [ "0" ],
+		"measurement" : 
+		{
+			"delay" : "5",
+			"error_amount_max" : "3",
+			"range" : "1",
+			"range_enabled" : "0",
+			"time" : "0",
+			"type" : "Значение при текущих настройках измерения"
+		},
+		"output_parameter" : 
+		{
+			"coefficient" : "1"
+		},
+		"output_parameter_options" : 
+		{
+			"consider" : "1",
+			"control" : 
+			{
+				"enabled" : "0",
+				"relative_deviation_max" : "3e-05",
+				"time" : "15"
+			},
+			"filter" : 
+			{
+				"enabled" : "1",
+				"point_count" : "100",
+				"sampling_time" : "0.1"
+			}
+		},
+		"temperature_control" : 
+		{
+			"deviation_max" : "0.5",
+			"enabled" : "0",
+			"reference" : "65"
+		}
 	},
 	"device" : 
 	{
@@ -161,7 +225,7 @@
 		"type" : "type_irs_bool",
 		"unit" : "8"
 	},
-	"last_active_file" : "Калибратор\\Data.dgi",
+	"last_active_file" : "..\\..\\..\\Data.dgi",
 	"output_parameter" : 
 	{
 		"index" : "172",

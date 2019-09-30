@@ -19,6 +19,7 @@
 #include <cbcomp.h>
 #include <irsalg.h>
 #include <irstable.h>
+#include <imp_filt.h>
 
 #include <Classes.hpp>
 #include <Controls.hpp>
@@ -391,6 +392,9 @@ __published:	// IDE-managed Components
   TMenuItem *N30;
   TAction *ShowSameCellConfigsAction;
   TMenuItem *N31;
+  TMenuItem *N33;
+  TMenuItem *measureMethodAverageCheckbox;
+  TMenuItem *measureMethodImpulseFilterCheckbox;
   void __fastcall RawDataStringGridSelectCell(TObject *Sender, int ACol,
           int ARow, bool &CanSelect);
   void __fastcall RawDataStringGridKeyDown(TObject *Sender, WORD &Key,
@@ -488,6 +492,8 @@ __published:	// IDE-managed Components
   void __fastcall PasteCellsConfigActionExecute(TObject *Sender);
   void __fastcall SelectAllCellsActionExecute(TObject *Sender);
   void __fastcall ShowSameCellConfigsActionExecute(TObject *Sender);
+  void __fastcall measureMethodAverageCheckboxClick(TObject *Sender);
+  void __fastcall measureMethodImpulseFilterCheckboxClick(TObject *Sender);
 
 
 
@@ -607,6 +613,13 @@ private:	// User declarations
   bool m_on_correct;
   bool m_correct_mode_previous_stat;
   bool m_is_autosave_meas_enabled;
+
+  enum measure_method_t {
+    mm_impulse_filter,
+    mm_average
+  };
+
+  int m_measure_method;
 
   // необходимый размер в пам€ти дл€ прошивки
   int m_need_size_memory;
@@ -753,6 +766,7 @@ private:	// User declarations
   counter_t m_delay_control_error_bit;
   counter_t m_delay_next_cell;
 
+  irs::timer_t m_restart_timer;
   irs::timer_t m_timer_delay_control;
   irs::timer_t m_timer_delay_operating_duty;
   irs::timer_t m_timer_delay_control_error_bit;
@@ -830,6 +844,7 @@ private:	// User declarations
   irs_u32 m_cur_count_reset_over_bit;
   double m_y_out;
   param_filter_t m_y_out_filter;
+  irs::filt_imp_noise_t m_impulse_filter;
   irs::fast_average_t<double, double> m_meas_value_filter;
   typedef irs::chart_data::point_t<double> point_type;
   typedef vector<point_type> points_type;
@@ -1018,8 +1033,8 @@ public:
     const double a_value_meas,
     const double out_param_value,
     const param_cur_cell_t& a_param_cell);
-  void update_result();
-  cell_t process_measured_points();
+  void update_result(bool a_last_call);
+  cell_t process_measured_points(bool a_last_call);
   void reset_chart(const int a_col_displ, const int a_row_displ);
   void update_chart(const int a_col_displ, const int a_row_displ);
   // ѕредустановка диапазона измерений
