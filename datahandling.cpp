@@ -4397,6 +4397,7 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
   const int a_row_z_data,
   const bool a_on_update)
 {
+  DGI_MSG(a_inf_in_param.type_anchor);
   static const precision_name_graph = 5;
   int cur_row = a_row_z_data;
   if(cur_row < 1) cur_row = 1;
@@ -4431,14 +4432,13 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
       }
     }
 
-    name_graph += irst(" ") +
+    name_graph += row_value_str + irst(" ") +
       a_inf_in_param.type_variable_param2 + irst(" (строка ") +
       irs::num_to_str(a_row_z_data) + irst(")");
 
     if (!a_on_update) {
     
       ostringstream_type out2(name_graph);
-      DGI_MSG(IRS_SIMPLE_FROM_TYPE_STR(name_graph.c_str()) <<  " added");
       add_chart_z_of_x(
         name_graph, p_points, x_points, a_inf_in_param, norm_koef);
       p_chart_window_z_of_x->show();
@@ -4497,7 +4497,7 @@ void TDataHandlingF::chart_t::add_chart_z_of_y(
 
     name_graph += col_value_str + irst(" ") +
       a_inf_in_param.type_variable_param1 + irst(" (колонка ") +
-      irs::num_to_str(a_col_z_data) + irst(")");;
+      irs::num_to_str(a_col_z_data) + irst(")");
 
     if (!a_on_update) {
       add_chart_z_of_y(
