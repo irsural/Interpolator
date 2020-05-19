@@ -228,6 +228,7 @@
             <DependentOn>parsemathematic.h</DependentOn>
             <BuildOrder>74</BuildOrder>
         </CppCompile>
+        <None Include="Profiling\AQtimeModule1.aqt"/>
         <CppCompile Include="servisfunction.cpp">
             <DependentOn>servisfunction.h</DependentOn>
             <BuildOrder>75</BuildOrder>
@@ -494,7 +495,6 @@
         </CppCompile>
         <FormResources Include="modifidatatable.dfm"/>
         <FormResources Include="managerf.dfm"/>
-        <FormResources Include="showmessages.dfm"/>
         <FormResources Include="newconfig.dfm"/>
         <FormResources Include="parameters.dfm"/>
         <FormResources Include="About.dfm"/>
@@ -504,6 +504,7 @@
         <FormResources Include="connectionlog.dfm"/>
         <FormResources Include="comparison.dfm"/>
         <FormResources Include="configtableconflict.dfm"/>
+        <FormResources Include="showmessages.dfm"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

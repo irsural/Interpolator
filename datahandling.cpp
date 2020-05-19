@@ -4397,7 +4397,6 @@ void TDataHandlingF::chart_t::add_chart_z_of_x(
   const int a_row_z_data,
   const bool a_on_update)
 {
-  DGI_MSG(a_inf_in_param.type_anchor);
   static const precision_name_graph = 5;
   int cur_row = a_row_z_data;
   if(cur_row < 1) cur_row = 1;
