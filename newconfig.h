@@ -32,7 +32,6 @@ void fill_combo_box_lang_type(TComboBox* ap_combo_box);
 class TNewConfigF : public TForm
 {
 __published:	// IDE-managed Components
-  TPanel *InformationPanel;
   TLabeledEdit *NameConfigLE;
   TButton *CreateConfigButton;
   TButton *ExitButton;
@@ -55,11 +54,7 @@ __published:	// IDE-managed Components
   TRadioButton *TypeSubDiapasonParam1RB;
   TRadioButton *TypeSubDiapasonParam2RB;
   TStringGrid *ListByteSG;
-  TCSpinEdit *BitsExCSpinEdit;
-  TLabel *Label2;
   TStringGrid *ListParameterSG;
-  TCSpinEdit *ParamsExCSpinEdit;
-  TLabel *Label4;
   TGroupBox *MultimeterSettingsGroupBox;
   TGroupBox *GroupBox2;
   TCheckBox *TemperatureControlVariableCheckBox;
@@ -99,6 +94,10 @@ __published:	// IDE-managed Components
   TCheckBox *TemperatureControlCheckBox;
   TCheckBox *RangeCheckBox;
   TEdit *RangeEdit;
+  TLabel *Label2;
+  TCSpinEdit *BitsExCSpinEdit;
+  TCSpinEdit *ParamsExCSpinEdit;
+  TLabel *Label4;
   void __fastcall CreateConfigButtonClick(TObject *Sender);
   void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
   void __fastcall ReferenceChannelCheckBClick(TObject *Sender);

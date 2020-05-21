@@ -160,8 +160,8 @@ object ManagerDGIF: TManagerDGIF
     OnClick = SingleModeProgramCBClick
   end
   object GroupBox1: TGroupBox
-    Left = 8
-    Top = 192
+    Left = -448
+    Top = 64
     Width = 745
     Height = 113
     Caption = #1056#1077#1078#1080#1084' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
