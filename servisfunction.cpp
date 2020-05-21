@@ -531,12 +531,11 @@ void table_data_t::delete_col_table()
         for (int i = 0; i < table_count; i++){
           mv_table[i].delcols(cur_col, cur_col);
         }
+        if (!m_is_cells_config_read_only) {
+          m_cells_config.col_erase(cur_col);
+        }
         mp_display_table->out_display(mv_table, m_inf_in_param);
       }
-    }
-
-    if (!m_is_cells_config_read_only) {
-      m_cells_config.col_erase(cur_col);
     }
   }
 }
@@ -694,12 +693,12 @@ void table_data_t::delete_row_table()
         for(int i = 0; i < table_count; i++){
           mv_table[i].delrows(cur_row, cur_row);
         }
+        if (!m_is_cells_config_read_only) {
+          m_cells_config.row_erase(cur_row_displ);
+        }
+
         mp_display_table->out_display(mv_table, m_inf_in_param);
       }
-    }
-
-    if (!m_is_cells_config_read_only) {
-      m_cells_config.row_erase(cur_row_displ);
     }
   }
 }

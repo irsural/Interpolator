@@ -2741,8 +2741,8 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
     bool is_same_config = false;
     const irs::table_t<cell_config_calibr_t>& cells_config = mp_active_table->get_cells_config();
     if (ShowSameCellConfigsAction->Checked &&
-      irs::is_in_range<int>(m_start_col, 0, cells_config.get_col_count()) &&
-      irs::is_in_range<int>(m_start_row, 0, cells_config.get_row_count()) &&
+      irs::is_in_range<int>(m_start_col + 1, 0, cells_config.get_col_count()) &&
+      irs::is_in_range<int>(m_start_row + 1, 0, cells_config.get_row_count()) &&
       irs::is_in_range<int>(col_table, 0, cells_config.get_col_count()) &&
       irs::is_in_range<int>(row_table, 0, cells_config.get_row_count())) {
 
@@ -2766,8 +2766,6 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
       table->Canvas->Brush->Color = clMoneyGreen;
       //цвет текста
       table->Canvas->Font->Color = clBlack;
-      //cтиль текста (жирный)
-      //RawDataStringGrid->Canvas->Font->Style << fsBold;
       //заливаем фон
       table->Canvas->FillRect(a_rect);
       //красим текст
@@ -2782,31 +2780,14 @@ void TDataHandlingF::special_style_cells(TStringGrid* a_table,
       table->Canvas->Brush->Color = clYellow;
       //цвет текста
       table->Canvas->Font->Color = clBlack;
-      //cтиль текста (жирный)
-      //RawDataStringGrid->Canvas->Font->Style << fsBold;
       //заливаем фон
       table->Canvas->FillRect(a_rect);
       //красим текст
       table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
     } else {
-      //table->Canvas->Brush->Color = clRed;
       table->Canvas->FillRect(a_rect);
       table->Canvas->TextOutW(a_rect.Left, a_rect.Top, value);
     }
-
-    /*if((a_col == table->Col) && (a_row == table->Row)){
-      //цвет фона
-      table->Canvas->Brush->Color = clMoneyGreen;
-      //цвет текста
-      table->Canvas->Font->Color = clBlack;
-      //cтиль текста (жирный)
-      //RawDataStringGrid->Canvas->Font->Style << fsBold;
-      //заливаем фон
-      table->Canvas->FillRect(a_rect);
-      //красим текст
-      table->Canvas->TextOutW(
-        a_rect.Left, a_rect.Top, value);
-    } */
   }
 }
 //---------------------------------------------------------------------------
