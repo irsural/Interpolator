@@ -431,7 +431,7 @@ void TDataHandlingF::load_config_calibr()
       temperature_control_common_cfg_t temperature_cfg =
         m_config_calibr.temperature_ctrl_common_cfg;
       
-      TemperatureControlGroupBox->Visible = temperature_cfg.enabled;   
+      TemperatureControlGroupBox->Visible = temperature_cfg.enabled;
       m_load_conf_calibr_device_success = true;
 
       DGI_MSG("Загрузка конфигурации калибровки успешно завершена.");
@@ -4300,7 +4300,7 @@ void __fastcall TDataHandlingF::ClearTableActionExecute(TObject *Sender)
 
 void __fastcall TDataHandlingF::TableDefActionExecute(TObject *Sender)
 {
-  mp_active_table->clear_table_def();  
+  mp_active_table->clear_table_def(true);
 }
 //---------------------------------------------------------------------------
 

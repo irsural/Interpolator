@@ -45,7 +45,7 @@ void table_string_grid_t::out_display(
         cell_t cell = av_data[z][x][y];
         if(cell.init){
           string_type value_str;
-          irs::number_to_string(cell.value, &value_str/*, m_precision*/); 
+          irs::number_to_string(cell.value, &value_str/*, m_precision*/);
           bool select_cell_x = (x > 0) && (y == 0);
           bool select_cell_y = (x == 0) && (y > 0);
           string_type type_variable;
@@ -1417,7 +1417,7 @@ void table_data_t::clear_table()
     }
   }
 }
-void table_data_t::clear_table_def()
+void table_data_t::clear_table_def(bool a_out_display)
 {
   int table_count = mv_table.size();
   if(table_count > 0){
@@ -1436,7 +1436,9 @@ void table_data_t::clear_table_def()
         }
       }
     }
-    mp_display_table->out_display(mv_table, m_inf_in_param);
+    if (a_out_display) {
+      mp_display_table->out_display(mv_table, m_inf_in_param);
+    }
 
     if (!m_is_cells_config_read_only) {
       m_cells_config.set_col_count(mv_table[0].col_count());
