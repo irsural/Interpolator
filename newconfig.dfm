@@ -31,7 +31,7 @@ object NewConfigF: TNewConfigF
     Caption = #1054#1050
     Default = True
     ModalResult = 1
-    TabOrder = 0
+    TabOrder = 4
     OnClick = CreateConfigButtonClick
     ExplicitLeft = 869
     ExplicitTop = 605
@@ -45,7 +45,7 @@ object NewConfigF: TNewConfigF
     Cancel = True
     Caption = #1054#1090#1084#1077#1085#1072
     ModalResult = 2
-    TabOrder = 1
+    TabOrder = 5
     OnClick = ExitButtonClick
     ExplicitLeft = 948
     ExplicitTop = 605
@@ -58,7 +58,7 @@ object NewConfigF: TNewConfigF
     Align = alTop
     BevelInner = bvRaised
     BevelOuter = bvLowered
-    TabOrder = 2
+    TabOrder = 0
     ExplicitTop = 27
     ExplicitWidth = 963
     object Label2: TLabel
@@ -102,7 +102,7 @@ object NewConfigF: TNewConfigF
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 2
+      TabOrder = 3
       OnChange = BitsExCSpinEditChange
     end
     object ParamsExCSpinEdit: TCSpinEdit
@@ -112,7 +112,7 @@ object NewConfigF: TNewConfigF
       Height = 22
       MaxValue = 1000000
       MinValue = 1
-      TabOrder = 3
+      TabOrder = 2
       OnChange = ParamsExCSpinEditChange
     end
   end
@@ -130,18 +130,21 @@ object NewConfigF: TNewConfigF
     object PageControl1: TPageControl
       Left = 8
       Top = 6
-      Width = 881
-      Height = 395
+      Width = 885
+      Height = 393
       ActivePage = MeasAndCalibrationSettingsTabSheet
       TabOrder = 0
       object PrimaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1087#1077#1088#1077#1084#1077#1085#1085#1099#1077
         ImageIndex = 2
-        ExplicitWidth = 947
+        ExplicitLeft = 8
+        ExplicitTop = 6
+        ExplicitWidth = 885
+        ExplicitHeight = 393
         object ListParameterSG: TStringGrid
           Left = 0
           Top = 0
-          Width = 873
+          Width = 877
           Height = 364
           Align = alTop
           ColCount = 8
@@ -168,11 +171,12 @@ object NewConfigF: TNewConfigF
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1073#1080#1090#1099
         ImageIndex = 1
         ExplicitWidth = 947
+        ExplicitHeight = 367
         object ListByteSG: TStringGrid
           Left = 0
           Top = 0
-          Width = 873
-          Height = 364
+          Width = 877
+          Height = 372
           Align = alTop
           Anchors = [akLeft, akTop, akRight, akBottom]
           DefaultColWidth = 150
@@ -183,7 +187,8 @@ object NewConfigF: TNewConfigF
           TabOrder = 0
           OnDrawCell = ListByteSGDrawCell
           OnSelectCell = ListByteSGSelectCell
-          ExplicitWidth = 947
+          ExplicitWidth = 870
+          ExplicitHeight = 374
           ColWidths = (
             258
             78
@@ -195,25 +200,28 @@ object NewConfigF: TNewConfigF
       object MeasAndCalibrationSettingsTabSheet: TTabSheet
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1077#1085#1080#1103' '#1080' '#1082#1072#1083#1080#1073#1088#1086#1074#1082#1080
         ExplicitWidth = 947
+        ExplicitHeight = 367
         DesignSize = (
-          873
-          367)
+          877
+          365)
         object Label3: TLabel
           Left = 373
-          Top = 328
+          Top = 326
           Width = 86
           Height = 13
           Anchors = [akLeft, akBottom]
           Caption = #1048#1085#1076#1077#1082#1089' '#1089#1095#1077#1090#1095#1080#1082#1072
+          ExplicitTop = 328
         end
         object MultimeterSettingsGroupBox: TGroupBox
           Left = 1
-          Top = 3
+          Top = 1
           Width = 248
           Height = 289
           Anchors = [akLeft, akBottom]
           Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1075#1086' '#1087#1088#1080#1073#1086#1088#1072
           TabOrder = 0
+          ExplicitTop = 3
           object Label1: TLabel
             Left = 13
             Top = 24
@@ -237,7 +245,7 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 134
             EditLabel.Height = 13
             EditLabel.Caption = #1047#1072#1076#1077#1088#1078#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082
-            TabOrder = 1
+            TabOrder = 3
             Text = '1'
           end
           object CountResetOverBitLE: TLabeledEdit
@@ -248,7 +256,7 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 207
             EditLabel.Height = 13
             EditLabel.Caption = #1050#1086#1083'-'#1074#1086' '#1087#1086#1087#1099#1090#1086#1082' '#1087#1077#1088#1077#1079#1072#1087#1091#1089#1082#1072' '#1080#1079#1084#1077#1088#1077#1085#1080#1081
-            TabOrder = 2
+            TabOrder = 5
           end
           object MeasIntervalLabeledEdit: TLabeledEdit
             Left = 13
@@ -261,7 +269,7 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 218
             EditLabel.Height = 13
             EditLabel.Caption = #1042#1088#1077#1084#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1103', '#1089#1077#1082' ("0" = 1 '#1080#1079#1084#1077#1088#1077#1085#1080#1077')'
-            TabOrder = 3
+            TabOrder = 4
           end
           object RangeCheckBox: TCheckBox
             Left = 13
@@ -269,7 +277,7 @@ object NewConfigF: TNewConfigF
             Width = 268
             Height = 17
             Caption = #1048#1089#1087#1086#1083#1100#1079#1086#1074#1072#1090#1100' '#1076#1080#1072#1087#1072#1079#1086#1085
-            TabOrder = 4
+            TabOrder = 1
             OnClick = RangeCheckBoxClick
           end
           object RangeEdit: TEdit
@@ -278,17 +286,18 @@ object NewConfigF: TNewConfigF
             Width = 224
             Height = 21
             Enabled = False
-            TabOrder = 5
+            TabOrder = 2
           end
         end
         object GroupBox1: TGroupBox
           Left = 255
-          Top = 3
+          Top = 1
           Width = 338
           Height = 289
           Anchors = [akLeft, akBottom]
           Caption = 'EEPROM'
           TabOrder = 1
+          ExplicitTop = 3
           object Label9: TLabel
             Left = 8
             Top = 56
@@ -311,7 +320,7 @@ object NewConfigF: TNewConfigF
             EditorEnabled = False
             MaxValue = 1000000
             MinValue = 1
-            TabOrder = 0
+            TabOrder = 1
             Value = 1
             OnChange = CSpinEdit1Change
           end
@@ -323,7 +332,7 @@ object NewConfigF: TNewConfigF
             DefaultRowHeight = 17
             RowCount = 2
             Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goEditing]
-            TabOrder = 1
+            TabOrder = 4
             ColWidths = (
               64
               64
@@ -352,18 +361,19 @@ object NewConfigF: TNewConfigF
             Top = 18
             Width = 89
             Height = 21
-            TabOrder = 4
+            TabOrder = 0
             Text = '17'
           end
         end
         object IndexWorkTimeEdit: TEdit
           Left = 472
-          Top = 326
+          Top = 324
           Width = 121
           Height = 21
           Anchors = [akLeft, akBottom]
           TabOrder = 2
           Text = '16'
+          ExplicitTop = 326
         end
         object GroupBox2: TGroupBox
           Left = 599
@@ -371,7 +381,7 @@ object NewConfigF: TNewConfigF
           Width = 272
           Height = 149
           Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099' '#1090#1077#1088#1084#1086#1089#1090#1072#1090#1072' '#1080#1079#1084#1077#1088#1080#1090'. '#1095#1072#1089#1090#1080
-          TabOrder = 3
+          TabOrder = 4
           object TemperatureControlVariableCheckBox: TCheckBox
             Left = 8
             Top = 16
@@ -399,7 +409,7 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 113
             EditLabel.Height = 13
             EditLabel.Caption = #1059#1089#1090#1072#1074#1082#1072' '#1090#1077#1084#1087#1077#1088#1072#1090#1091#1088#1099
-            TabOrder = 2
+            TabOrder = 3
           end
           object DifferenceTemperatureLabeledEdit: TLabeledEdit
             Left = 140
@@ -409,7 +419,7 @@ object NewConfigF: TNewConfigF
             EditLabel.Width = 125
             EditLabel.Height = 13
             EditLabel.Caption = #1044#1086#1087#1091#1089#1090#1080#1084#1086#1077' '#1086#1090#1082#1083#1086#1085#1077#1085#1080#1077
-            TabOrder = 3
+            TabOrder = 4
           end
           object TemperatureControlCheckBox: TCheckBox
             Left = 9
@@ -417,7 +427,7 @@ object NewConfigF: TNewConfigF
             Width = 272
             Height = 17
             Caption = #1042#1082#1083#1102#1095#1080#1090#1100' '#1076#1083#1103' '#1074#1099#1076#1077#1083#1077#1085#1085#1086#1075#1086' '#1076#1080#1072#1087#1072#1079#1086#1085#1072' '#1103#1095#1077#1077#1082
-            TabOrder = 4
+            TabOrder = 2
             OnClick = TemperatureControlCheckBoxClick
           end
         end
@@ -427,7 +437,7 @@ object NewConfigF: TNewConfigF
           Width = 272
           Height = 79
           Caption = #1050#1086#1085#1090#1088#1086#1083#1100' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103
-          TabOrder = 4
+          TabOrder = 5
           object OutParameterControlCheckBox: TCheckBox
             Left = 8
             Top = 16
@@ -463,7 +473,7 @@ object NewConfigF: TNewConfigF
           Width = 272
           Height = 110
           Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1074#1099#1093#1086#1076#1085#1086#1075#1086' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1076#1083#1103' '#1080#1079#1084#1077#1088#1077#1085#1080#1103
-          TabOrder = 5
+          TabOrder = 3
           object Label5: TLabel
             Left = 8
             Top = 64
@@ -531,7 +541,7 @@ object NewConfigF: TNewConfigF
     Align = alTop
     BevelInner = bvRaised
     BevelOuter = bvLowered
-    TabOrder = 4
+    TabOrder = 1
     ExplicitTop = 69
     object DevideGroupBox: TGroupBox
       Left = 8
@@ -569,7 +579,7 @@ object NewConfigF: TNewConfigF
         Width = 75
         Height = 21
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-        TabOrder = 1
+        TabOrder = 2
         OnClick = ChangeDeviceConfigButtonClick
       end
       object DeviceComboBox: TComboBox
@@ -578,7 +588,7 @@ object NewConfigF: TNewConfigF
         Width = 83
         Height = 21
         Style = csDropDownList
-        TabOrder = 2
+        TabOrder = 1
         OnChange = DeviceComboBoxChange
       end
     end
@@ -602,7 +612,7 @@ object NewConfigF: TNewConfigF
         Width = 225
         Height = 21
         Style = csDropDownList
-        TabOrder = 0
+        TabOrder = 1
         OnChange = RefDeviceNameComboBoxChange
       end
       object ReferenceChannelCheckB: TCheckBox
@@ -611,7 +621,7 @@ object NewConfigF: TNewConfigF
         Width = 97
         Height = 17
         Caption = #1054#1087#1086#1088#1085#1099#1081' '#1082#1072#1085#1072#1083
-        TabOrder = 1
+        TabOrder = 0
         OnClick = ReferenceChannelCheckBClick
       end
       object ChangeRefDeviceConfigButton: TButton
@@ -620,7 +630,7 @@ object NewConfigF: TNewConfigF
         Width = 75
         Height = 21
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
-        TabOrder = 2
+        TabOrder = 3
         OnClick = ChangeRefDeviceConfigButtonClick
       end
       object RefDeviceComboBox: TComboBox
@@ -629,7 +639,7 @@ object NewConfigF: TNewConfigF
         Width = 83
         Height = 21
         Style = csDropDownList
-        TabOrder = 3
+        TabOrder = 2
         OnChange = RefDeviceComboBoxChange
       end
     end
@@ -640,7 +650,7 @@ object NewConfigF: TNewConfigF
     Width = 896
     Height = 26
     Align = alTop
-    TabOrder = 5
+    TabOrder = 2
     ExplicitTop = 161
     ExplicitWidth = 1031
     object CellsRangeLabel: TLabel
