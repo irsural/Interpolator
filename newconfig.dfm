@@ -14,7 +14,7 @@ object NewConfigF: TNewConfigF
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
-  Position = poDesigned
+  Position = poScreenCenter
   ShowHint = True
   OnClose = FormClose
   DesignSize = (
@@ -33,8 +33,6 @@ object NewConfigF: TNewConfigF
     ModalResult = 1
     TabOrder = 4
     OnClick = CreateConfigButtonClick
-    ExplicitLeft = 869
-    ExplicitTop = 605
   end
   object ExitButton: TButton
     Left = 813
@@ -47,8 +45,6 @@ object NewConfigF: TNewConfigF
     ModalResult = 2
     TabOrder = 5
     OnClick = ExitButtonClick
-    ExplicitLeft = 948
-    ExplicitTop = 605
   end
   object Panel2: TPanel
     Left = 0
@@ -59,8 +55,6 @@ object NewConfigF: TNewConfigF
     BevelInner = bvRaised
     BevelOuter = bvLowered
     TabOrder = 0
-    ExplicitTop = 27
-    ExplicitWidth = 963
     object Label2: TLabel
       Left = 719
       Top = 6
@@ -125,8 +119,6 @@ object NewConfigF: TNewConfigF
     BevelInner = bvRaised
     BevelOuter = bvLowered
     TabOrder = 3
-    ExplicitTop = 187
-    ExplicitWidth = 1000
     object PageControl1: TPageControl
       Left = 8
       Top = 6
@@ -170,6 +162,8 @@ object NewConfigF: TNewConfigF
       object SecondaryNetworkVariablesTabSheet: TTabSheet
         Caption = #1057#1077#1090#1077#1074#1099#1077' '#1073#1080#1090#1099
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
         ExplicitWidth = 947
         ExplicitHeight = 367
         object ListByteSG: TStringGrid
@@ -199,8 +193,6 @@ object NewConfigF: TNewConfigF
       end
       object MeasAndCalibrationSettingsTabSheet: TTabSheet
         Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1077#1085#1080#1103' '#1080' '#1082#1072#1083#1080#1073#1088#1086#1074#1082#1080
-        ExplicitWidth = 947
-        ExplicitHeight = 367
         DesignSize = (
           877
           365)
@@ -221,7 +213,6 @@ object NewConfigF: TNewConfigF
           Anchors = [akLeft, akBottom]
           Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080' '#1080#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1086#1075#1086' '#1087#1088#1080#1073#1086#1088#1072
           TabOrder = 0
-          ExplicitTop = 3
           object Label1: TLabel
             Left = 13
             Top = 24
@@ -297,7 +288,6 @@ object NewConfigF: TNewConfigF
           Anchors = [akLeft, akBottom]
           Caption = 'EEPROM'
           TabOrder = 1
-          ExplicitTop = 3
           object Label9: TLabel
             Left = 8
             Top = 56
@@ -373,7 +363,6 @@ object NewConfigF: TNewConfigF
           Anchors = [akLeft, akBottom]
           TabOrder = 2
           Text = '16'
-          ExplicitTop = 326
         end
         object GroupBox2: TGroupBox
           Left = 599
@@ -542,7 +531,6 @@ object NewConfigF: TNewConfigF
     BevelInner = bvRaised
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 69
     object DevideGroupBox: TGroupBox
       Left = 8
       Top = 6
@@ -651,8 +639,6 @@ object NewConfigF: TNewConfigF
     Height = 26
     Align = alTop
     TabOrder = 2
-    ExplicitTop = 161
-    ExplicitWidth = 1031
     object CellsRangeLabel: TLabel
       Left = 8
       Top = 6
